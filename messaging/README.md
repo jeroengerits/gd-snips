@@ -6,7 +6,7 @@ A lightweight, type-safe messaging system with commands and events for decouplin
 
 ```gdscript
 # Import the messaging API
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 
 # Create buses (instantiate directly)
 var command_bus = Messaging.CommandBus.new()
@@ -32,7 +32,7 @@ event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
 
 ```gdscript
 # Quick verification script (no scenes required)
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 
 # Create test command class
 extends Messaging.Command
@@ -93,7 +93,7 @@ func _ready():
 
 **Custom Command:**
 ```gdscript
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 
 extends Messaging.Command
 class_name DealDamageCommand
@@ -111,7 +111,7 @@ func _init(target_node: Node, damage: int) -> void:
 
 **Custom Event:**
 ```gdscript
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 
 extends Messaging.Event
 class_name PlayerDiedEvent
@@ -131,7 +131,7 @@ func _init(id: int, death_cause: String) -> void:
 
 **Command Bus - Handling Actions:**
 ```gdscript
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 
 # Setup (typically in _ready() or initialization)
 var command_bus: Messaging.CommandBus
@@ -154,7 +154,7 @@ if result is Messaging.CommandBus.CommandBusError:
 
 **Event Bus - Subscribing to Notifications:**
 ```gdscript
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 
 # Setup with priorities (higher priority listeners called first)
 var event_bus: Messaging.EventBus
@@ -178,7 +178,7 @@ func _on_enemy_died_cleanup(evt: EnemyDiedEvent) -> void:
 **Advanced Features:**
 
 ```gdscript
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 
 var command_bus = Messaging.CommandBus.new()
 var event_bus = Messaging.EventBus.new()
@@ -209,7 +209,7 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 
 **Import:**
 ```gdscript
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 ```
 
 **CommandBus** (`Messaging.CommandBus`):
@@ -264,7 +264,7 @@ const Messaging = preload("res://core/messaging/api.gd")
 ## Debugging & Inspection
 
 ```gdscript
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 
 var command_bus = Messaging.CommandBus.new()
 var event_bus = Messaging.EventBus.new()
@@ -311,7 +311,7 @@ The messaging system includes rules classes that encapsulate business rules:
 These rules make business rules explicit and testable. They're used internally by the buses but can be accessed directly if needed:
 
 ```gdscript
-const Messaging = preload("res://core/messaging/api.gd")
+const Messaging = preload("res://messaging/api.gd")
 
 # Access rules directly for testing or custom logic
 var validation = Messaging.CommandRules.validate_handler_count(handler_count)
@@ -356,5 +356,5 @@ if validation == Messaging.CommandRules.ValidationResult.VALID:
 
 ## See Also
 
-- [Examples](../../src/examples/) - Usage examples and tests
+- [Examples](examples/) - Usage examples and tests
 

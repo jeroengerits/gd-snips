@@ -1,10 +1,10 @@
-const MessageTypeResolver = preload("res://core/messaging/service/message_type_resolver.gd")
-const SubscriptionRules = preload("res://core/messaging/service/subscription_rules.gd")
+const MessageTypeResolver = preload("res://messaging/service/message_type_resolver.gd")
+const SubscriptionRules = preload("res://messaging/service/subscription_rules.gd")
 
 extends RefCounted
 ## Generic message bus core supporting different delivery semantics.
 ##
-## Internal implementation - do not use directly. Use CommandBus or EventBus from api.gd.
+## Internal implementation - do not use directly. Use CommandBus or EventBus from messaging/api.gd.
 ##
 ## This is a foundation class that CommandBus and EventBus extend to provide
 ## specific messaging patterns. The core provides:
