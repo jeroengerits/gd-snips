@@ -185,3 +185,21 @@ event_bus.subscribe(EnemyDiedEvent, cleanup_enemy, bound_object=enemy_node)
 event_bus.publish(EnemyDiedEvent.new(enemy_id, points))
 ```
 
+## File Structure
+
+The messaging system is organized as follows:
+
+```
+core/messaging/
+├── buses/              # Bus implementations (infrastructure)
+│   ├── message_bus.gd  # Base MessageBus class (core routing/subscription)
+│   ├── command_bus.gd  # CommandBus (extends MessageBus, single-handler)
+│   └── event_bus.gd    # EventBus (extends MessageBus, multi-subscriber)
+└── messages/           # Message base classes (data types)
+    ├── message.gd      # Base Message class
+    ├── command.gd      # Command base class (extends Message)
+    └── event.gd        # Event base class (extends Message)
+```
+
+This structure separates infrastructure (buses) from data types (messages), making it clear where to find implementation code vs. type definitions. See [STRUCTURE_PROPOSALS.md](../STRUCTURE_PROPOSALS.md) for alternative organization approaches.
+

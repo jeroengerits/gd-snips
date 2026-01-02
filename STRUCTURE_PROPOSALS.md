@@ -43,9 +43,9 @@ core/messaging/
 
 ---
 
-## Option 2: Type-Based Separation (Current, Improved)
+## Option 2: Type-Based Separation (✅ CURRENTLY IMPLEMENTED)
 
-Similar to current but with clearer naming.
+This is the structure currently in use. Groups files by their type (buses vs messages) rather than by pattern.
 
 ```
 core/messaging/
@@ -124,9 +124,23 @@ core/messaging/
 
 ---
 
-## Recommendation: Option 1 (Pattern-Based)
+## Current Implementation: Option 2 (Type-Based Separation) ✅
 
-**Why this is best:**
+**Status**: This structure is currently implemented and in use.
+
+**Why Option 2 was chosen:**
+1. **Clear separation**: Infrastructure (buses) vs data types (messages) is immediately obvious
+2. **Simple structure**: Only two folders, easy to navigate
+3. **Logical grouping**: All buses together, all messages together
+4. **GDScript compatibility**: Since classes use `class_name` for global registration, physical location doesn't matter for usage
+
+**Note**: Option 1 (Pattern-Based) remains a valid alternative for future consideration, offering better conceptual coupling between related components.
+
+---
+
+## Alternative Recommendation: Option 1 (Pattern-Based)
+
+**Why this could be better:**
 1. **Conceptual alignment**: When using commands, you work with both Command and CommandBus - they belong together
 2. **Feature-focused**: Developers think "I need commands" not "I need a bus and a message type separately"
 3. **Scalability**: Easy to add new patterns (QueryBus) without restructuring
