@@ -18,22 +18,22 @@ A lightweight messaging system with commands and events. All messages are immuta
 var command_bus = CommandBus.create()
 var event_bus = EventBus.create()
 
-# Register a command handler
-command_bus.handle("deal_damage", func(cmd: Command):
-    print("Dealt ", cmd.data()["amount"], " damage")
+# Register a command handler (using typed command classes)
+command_bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
+    return player.move_to(cmd.target_position)
 )
 
 # Subscribe to events
-event_bus.on("damage_dealt", func(evt: Event):
-    print("Damage was dealt: ", evt.description())
+event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+    update_score(evt.points)
 )
 
-# Send commands and emit events
-var cmd = Command.create("deal_damage", {"amount": 10})
-var evt = Event.create("damage_dealt", {"amount": 10}, "Player took damage")
+# Dispatch commands and publish events
+var cmd = MovePlayerCommand.new(Vector2(100, 200))
+var result = await command_bus.dispatch(cmd)
 
-command_bus.send(cmd)
-event_bus.emit(evt)
+var evt = EnemyDiedEvent.new(enemy_id, 100)
+event_bus.publish(evt)
 ```
 
 ### Commands vs Events
@@ -59,16 +59,20 @@ event_bus.emit(evt)
 - `static create(type, data, desc)` - Factory method
 
 **CommandBus class**:
-- `handle(type, fn)` - Register command handler
-- `unregister_handler(type)` - Remove command handler
-- `send(cmd)` - Dispatch command (returns result)
+- `handle(command_type, handler)` - Register command handler (replaces existing)
+- `unregister_handler(command_type)` - Remove command handler
+- `dispatch(command)` - Dispatch command (returns result, supports async)
+- `has_handler(command_type)` - Check if handler exists
 - `clear()` - Clear all handlers
 - `static create()` - Factory method
 
 **EventBus class**:
-- `on(type, fn)` - Subscribe to event type
-- `off(type, fn)` - Unsubscribe from event type
-- `emit(evt)` - Publish event to all subscribers
+- `subscribe(event_type, listener, priority, one_shot, bound_object)` - Subscribe to event type
+- `unsubscribe(event_type, listener)` - Unsubscribe from event type
+- `unsubscribe_by_id(event_type, sub_id)` - Unsubscribe by subscription ID
+- `publish(event)` - Publish event to all subscribers (fire-and-forget)
+- `publish_async(event)` - Publish event and await async listeners
+- `get_listeners(event_type)` - Get all listeners for an event type
 - `clear()` - Clear all subscribers
 - `static create()` - Factory method
 
