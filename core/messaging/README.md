@@ -208,12 +208,12 @@ event_bus.set_collect_errors(true)
 
 ## Files
 
-**System** (`system/`):
+**Buses** (`buses/`):
 - `message_bus.gd` - Generic message bus core (subscription management, routing)
-- `command_bus.gd` - Command bus implementation (single handler dispatch)
-- `event_bus.gd` - Event bus implementation (multi-subscriber publish)
+- `command_bus.gd` - Command bus implementation (single handler dispatch, extends MessageBus)
+- `event_bus.gd` - Event bus implementation (multi-subscriber publish, extends MessageBus)
 
-**Objects** (`objects/`):
+**Messages** (`messages/`):
 - `message.gd` - Base message class
 - `command.gd` - Command base class (extends Message)
 - `event.gd` - Event base class (extends Message)

@@ -3,11 +3,11 @@
 ## Current Structure
 ```
 core/messaging/
-├── system/          # All buses
+├── buses/           # All bus implementations
 │   ├── message_bus.gd
 │   ├── command_bus.gd
 │   └── event_bus.gd
-└── objects/         # All message types
+└── messages/        # All message types
     ├── message.gd
     ├── command.gd
     └── event.gd
