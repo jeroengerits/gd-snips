@@ -8,13 +8,13 @@ A personal collection of packages and utilities for tinkering with **Godot 4.5.1
 
 Lightweight, type-safe messaging system with commands and events for decoupling game components.
 
-**[📖 Messaging Docs →](messaging/README.md)**
+**[📖 Documentation →](messaging/README.md)**
 
 ## 🛠️ Utilities
 
 Shared utility functions for use across packages.
 
-**[📖 Utilities Docs →](utilities/README.md)**
+**[📖 Documentation →](utilities/README.md)**
 
 ## 📝 Developer Diary
 
