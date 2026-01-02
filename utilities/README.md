@@ -75,50 +75,24 @@ var collection = Collection.new(my_array, false)  # false = use reference
 collection.push(4)  # Modifies my_array directly
 ```
 
-## Collection Utilities (Legacy)
+### Dictionary Cleanup Pattern
 
-**File:** `collection_utils.gd`
-
-Static utility functions for backward compatibility. These now use the Collection class internally.
-
-### `cleanup_empty_key(array: Array, dict: Dictionary, key) -> void`
-
-Erase a dictionary key when its associated array becomes empty.
-
-**Use when:** You remove items from an array and want to automatically clean up the dictionary key if the array is now empty.
+Common pattern for managing arrays in dictionaries (caches, registries, subscriptions):
 
 ```gdscript
-const CollectionUtils = preload("res://utilities/collection_utils.gd")
+const Collection = preload("res://utilities/collection.gd")
 
 var subscriptions: Dictionary = {}
 var listeners: Array = []
 
+# Remove a single item and cleanup if empty
 listeners.erase(listener)
-CollectionUtils.cleanup_empty_key(listeners, subscriptions, "my_event")
-```
+Collection.new(listeners, false).cleanup_empty_key(subscriptions, "my_event")
 
-### `remove_from_array_and_cleanup_key(array: Array, indices: Array, dict: Dictionary, key) -> void`
-
-Remove multiple items from an array by index, then clean up the dictionary key if the array becomes empty.
-
-**Use when:** You need to remove several items at once and want safe, automatic cleanup.
-
-```gdscript
-const CollectionUtils = preload("res://utilities/collection_utils.gd")
-
-var subscriptions: Dictionary = {}
-var listeners: Array = [listener1, listener2, listener3]
-
+# Remove multiple items and cleanup if empty
 var to_remove: Array = [0, 2]  # Indices to remove
-CollectionUtils.remove_from_array_and_cleanup_key(
-    listeners, 
-    to_remove, 
-    subscriptions, 
-    "my_event"
-)
+Collection.new(listeners, false).remove_and_cleanup_key(to_remove, subscriptions, "my_event")
 ```
-
-**Note:** For new code, prefer using the Collection class directly for a more expressive API.
 
 ## Design Principles
 
@@ -126,19 +100,14 @@ CollectionUtils.remove_from_array_and_cleanup_key(
 - **Fluent API:** Collection class supports method chaining
 - **Type-safe:** Explicit type annotations throughout
 - **Godot conventions:** Follows `snake_case` and static method patterns
-- **Backward compatible:** Legacy utilities still work
 
 ## When to Use
 
-**Use Collection class for:**
+Use the Collection class for:
 - Complex array operations with method chaining
 - Functional programming patterns (map, filter, reduce)
 - Expressive, readable code
-
-**Use static utilities for:**
-- Simple one-off operations
-- Backward compatibility with existing code
-- Minimal overhead scenarios
+- Managing collections in dictionaries with automatic cleanup
 
 ## See Also
 
