@@ -1,4 +1,4 @@
-# gd-snips
+# Godot Snips
 
 Personal code snippets for **Godot 4.5.1+** game projects—handy scripts, experiments, and reusable patterns collected across builds to speed up prototyping and gameplay development.
 
