@@ -8,13 +8,15 @@ extends Node
 ## - Dispatching commands and publishing events
 ## - Using priorities, one-shot subscriptions, and lifecycle binding
 
-var command_bus: CommandBus
-var event_bus: EventBus
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+var command_bus: Messaging.CommandBus
+var event_bus: Messaging.EventBus
 
 func _ready() -> void:
 	# Create bus instances
-	command_bus = CommandBus.create()
-	event_bus = EventBus.create()
+	command_bus = Messaging.CommandBus.new()
+	event_bus = Messaging.EventBus.new()
 	
 	# Enable verbose logging for this example
 	command_bus.set_verbose(true)

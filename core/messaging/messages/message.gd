@@ -1,5 +1,5 @@
 extends RefCounted
-class_name Message
+class_name CoreMessagingMessage
 
 ## Concrete value object for messages sent through messaging systems.
 ##
@@ -7,11 +7,11 @@ class_name Message
 ## Messages are immutable data carriers configured via constructor.
 ##
 ## @example Direct instantiation:
-##   var msg = Message.new("damage", {"amount": 10, "target": player})
-##   var msg2 = Message.create("heal", {"amount": 5}, "Heal")
+##   var msg = CoreMessagingMessage.new("damage", {"amount": 10, "target": player})
+##   var msg2 = CoreMessagingMessage.create("heal", {"amount": 5}, "Heal")
 ##
 ## @example Subclassing:
-##   extends Message
+##   extends CoreMessagingMessage
 ##   class_name DamageMessage
 ##
 ##   func _init(amount: int, target: Node) -> void:
@@ -76,7 +76,7 @@ func to_dict() -> Dictionary:
 
 ## Check if this message equals another (content-based equality for value objects).
 ## Two messages are equal if they have the same type and data.
-func equals(other: Message) -> bool:
+func equals(other: CoreMessagingMessage) -> bool:
 	if other == null:
 		return false
 	return _type == other._type and _data == other._data
@@ -103,5 +103,6 @@ func has_data_key(key: String) -> bool:
 	return _data.has(key)
 
 ## Static factory method.
-static func create(type: String, data: Dictionary = {}, desc: String = "") -> Message:
-	return Message.new(type, data, desc)
+static func create(type: String, data: Dictionary = {}, desc: String = "") -> CoreMessagingMessage:
+	return CoreMessagingMessage.new(type, data, desc)
+

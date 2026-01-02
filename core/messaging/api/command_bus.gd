@@ -1,5 +1,9 @@
+const MessageBus = preload("res://core/messaging/internal/message_bus.gd")
+const CommandRules = preload("res://core/messaging/rules/command_rules.gd")
+const Command = preload("res://core/messaging/messages/command.gd")
+
 extends MessageBus
-class_name CommandBus
+class_name CoreMessagingCommandBus
 
 ## Command bus for dispatching commands with exactly one handler.
 ##
@@ -8,7 +12,8 @@ class_name CommandBus
 ## multiple handlers are registered.
 ##
 ## Usage:
-##   var bus = CommandBus.create()
+##   const Messaging = preload("res://core/messaging/api/messaging.gd")
+##   var bus = Messaging.CommandBus.new()
 ##   bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
 ##       return move_player(cmd.target_position)
 ##   )
@@ -53,20 +58,20 @@ func unregister_handler(command_type) -> void:
 ## Dispatch a command to its handler.
 ## Returns the handler's result (may be Variant, including async results).
 ## Throws CommandBusError if no handler or multiple handlers are registered.
-func dispatch(command: Command) -> Variant:
-	var key = get_key_from_message(command)
+func dispatch(cmd: CoreMessagingCommand) -> Variant:
+	var key = get_key_from_message(cmd)
 	var subs = _get_valid_subscriptions(key)
 	
 	# Use domain service to validate routing rules
-	var validation = CommandRoutingPolicy.validate_handler_count(subs.size())
+	var validation = CommandRules.validate_handler_count(subs.size())
 	
 	match validation:
-		CommandRoutingPolicy.ValidationResult.NO_HANDLER:
+		CommandRules.ValidationResult.NO_HANDLER:
 			var err = CommandBusError.new("No handler registered for command type: %s" % key, CommandBusError.ErrorCode.NO_HANDLER)
 			push_error(err.to_string())
 			return err
 		
-		CommandRoutingPolicy.ValidationResult.MULTIPLE_HANDLERS:
+		CommandRules.ValidationResult.MULTIPLE_HANDLERS:
 			var err = CommandBusError.new("Multiple handlers registered for command type: %s (expected exactly one)" % key, CommandBusError.ErrorCode.MULTIPLE_HANDLERS)
 			push_error(err.to_string())
 			return err
@@ -85,7 +90,7 @@ func dispatch(command: Command) -> Variant:
 		push_error(err.to_string())
 		return err
 	
-	var result = sub.callable.call(command)
+	var result = sub.callable.call(cmd)
 	
 	# Support async handlers (if they return GDScriptFunctionState)
 	if result is GDScriptFunctionState:
@@ -97,6 +102,3 @@ func dispatch(command: Command) -> Variant:
 func has_handler(command_type) -> bool:
 	return get_subscription_count(command_type) > 0
 
-## Static factory method.
-static func create() -> CommandBus:
-	return CommandBus.new()

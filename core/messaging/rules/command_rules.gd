@@ -1,5 +1,5 @@
 extends RefCounted
-class_name CommandRoutingPolicy
+class_name CommandRules
 
 ## Domain service defining business rules for command routing.
 ##
@@ -28,3 +28,4 @@ static func validate_handler_count(handler_count: int) -> ValidationResult:
 ## Check if handler count satisfies command routing rules.
 static func is_valid_handler_count(handler_count: int) -> bool:
 	return validate_handler_count(handler_count) == ValidationResult.VALID
+

@@ -1,7 +1,10 @@
-extends RefCounted
-class_name MessageBus
+const MessageTypeResolver = preload("res://core/messaging/internal/message_type_resolver.gd")
+const SubscriptionRules = preload("res://core/messaging/rules/subscription_rules.gd")
 
+extends RefCounted
 ## Generic message bus core supporting different delivery semantics.
+##
+## Internal implementation - do not use directly. Use CommandBus or EventBus from api/.
 ##
 ## This is a foundation class that CommandBus and EventBus extend to provide
 ## specific messaging patterns. The core provides:
@@ -11,9 +14,6 @@ class_name MessageBus
 ## - One-shot subscriptions
 ## - Safe iteration during dispatch
 ## - Debugging and tracing support
-##
-## Design Decision: Uses StringName for type keys (performance) and accepts
-## both class instances (extracts class_name) or StringName directly.
 
 ## Subscription entry for tracking handlers/listeners
 class Subscription:
@@ -34,7 +34,7 @@ class Subscription:
 		_next_id += 1
 	
 	func is_valid() -> bool:
-		if not SubscriptionPolicy.is_valid_for_lifecycle(bound_object):
+		if not SubscriptionRules.is_valid_for_lifecycle(bound_object):
 			return false
 		return callable.is_valid()
 	
@@ -77,7 +77,7 @@ func subscribe(message_type, handler: Callable, priority: int = 0, one_shot: boo
 		_subscriptions[key] = []
 	
 	_subscriptions[key].append(sub)
-	SubscriptionPolicy.sort_by_priority(_subscriptions[key])
+	SubscriptionRules.sort_by_priority(_subscriptions[key])
 	
 	if _verbose:
 		print("[MessageBus] Subscribed to ", key, " (priority=", priority, ", one_shot=", one_shot, ")")
@@ -201,3 +201,4 @@ func _mark_for_removal(key: StringName, sub: Subscription) -> void:
 		subs.remove_at(index)
 		if subs.is_empty():
 			_subscriptions.erase(key)
+

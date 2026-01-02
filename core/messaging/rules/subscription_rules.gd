@@ -1,5 +1,5 @@
 extends RefCounted
-class_name SubscriptionPolicy
+class_name SubscriptionRules
 
 ## Domain service defining business rules for subscription behavior.
 ##
@@ -42,3 +42,4 @@ static func sort_by_priority(subscriptions: Array) -> void:
 	subscriptions.sort_custom(func(a, b): 
 		return should_process_before(a.priority, b.priority)
 	)
+

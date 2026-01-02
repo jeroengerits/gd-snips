@@ -1,5 +1,7 @@
+const Message = preload("res://core/messaging/messages/message.gd")
+
 extends Message
-class_name Event
+class_name CoreMessagingEvent
 
 ## Event messages for declarative notifications.
 ##
@@ -11,6 +13,6 @@ func to_string() -> String:
 	return "[Event id=%s type=%s desc=%s data=%s]" % [id(), type(), description(), data()]
 
 ## Static factory method.
-static func create(type: String, data: Dictionary = {}, desc: String = "") -> Event:
-	return Event.new(type, data, desc)
+static func create(type: String, data: Dictionary = {}, desc: String = "") -> CoreMessagingEvent:
+	return CoreMessagingEvent.new(type, data, desc)
 

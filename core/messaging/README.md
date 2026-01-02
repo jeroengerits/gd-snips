@@ -2,14 +2,15 @@
 
 A lightweight, type-safe messaging system with commands and events for decoupling game components.
 
-> **Architecture**: This system follows Domain-Driven Design (DDD) principles with clear layer separation (Domain/Infrastructure/Application).
-
 ## Quick Start
 
 ```gdscript
-# Create buses (use as autoload singletons or instantiate as needed)
-var command_bus = CommandBus.create()
-var event_bus = EventBus.create()
+# Import the messaging API
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+# Create buses (instantiate directly)
+var command_bus = Messaging.CommandBus.new()
+var event_bus = Messaging.EventBus.new()
 
 # Register a command handler
 command_bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
@@ -25,6 +26,55 @@ event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 # Dispatch commands and publish events
 var result = await command_bus.dispatch(MovePlayerCommand.new(Vector2(100, 200)))
 event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
+```
+
+## Self-Check Example
+
+```gdscript
+# Quick verification script (no scenes required)
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+# Create test command class
+extends Messaging.Command
+class_name TestCommand
+
+var value: int
+
+func _init(v: int) -> void:
+    value = v
+    super._init("test_command", {"value": v})
+
+# Create test event class
+extends Messaging.Event
+class_name TestEvent
+
+var id: int
+
+func _init(i: int) -> void:
+    id = i
+    super._init("test_event", {"id": i})
+
+# Usage
+func _ready():
+    var cmd_bus = Messaging.CommandBus.new()
+    var evt_bus = Messaging.EventBus.new()
+    
+    # Command handler
+    cmd_bus.handle(TestCommand, func(cmd: TestCommand) -> bool:
+        print("Command received: ", cmd.value)
+        return true
+    )
+    
+    # Event listener
+    evt_bus.subscribe(TestEvent, func(evt: TestEvent):
+        print("Event received: ", evt.id)
+    )
+    
+    # Dispatch and publish
+    var result = await cmd_bus.dispatch(TestCommand.new(42))
+    evt_bus.publish(TestEvent.new(100))
+    
+    print("Self-check complete! Messaging system working.")
 ```
 
 ## Commands vs Events
@@ -43,7 +93,9 @@ event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
 
 **Custom Command:**
 ```gdscript
-extends Command
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+extends Messaging.Command
 class_name DealDamageCommand
 
 var target: Node
@@ -54,13 +106,14 @@ func _init(target_node: Node, damage: int) -> void:
     amount = damage
     super._init("deal_damage", {"target": target_node, "amount": damage})
 
-# Type identification is handled automatically by MessageTypeResolver
-# Resolved from the script path based on class_name
+# Type identification is handled automatically from class_name
 ```
 
 **Custom Event:**
 ```gdscript
-extends Event
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+extends Messaging.Event
 class_name PlayerDiedEvent
 
 var player_id: int
@@ -71,16 +124,20 @@ func _init(id: int, death_cause: String) -> void:
     cause = death_cause
     super._init("player_died", {"player_id": id, "cause": death_cause})
 
-# Type identification is handled automatically by MessageTypeResolver
-# Resolved from the script path based on class_name
+# Type identification is handled automatically from class_name
 ```
 
 ## Usage Examples
 
 **Command Bus - Handling Actions:**
 ```gdscript
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
 # Setup (typically in _ready() or initialization)
+var command_bus: Messaging.CommandBus
+
 func _ready():
+    command_bus = Messaging.CommandBus.new()
     command_bus.handle(DealDamageCommand, _handle_damage)
 
 func _handle_damage(cmd: DealDamageCommand) -> bool:
@@ -91,14 +148,19 @@ func _handle_damage(cmd: DealDamageCommand) -> bool:
 
 # Dispatch from anywhere
 var result = await command_bus.dispatch(DealDamageCommand.new(enemy, 25))
-if result is CommandBus.CommandBusError:
-    print("Failed to deal damage")
+if result is Messaging.CommandBus.CommandBusError:
+    print("Failed to deal damage: ", result.message)
 ```
 
 **Event Bus - Subscribing to Notifications:**
 ```gdscript
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
 # Setup with priorities (higher priority listeners called first)
+var event_bus: Messaging.EventBus
+
 func _ready():
+    event_bus = Messaging.EventBus.new()
     event_bus.subscribe(EnemyDiedEvent, _on_enemy_died_score, priority=10)
     event_bus.subscribe(EnemyDiedEvent, _on_enemy_died_sound, priority=5)
     event_bus.subscribe(EnemyDiedEvent, _on_enemy_died_cleanup, priority=0)
@@ -116,6 +178,11 @@ func _on_enemy_died_cleanup(evt: EnemyDiedEvent) -> void:
 **Advanced Features:**
 
 ```gdscript
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+var command_bus = Messaging.CommandBus.new()
+var event_bus = Messaging.EventBus.new()
+
 # One-shot subscription (auto-unsubscribes after first event)
 event_bus.subscribe(TutorialCompletedEvent, func(evt):
     show_celebration()
@@ -140,9 +207,14 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 
 ## API Reference
 
-**CommandBus:**
+**Import:**
+```gdscript
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+```
+
+**CommandBus** (`Messaging.CommandBus`):
 - `handle(command_type, handler: Callable)` - Register handler (replaces existing)
-- `dispatch(command: Command) -> Variant` - Dispatch command, returns result
+- `dispatch(command: CoreMessagingCommand) -> Variant` - Dispatch command, returns result
 - `unregister_handler(command_type)` - Remove handler
 - `has_handler(command_type) -> bool` - Check if handler exists
 - `get_subscription_count(command_type) -> int` - Get number of handlers (should be 0 or 1)
@@ -150,10 +222,10 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 - `set_tracing(enabled: bool)` - Enable/disable message delivery tracing
 - `clear()` - Clear all handlers
 
-**EventBus:**
+**EventBus** (`Messaging.EventBus`):
 - `subscribe(event_type, listener: Callable, priority=0, one_shot=false, bound_object=null) -> int` - Subscribe to events
-- `publish(event: Event)` - Publish event (fire-and-forget)
-- `publish_async(event: Event)` - Publish and await async listeners
+- `publish(event: CoreMessagingEvent)` - Publish event (fire-and-forget)
+- `publish_async(event: CoreMessagingEvent)` - Publish and await async listeners
 - `unsubscribe(event_type, listener: Callable)` - Unsubscribe
 - `unsubscribe_by_id(event_type, sub_id: int)` - Unsubscribe by subscription ID
 - `get_listeners(event_type) -> Array` - Get all listeners for an event type
@@ -164,25 +236,39 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 - `set_tracing(enabled: bool)` - Enable/disable message delivery tracing
 - `clear()` - Clear all subscribers
 
-**Message Base Classes:**
-- `Message`, `Command`, `Event` - Base classes for creating your own messages
+**Message Base Classes** (`Messaging.Message`, `Messaging.Command`, `Messaging.Event`):
 - `id() -> String` - Unique message identifier (content-based)
 - `type() -> String` - Message type string
 - `data() -> Dictionary` - Message payload (deep copy)
-- `is_valid() -> bool` - Check if message satisfies domain invariants
+- `is_valid() -> bool` - Check if message satisfies validation rules
 - `has_data() -> bool` - Check if message has data payload
 - `get_data_value(key: String, default) -> Variant` - Get data value by key
 - `has_data_key(key: String) -> bool` - Check if data contains key
 - `to_string() -> String` - Debug representation
-- `equals(other: Message) -> bool` - Content-based equality comparison
+- `equals(other: CoreMessagingMessage) -> bool` - Content-based equality comparison
 
-**Command-Specific Methods:**
+**Command-Specific Methods** (`Messaging.Command`):
 - `is_executable() -> bool` - Check if command can be executed
 - `has_required_data() -> bool` - Validate required fields (override in subclasses)
+
+**Rules Classes** (`Messaging.CommandRules`, `Messaging.SubscriptionRules`):
+- These are domain services that encapsulate business rules
+- Used internally by the buses but can be accessed directly for testing or custom validation
+- `CommandRules.validate_handler_count(count: int) -> CommandRules.ValidationResult` - Validate handler count
+- `CommandRules.is_valid_handler_count(count: int) -> bool` - Check if handler count is valid
+- `SubscriptionRules.should_process_before(a_priority: int, b_priority: int) -> bool` - Compare priorities
+- `SubscriptionRules.should_remove_after_delivery(one_shot: bool) -> bool` - Check if subscription should be removed
+- `SubscriptionRules.is_valid_for_lifecycle(bound_object: Object) -> bool` - Validate lifecycle binding
+- `SubscriptionRules.sort_by_priority(subscriptions: Array) -> void` - Sort subscriptions by priority
 
 ## Debugging & Inspection
 
 ```gdscript
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+var command_bus = Messaging.CommandBus.new()
+var event_bus = Messaging.EventBus.new()
+
 # Enable verbose logging (logs subscriptions/unsubscriptions)
 command_bus.set_verbose(true)
 event_bus.set_verbose(true)
@@ -208,20 +294,31 @@ for listener in listeners:
 event_bus.set_collect_errors(true)
 ```
 
-## Domain Services
+## Rules
 
-The messaging system includes domain services that encapsulate business rules:
+The messaging system includes rules classes that encapsulate business rules:
 
-**CommandRoutingPolicy** - Validates command routing rules:
-- Commands must have exactly one handler (domain invariant)
+**CommandRules** (`Messaging.CommandRules`) - Validates command routing rules:
+- Commands must have exactly one handler (invariant)
 - Used internally by `CommandBus` to enforce routing semantics
+- Can be accessed directly for testing or custom validation logic
 
-**SubscriptionPolicy** - Defines subscription behavior rules:
+**SubscriptionRules** (`Messaging.SubscriptionRules`) - Defines subscription behavior rules:
 - Priority ordering (higher priority subscribers processed first)
 - One-shot subscription semantics (auto-unsubscribe after delivery)
 - Lifecycle binding validation (subscriptions invalid when bound object freed)
 
-These services make domain rules explicit and testable. They're used internally by the buses but can be accessed directly if needed.
+These rules make business rules explicit and testable. They're used internally by the buses but can be accessed directly if needed:
+
+```gdscript
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+# Access rules directly for testing or custom logic
+var validation = Messaging.CommandRules.validate_handler_count(handler_count)
+if validation == Messaging.CommandRules.ValidationResult.VALID:
+    # Proceed with dispatch
+    pass
+```
 
 ## Tips
 
@@ -232,29 +329,32 @@ These services make domain rules explicit and testable. They're used internally 
 - Enable verbose logging and tracing during development for debugging
 - Use `get_subscription_count()` to verify listeners are registered correctly
 - Messages use content-based equality - two messages with same type and data are equal
-- Message constructors enforce domain invariants (type cannot be empty, data cannot be null)
+- Message constructors enforce validation rules (type cannot be empty, data cannot be null)
 
 ## Files
 
-**Domain Layer** (`domain/`):
-- `message.gd` - Base message class (core domain value object with invariants)
-- `command.gd` - Command base class (extends Message)
-- `event.gd` - Event base class (extends Message)
-- `services/command_routing_policy.gd` - Domain service for command routing rules
-- `services/subscription_policy.gd` - Domain service for subscription behavior rules
+**Public API** (`api/`):
+- `messaging.gd` - Barrel entrypoint (import this to use the system)
+- `command_bus.gd` - Command bus (class: `CoreMessagingCommandBus`)
+- `event_bus.gd` - Event bus (class: `CoreMessagingEventBus`)
 
-**Infrastructure Layer** (`infrastructure/`):
-- `message_bus.gd` - Generic message bus core (subscription management, routing)
-- `message_type_resolver.gd` - Resolves message types from scripts/classes (infrastructure concern)
+**Message Types** (`messages/`):
+- `message.gd` - Base message class (class: `CoreMessagingMessage`)
+- `command.gd` - Command base class (class: `CoreMessagingCommand`)
+- `event.gd` - Event base class (class: `CoreMessagingEvent`)
 
-**Application Layer** (`application/`):
-- `command_bus.gd` - Command bus implementation (single handler dispatch, extends MessageBus)
-- `event_bus.gd` - Event bus implementation (multi-subscriber publish, extends MessageBus)
+**Rules** (`rules/`):
+- `command_rules.gd` - Command routing rules (class: `CommandRules`)
+- `subscription_rules.gd` - Subscription behavior rules (class: `SubscriptionRules`)
 
-> **Note**: This structure follows Domain-Driven Design (DDD) principles:
-> - **Domain Layer**: Pure business concepts (Message, Command, Event, domain services)
-> - **Infrastructure Layer**: Technical implementation (MessageBus, type resolution)
-> - **Application Layer**: Use cases and orchestration (CommandBus, EventBus)
+**Internal** (`internal/`):
+- `message_bus.gd` - Internal message bus implementation (no class_name)
+- `message_type_resolver.gd` - Internal type resolution (no class_name)
+
+> **Note**: 
+> - Only import from `api/messaging.gd` in your code
+> - `internal/` files are implementation details and should not be imported directly
+> - All public classes use `CoreMessaging` prefix to avoid naming collisions across packages
 
 ## See Also
 

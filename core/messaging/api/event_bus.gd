@@ -1,5 +1,9 @@
+const MessageBus = preload("res://core/messaging/internal/message_bus.gd")
+const SubscriptionRules = preload("res://core/messaging/rules/subscription_rules.gd")
+const Event = preload("res://core/messaging/messages/event.gd")
+
 extends MessageBus
-class_name EventBus
+class_name CoreMessagingEventBus
 
 ## Event bus for publishing events with 0..N subscribers.
 ##
@@ -8,7 +12,8 @@ class_name EventBus
 ## but can await async listeners if needed.
 ##
 ## Usage:
-##   var bus = EventBus.create()
+##   const Messaging = preload("res://core/messaging/api/messaging.gd")
+##   var bus = Messaging.EventBus.new()
 ##   bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 ##       update_score(evt.points)
 ##   )
@@ -41,18 +46,17 @@ func unsubscribe_by_id(event_type, sub_id: int) -> bool:
 ## Publish an event to all subscribers (fire-and-forget, synchronous).
 ## Listeners are called in priority order. Errors from listeners are isolated
 ## (one bad listener won't break others) unless error collection is enabled.
-func publish(event: Event) -> void:
-	await _publish_internal(event, false)
+func publish(evt: CoreMessagingEvent) -> void:
+	await _publish_internal(evt, false)
 
 ## Publish an event and await all async listeners.
 ## Use this when you need to wait for async listeners to complete.
-func publish_async(event: Event) -> void:
-	await _publish_internal(event, true)
+func publish_async(evt: CoreMessagingEvent) -> void:
+	await _publish_internal(evt, true)
 
 ## Internal publish implementation.
-func _publish_internal(event: Event, await_async: bool) -> void:
-	var key = get_key_from_message(event)
-	# Use the event instance itself for subscription lookup (get_key_from_message handles it)
+func _publish_internal(evt: CoreMessagingEvent, await_async: bool) -> void:
+	var key = get_key_from_message(evt)
 	var subs = _get_valid_subscriptions(key)
 	
 	if _trace_enabled:
@@ -79,7 +83,7 @@ func _publish_internal(event: Event, await_async: bool) -> void:
 		
 		# Call listener and isolate failures
 		# GDScript doesn't have try/catch, so errors will propagate but we continue
-		result = sub.callable.call(event)
+		result = sub.callable.call(evt)
 		
 		# Handle async results
 		if result is GDScriptFunctionState:
@@ -93,7 +97,7 @@ func _publish_internal(event: Event, await_async: bool) -> void:
 				await result
 		
 		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)
-		if SubscriptionPolicy.should_remove_after_delivery(sub.one_shot):
+		if SubscriptionRules.should_remove_after_delivery(sub.one_shot):
 			one_shots_to_remove.append({"key": key, "sub": sub})
 	
 	# Remove one-shot subscriptions after iteration
@@ -108,6 +112,3 @@ func _publish_internal(event: Event, await_async: bool) -> void:
 func get_listeners(event_type) -> Array:
 	return get_subscriptions(event_type)
 
-## Static factory method.
-static func create() -> EventBus:
-	return EventBus.new()

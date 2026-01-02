@@ -1,4 +1,6 @@
-extends Command
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+extends Messaging.Command
 class_name MovePlayerCommand
 
 ## Example command: Move player to a target position.

@@ -10,13 +10,15 @@ extends Node
 ## - One-shot listener
 ## - Error isolation
 
-var command_bus: CommandBus
-var event_bus: EventBus
+const Messaging = preload("res://core/messaging/api/messaging.gd")
+
+var command_bus: Messaging.CommandBus
+var event_bus: Messaging.EventBus
 var test_results: Dictionary = {}
 
 func _ready() -> void:
-	command_bus = CommandBus.create()
-	event_bus = EventBus.create()
+	command_bus = Messaging.CommandBus.new()
+	event_bus = Messaging.EventBus.new()
 	
 	print("=== Running MessageBus Tests ===\n")
 	
@@ -54,7 +56,7 @@ func _test_command_no_handler() -> void:
 	var result = await command_bus.dispatch(cmd)
 	
 	# Should return a CommandBusError
-	test_results[test_name] = result is CommandBus.CommandBusError
+	test_results[test_name] = result is Messaging.CommandBus.CommandBusError
 	print("✓ " if test_results[test_name] else "✗ ", test_name)
 
 func _test_command_multiple_handlers() -> void:
