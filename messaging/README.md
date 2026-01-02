@@ -2,6 +2,61 @@
 
 A lightweight, type-safe messaging system with commands and events for decoupling game components.
 
+## Getting Started
+
+Here's a minimal example to get you started in under 30 seconds:
+
+**Step 1:** Create your message types (in separate files or in your script):
+
+```gdscript
+# greet_command.gd
+extends Messaging.Command
+class_name GreetCommand
+var name: String
+func _init(n: String): 
+    name = n
+    super._init("greet", {"name": n})
+
+# greeted_event.gd
+extends Messaging.Event
+class_name GreetedEvent
+var name: String
+func _init(n: String): 
+    name = n
+    super._init("greeted", {"name": n})
+```
+
+**Step 2:** Use the messaging system in your game code:
+
+```gdscript
+extends Node
+
+const Messaging = preload("res://messaging/messaging.gd")
+
+func _ready():
+    var command_bus = Messaging.CommandBus.new()
+    var event_bus = Messaging.EventBus.new()
+    
+    # Handle commands
+    command_bus.handle(GreetCommand, func(cmd: GreetCommand) -> bool:
+        print("Hello, ", cmd.name, "!")
+        event_bus.publish(GreetedEvent.new(cmd.name))
+        return true
+    )
+    
+    # Listen to events
+    event_bus.subscribe(GreetedEvent, func(evt: GreetedEvent):
+        print("Greeting event received for: ", evt.name)
+    )
+    
+    # Use it!
+    await command_bus.dispatch(GreetCommand.new("World"))
+    # Output: "Hello, World!"
+    # Output: "Greeting event received for: World"
+```
+
+That's it! You now have a working messaging system. See [Quick Start](#quick-start) for more detailed examples.
+
 ## Quick Start
 
 ```gdscript
