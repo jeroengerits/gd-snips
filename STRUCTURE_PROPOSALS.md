@@ -1,17 +1,29 @@
-# Proposed Folder Structures for Messaging System
+# Folder Structure Proposals for Messaging System
 
-## Current Structure
+> **Note**: The current implementation uses a DDD-aligned structure. See [DDD_STRUCTURE.md](core/messaging/DDD_STRUCTURE.md) for details.
+
+## Current Structure (DDD-Aligned) ✅
+
 ```
 core/messaging/
-├── buses/           # All bus implementations
-│   ├── message_bus.gd
-│   ├── command_bus.gd
-│   └── event_bus.gd
-└── messages/        # All message types
-    ├── message.gd
-    ├── command.gd
-    └── event.gd
+├── domain/              # Domain Layer - Pure business concepts
+│   ├── message.gd       # Base Message class
+│   ├── command.gd       # Command base class
+│   └── event.gd         # Event base class
+│
+├── infrastructure/      # Infrastructure Layer - Technical implementation
+│   └── message_bus.gd   # Base MessageBus class
+│
+└── application/         # Application Layer - Use cases/application services
+    ├── command_bus.gd   # CommandBus
+    └── event_bus.gd     # EventBus
 ```
+
+This structure follows Domain-Driven Design principles with clear layer separation.
+
+---
+
+## Previous Structures (Historical)
 
 ## Option 1: Pattern-Based Grouping (RECOMMENDED) ⭐
 
@@ -43,9 +55,9 @@ core/messaging/
 
 ---
 
-## Option 2: Type-Based Separation (✅ CURRENTLY IMPLEMENTED)
+## Option 2: Type-Based Separation (Historical)
 
-This is the structure currently in use. Groups files by their type (buses vs messages) rather than by pattern.
+Previous structure that grouped files by their type (buses vs messages).
 
 ```
 core/messaging/
@@ -124,9 +136,9 @@ core/messaging/
 
 ---
 
-## Current Implementation: Option 2 (Type-Based Separation) ✅
+## Previous Implementation: Option 2 (Type-Based Separation)
 
-**Status**: This structure is currently implemented and in use.
+**Status**: Replaced by DDD-aligned structure (see Current Structure above).
 
 **Why Option 2 was chosen:**
 1. **Clear separation**: Infrastructure (buses) vs data types (messages) is immediately obvious

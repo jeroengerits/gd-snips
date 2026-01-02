@@ -187,19 +187,27 @@ event_bus.publish(EnemyDiedEvent.new(enemy_id, points))
 
 ## File Structure
 
-The messaging system is organized as follows:
+The messaging system follows Domain-Driven Design (DDD) principles and is organized into three layers:
 
 ```
 core/messaging/
-├── buses/              # Bus implementations (infrastructure)
-│   ├── message_bus.gd  # Base MessageBus class (core routing/subscription)
-│   ├── command_bus.gd  # CommandBus (extends MessageBus, single-handler)
-│   └── event_bus.gd    # EventBus (extends MessageBus, multi-subscriber)
-└── messages/           # Message base classes (data types)
-    ├── message.gd      # Base Message class
-    ├── command.gd      # Command base class (extends Message)
-    └── event.gd        # Event base class (extends Message)
+├── domain/              # Domain Layer - Pure business concepts
+│   ├── message.gd       # Base Message class (core domain value object)
+│   ├── command.gd       # Command base class (extends Message)
+│   └── event.gd         # Event base class (extends Message)
+│
+├── infrastructure/      # Infrastructure Layer - Technical implementation
+│   └── message_bus.gd   # Base MessageBus class (core routing/subscription)
+│
+└── application/         # Application Layer - Use cases/application services
+    ├── command_bus.gd   # CommandBus (extends MessageBus, single-handler)
+    └── event_bus.gd     # EventBus (extends MessageBus, multi-subscriber)
 ```
 
-This structure separates infrastructure (buses) from data types (messages), making it clear where to find implementation code vs. type definitions. See [STRUCTURE_PROPOSALS.md](../STRUCTURE_PROPOSALS.md) for alternative organization approaches.
+**Layer Responsibilities**:
+- **Domain**: Core business concepts (Message, Command, Event) - independent, no dependencies
+- **Infrastructure**: Technical implementation (MessageBus) - depends on Domain
+- **Application**: Application services (CommandBus, EventBus) - depends on Domain + Infrastructure
+
+This structure ensures clear separation of concerns: business logic is independent of technical details, and application services orchestrate domain concepts with infrastructure. See [DDD_STRUCTURE.md](core/messaging/DDD_STRUCTURE.md) for detailed architectural documentation.
 

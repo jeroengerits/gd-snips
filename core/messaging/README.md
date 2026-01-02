@@ -2,6 +2,8 @@
 
 A lightweight, type-safe messaging system with commands and events for decoupling game components.
 
+> **Architecture**: This system follows Domain-Driven Design (DDD) principles. See [DDD_STRUCTURE.md](DDD_STRUCTURE.md) for architectural details.
+
 ## Quick Start
 
 ```gdscript
@@ -208,15 +210,19 @@ event_bus.set_collect_errors(true)
 
 ## Files
 
-**Buses** (`buses/`):
+**Domain Layer** (`domain/`):
+- `message.gd` - Base message class (core domain value object)
+- `command.gd` - Command base class (extends Message)
+- `event.gd` - Event base class (extends Message)
+
+**Infrastructure Layer** (`infrastructure/`):
 - `message_bus.gd` - Generic message bus core (subscription management, routing)
+
+**Application Layer** (`application/`):
 - `command_bus.gd` - Command bus implementation (single handler dispatch, extends MessageBus)
 - `event_bus.gd` - Event bus implementation (multi-subscriber publish, extends MessageBus)
 
-**Messages** (`messages/`):
-- `message.gd` - Base message class
-- `command.gd` - Command base class (extends Message)
-- `event.gd` - Event base class (extends Message)
+> **Note**: This structure follows Domain-Driven Design (DDD) principles. See [DDD_STRUCTURE.md](DDD_STRUCTURE.md) for architectural details.
 
 ## See Also
 
