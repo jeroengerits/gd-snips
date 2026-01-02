@@ -462,6 +462,7 @@ This messaging system follows Godot best practices:
 - Private methods use `_` prefix consistently
 - Clear separation between public API and internal implementation
 - Domain rules are encapsulated in dedicated Rules classes
+- Common patterns extracted into utility functions (generic utilities in `utilities/`, package-specific in `messaging/utilities/`)
 
 ### Performance
 - Lightweight `RefCounted` base classes (no scene tree dependency)
@@ -502,10 +503,19 @@ This messaging system follows Godot best practices:
 - `command_rules.gd` - Command routing rules (class: `CommandRules`)
 - `subscription_rules.gd` - Subscription behavior rules (class: `SubscriptionRules`)
 
+**Utilities** (`utilities/`):
+
+- `metrics_utils.gd` - Messaging-specific metrics calculation utilities (internal use only)
+
+**Shared Utilities** (`../utilities/`):
+
+- `collection_utils.gd` - Generic array/dictionary manipulation utilities (shared across packages)
+
 > **Note**:
 >
 > - Only import from `messaging.gd` in your code
-> - `types/`, `buses/`, `internal/`, and `rules/` files are implementation details and should not be imported directly
+> - `types/`, `buses/`, `internal/`, `rules/`, and `utilities/` files are implementation details and should not be imported directly
+> - Utility functions are internal helpers used by the messaging system
 
 ## See Also
 
