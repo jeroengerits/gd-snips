@@ -1,37 +1,38 @@
 # Godot Messaging System
 
-A lightweight, type-safe messaging system for Godot that cleanly separates actions (commands) from notifications (events).
+A high-performance, type-safe messaging framework for Godot that rigorously separates actions (commands) from notifications (events).
 
-Built for decoupled game architecture, predictable execution, and serious debugging—without signals, scenes, or tight coupling.
+Designed to support modular game architecture, precise execution order, and powerful debugging tools—all without relying on Godot signals, scenes, or tight coupling.
 
-## Why This Library?
+## Why Use This Library?
 
-Godot's signal-based workflows often lead to:
+Godot’s built-in signals often lead to:
 
-- Tight coupling between systems
-- Implicit execution order
-- Hard-to-trace side effects
-- Signal spaghetti across scenes
+- Systems being tightly bound together
+- Hidden or unpredictable execution order
+- Difficult-to-track side effects
+- “Signal spaghetti” scattered across scenes
 
-This library provides a clear alternative:
+**This messaging system offers a modern alternative:**
 
-- ✅ Explicit commands (exactly one handler)
-- ✅ Broadcast events (zero or more listeners)
-- ✅ Deterministic ordering via priorities
-- ✅ Lifecycle-safe subscriptions
-- ✅ Middleware, metrics, and tracing
-- ✅ No scene tree dependency (RefCounted only)
+- ✅ Explicit commands (guaranteed exactly one handler)
+- ✅ Broadcast events (zero or more listeners, no assumptions)
+- ✅ Deterministic, priority-based execution order
+- ✅ Lifecycle-aware subscriptions (automatic clean-up)
+- ✅ Middleware, metrics, and tracing for introspection
+- ✅ No reliance on the scene tree (works with RefCounted only)
 
 ## Core Concepts
 
 ### Commands
 
-Imperative requests that expect a single handler.
+Commands represent requests that expect a single authoritative handler.
 
-- "Do this."
-- Exactly one handler
-- Returns a result or error
-- Enforces clear ownership
+> "Do this."
+
+- Exactly one handler (errors if ambiguous or unhandled)
+- Returns a result or propagates an error
+- Clear boundaries and responsibility
 
 **Examples:**
 - `MovePlayerCommand`
@@ -40,12 +41,13 @@ Imperative requests that expect a single handler.
 
 ### Events
 
-Notifications describing something that already happened.
+Events signal that something has already occurred in the game domain.
 
-- "This happened."
-- Zero or more listeners
-- Ordered by priority
-- Fire-and-forget semantics
+> "This happened."
+
+- Any number of listeners (including zero)
+- Ordered by priority, processed sequentially
+- “Fire-and-forget” by default—no return value
 
 **Examples:**
 - `EnemyDiedEvent`
@@ -56,32 +58,32 @@ Notifications describing something that already happened.
 
 ### Command Flow
 
-```
-validate → Dispatch Command → CommandBus → Single Handler → Result / Error
+```text
+Validate Input → Dispatch Command → CommandBus → Single Handler → Result or Error
 ```
 
 ### Event Flow
 
-```
-Publish Event → EventBus → Listener 1, Listener 2, ... Listener N
+```text
+Publish Event → EventBus → Listener 1 → Listener 2 → ... → Listener N
 ```
 
 ## Quick Start
 
-**Import:**
+**Import the messaging library:**
 
 ```gdscript
 const Messaging = preload("res://messaging/messaging.gd")
 ```
 
-**Create Buses:**
+**Create Instances of CommandBus and EventBus:**
 
 ```gdscript
 var command_bus = Messaging.CommandBus.new()
 var event_bus = Messaging.EventBus.new()
 ```
 
-**Dispatch & Publish:**
+**Dispatch Commands & Publish Events:**
 
 ```gdscript
 await command_bus.dispatch(MovePlayerCommand.new(Vector2(100, 200)))
@@ -90,14 +92,14 @@ event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
 
 ## Best Practices
 
-- Commands for actions with ownership
-- Events for side effects & notifications
-- Keep handlers small and deterministic
-- Use lifecycle-bound subscriptions
-- Enable tracing during development
+- Use commands for actions requiring ownership and a single response
+- Use events for notifications, side effects, and observability
+- Write small, deterministic handlers and listeners
+- Bind subscriptions to object lifecycles to prevent leaks
+- Enable tracing and metrics during development for deep diagnostics
 
-## Design Philosophy
+## Design Principles
 
-- Explicit over magical.
-- Deterministic over convenient.
-- Debuggable over clever.
+- Prefer explicitness over “magic”
+- Value deterministic behavior over convenience
+- Optimize for debuggability, transparency, and maintainability
