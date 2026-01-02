@@ -29,6 +29,8 @@ The project includes shared utility functions that can be used across packages:
 
 These utilities are designed to be reusable across different packages in this collection.
 
+**[📖 Utilities Documentation →](utilities/README.md)**
+
 ## 📝 Developer Diary
 
 Development insights and architectural decisions are documented in the [developer diary](docs/developer-diary/):
