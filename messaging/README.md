@@ -4,75 +4,74 @@ A lightweight, type-safe messaging system with commands and events for decouplin
 
 ## Getting Started
 
-Here's everything you need to get started with the messaging system:
+Follow these 8 simple steps to get started:
+
+**1. Import the messaging API**
 
 ```gdscript
-# Import the messaging API
 const Messaging = preload("res://messaging/messaging.gd")
+```
 
-# Create buses (instantiate directly)
+**2. Create buses**
+
+```gdscript
 var command_bus = Messaging.CommandBus.new()
 var event_bus = Messaging.EventBus.new()
+```
 
-# Register a command handler
+**3. Create commands**
+
+```gdscript
+# move_player_command.gd
+extends Messaging.Command
+class_name MovePlayerCommand
+var target_position: Vector2
+func _init(pos: Vector2): 
+    target_position = pos
+    super._init("move_player", {"target_position": pos})
+```
+
+**4. Register command handlers**
+
+```gdscript
 command_bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
     return player.move_to(cmd.target_position)
 )
+```
 
-# Subscribe to events
+**5. Create events**
+
+```gdscript
+# enemy_died_event.gd
+extends Messaging.Event
+class_name EnemyDiedEvent
+var enemy_id: int
+var points: int
+func _init(id: int, pts: int): 
+    enemy_id = id
+    points = pts
+    super._init("enemy_died", {"enemy_id": id, "points": pts})
+```
+
+**6. Subscribe to events**
+
+```gdscript
 event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
     update_score(evt.points)
     play_sound("enemy_death")
 )
+```
 
-# Dispatch commands and publish events
+**7. Dispatch commands**
+
+```gdscript
 var result = await command_bus.dispatch(MovePlayerCommand.new(Vector2(100, 200)))
+```
+
+**8. Publish events**
+
+```gdscript
 event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
-```
-
-### Creating Your Own Message Types
-
-To create custom commands and events, extend the base classes:
-
-```gdscript
-# greet_command.gd
-extends Messaging.Command
-class_name GreetCommand
-var name: String
-func _init(n: String): 
-    name = n
-    super._init("greet", {"name": n})
-
-# greeted_event.gd
-extends Messaging.Event
-class_name GreetedEvent
-var name: String
-func _init(n: String): 
-    name = n
-    super._init("greeted", {"name": n})
-```
-
-Then use them in your code:
-
-```gdscript
-func _ready():
-    var command_bus = Messaging.CommandBus.new()
-    var event_bus = Messaging.EventBus.new()
-    
-    # Handle commands
-    command_bus.handle(GreetCommand, func(cmd: GreetCommand) -> bool:
-        print("Hello, ", cmd.name, "!")
-        event_bus.publish(GreetedEvent.new(cmd.name))
-        return true
-    )
-    
-    # Listen to events
-    event_bus.subscribe(GreetedEvent, func(evt: GreetedEvent):
-        print("Greeting event received for: ", evt.name)
-    )
-    
-    # Use it!
-    await command_bus.dispatch(GreetCommand.new("World"))
 ```
 
 ## Self-Check Example
