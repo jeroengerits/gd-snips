@@ -1,69 +1,53 @@
 # Godot Snips
 
-Personal code snippets for **Godot 4.5.1+** game projects—reusable patterns and contracts for prototyping and gameplay development.
+Personal code snippets for **Godot 4.5.1+** game projects—reusable patterns for prototyping and gameplay development.
 
 ## Requirements
 
 - Godot Engine **4.5.1** or later
 - GDScript knowledge
 
-## Features
+## Messaging System
 
-This repository contains reusable code snippets and patterns for Godot projects. More features will be added over time.
-
-### Messaging
-
-A lightweight messaging system with concrete value objects for commands and events. All messages are immutable, reference-counted, and can be instantiated directly or extended for type safety.
+A lightweight messaging system with commands and events. All messages are immutable value objects that can be extended for type safety.
 
 ### Quick Start
 
 ```gdscript
-# Create messages
-var cmd = Command.create("deal_damage", {"amount": 10, "target": enemy}, "Deal 10 damage")
-var evt = Event.create("damage_dealt", {"amount": 10, "target": enemy}, "10 damage dealt")
-
-# Setup bus
+# Create a message bus
 var bus = Bus.create()
-bus.handle("deal_damage", func(cmd: Command): print("Dealt damage"))
-bus.on("damage_dealt", func(evt: Event): print("Damage was dealt"))
 
-# Dispatch and publish
+# Register a command handler
+bus.handle("deal_damage", func(cmd: Command):
+    print("Dealt ", cmd.data()["amount"], " damage")
+)
+
+# Subscribe to events
+bus.on("damage_dealt", func(evt: Event):
+    print("Damage was dealt: ", evt.description())
+)
+
+# Send commands and emit events
+var cmd = Command.create("deal_damage", {"amount": 10})
+var evt = Event.create("damage_dealt", {"amount": 10}, "Player took damage")
+
 bus.send(cmd)
 bus.emit(evt)
-
-# Working with messages
-print(cmd.description())  # "Deal 10 damage"
-print(cmd.to_string())    # "[Command id=... type=deal_damage ...]"
-var data = cmd.to_dict()  # Serialize to dictionary
-if cmd1.equals(cmd2):     # Compare messages
-    # ...
 ```
 
-### Architecture
+### Commands vs Events
 
-- **`Message`** - Base class for all messages (immutable value objects)
-    - **`Command`** - Requests to perform actions (typically handled by single handler)
-    - **`Event`** - Notifications that something happened (typically handled by multiple subscribers)
-- **`Bus`** - Message bus for dispatching commands and publishing events
-
-### When to Use Commands vs Events
-
-**Commands** - Imperative actions ("do this"):
+**Commands** — requests to perform actions (typically handled by one handler):
 - `"deal_damage"`, `"move_player"`, `"open_inventory"`
-- Typically handled by one handler
 - May return results
-- Represent requests to perform actions
 
-**Events** - Declarative notifications ("this happened"):
+**Events** — notifications that something happened (typically handled by multiple subscribers):
 - `"damage_dealt"`, `"player_died"`, `"inventory_opened"`
-- Typically handled by multiple subscribers
 - No return values
-- Represent state changes or occurrences
 
-### API Reference
+### API
 
-All message classes provide:
-
+**Message classes** (`Message`, `Command`, `Event`):
 - `id() -> String` - Unique identifier
 - `type() -> String` - Message type
 - `description() -> String` - Optional description
@@ -71,31 +55,27 @@ All message classes provide:
 - `to_string() -> String` - Debug representation
 - `to_dict() -> Dictionary` - Serialization
 - `equals(other: Message) -> bool` - Equality by ID
-- `hash() -> int` - Hash for dictionaries/sets
-- `static create(type, data, desc)` - Factory method (returns Message/Command/Event based on class)
+- `static create(type, data, desc)` - Factory method
 
-### Bus API
-
-- `handle(type, fn)` - Register handler for command type
+**Bus class**:
+- `handle(type, fn)` - Register command handler
 - `unregister_handler(type)` - Remove command handler
 - `on(type, fn)` - Subscribe to event type
 - `off(type, fn)` - Unsubscribe from event type
-- `send(cmd)` - Dispatch command to handler (returns result)
+- `send(cmd)` - Dispatch command (returns result)
 - `emit(evt)` - Publish event to all subscribers
 - `clear()` - Clear all handlers and subscribers
+- `static create()` - Factory method
 
 ### Project Structure
 
 ```
-src/
-  core/
-    message.gd    # Base message class
-    command.gd    # Command messages
-    event.gd      # Event messages
-    bus.gd        # Message bus for dispatching
+src/core/
+  message.gd    # Base message class
+  command.gd    # Command messages
+  event.gd      # Event messages
+  bus.gd        # Message bus
 ```
-
-_More features coming soon..._
 
 ## Usage
 
@@ -103,4 +83,4 @@ Copy, modify, and adapt snippets to fit your project needs. These are personal n
 
 ## License
 
-Personal use—adapt as needed. 
+Personal use—adapt as needed.
