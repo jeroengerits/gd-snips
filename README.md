@@ -147,6 +147,9 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 - `dispatch(command: Command) -> Variant` - Dispatch command, returns result
 - `unregister_handler(command_type)` - Remove handler
 - `has_handler(command_type) -> bool` - Check if handler exists
+- `get_subscription_count(command_type) -> int` - Get number of handlers (should be 0 or 1)
+- `set_verbose(enabled: bool)` - Enable/disable verbose logging
+- `set_tracing(enabled: bool)` - Enable/disable message delivery tracing
 - `clear()` - Clear all handlers
 
 **EventBus:**
@@ -156,6 +159,11 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 - `unsubscribe(event_type, listener: Callable)` - Unsubscribe
 - `unsubscribe_by_id(event_type, sub_id: int)` - Unsubscribe by subscription ID
 - `get_listeners(event_type) -> Array` - Get all listeners for an event type
+- `get_subscription_count(event_type) -> int` - Get number of listeners for an event type
+- `get_registered_types() -> Array[StringName]` - Get all registered event types
+- `set_collect_errors(enabled: bool)` - Enable/disable error collection for debugging
+- `set_verbose(enabled: bool)` - Enable/disable verbose logging
+- `set_tracing(enabled: bool)` - Enable/disable message delivery tracing
 - `clear()` - Clear all subscribers
 
 **Message Base Classes:**
@@ -165,10 +173,39 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 - `data() -> Dictionary` - Message payload (deep copy)
 - `to_string() -> String` - Debug representation
 
+### Debugging & Inspection
+
+```gdscript
+# Enable verbose logging (logs subscriptions/unsubscriptions)
+command_bus.set_verbose(true)
+event_bus.set_verbose(true)
+
+# Enable tracing (logs all message deliveries)
+command_bus.set_tracing(true)
+event_bus.set_tracing(true)
+
+# Check subscription counts
+print("EnemyDiedEvent has ", event_bus.get_subscription_count(EnemyDiedEvent), " listeners")
+print("MovePlayerCommand handler exists: ", command_bus.has_handler(MovePlayerCommand))
+
+# Get all registered message types
+var event_types = event_bus.get_registered_types()
+print("Registered event types: ", event_types)
+
+# Get all listeners for an event type
+var listeners = event_bus.get_listeners(EnemyDiedEvent)
+for listener in listeners:
+    print("Listener: ", listener)
+
+# Enable error collection in EventBus (for debugging listener failures)
+event_bus.set_collect_errors(true)
+```
+
 ### Tips
 
 - Use commands for actions that need a response or error handling
 - Use events for notifications that multiple systems care about
 - Higher priority listeners are called first (useful for core systems before UI)
 - Bound subscriptions automatically clean up when objects are freed
-- Enable verbose logging: `event_bus.set_verbose(true)` for debugging
+- Enable verbose logging and tracing during development for debugging
+- Use `get_subscription_count()` to verify listeners are registered correctly

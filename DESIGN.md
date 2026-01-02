@@ -19,7 +19,7 @@ The `MessageBus` class is the foundation that provides:
 - **Lifecycle safety**: Subscriptions can be bound to Objects and auto-unsubscribe when objects are freed
 - **One-shot subscriptions**: Subscriptions that automatically unsubscribe after first delivery
 - **Safe iteration**: Subscriptions can be safely removed during dispatch
-- **Debugging support**: Verbose logging and tracing capabilities
+- **Debugging support**: Verbose logging, tracing, and inspection capabilities
 
 **Design Decision: StringName Type Keys**
 
@@ -127,8 +127,20 @@ EventBus supports async listeners, though `publish()` is fire-and-forget by defa
 
 **EventBus**:
 - Errors from listeners are isolated (one failure doesn't break others)
-- Optional error collection mode for debugging
+- Optional error collection mode for debugging (`set_collect_errors()`)
 - Uses `push_error()` for logging failures
+
+### Debugging & Inspection
+
+Both buses inherit debugging capabilities from `MessageBus`:
+
+- **Verbose logging** (`set_verbose()`): Logs all subscription/unsubscription operations
+- **Tracing** (`set_tracing()`): Logs every message delivery with details
+- **Subscription inspection**:
+  - `get_subscription_count(message_type)` - Count active subscriptions
+  - `get_registered_types()` - List all registered message types
+  - `get_listeners(event_type)` - Get all listeners for an event type
+- **EventBus-specific**: `set_collect_errors()` to collect and log listener errors without breaking execution
 
 ## Why This Abstraction is Reusable
 
