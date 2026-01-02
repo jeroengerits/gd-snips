@@ -1,4 +1,4 @@
-const Messaging = preload("res://messaging/api.gd")
+const Messaging = preload("res://messaging/messaging.gd")
 
 extends Messaging.Event
 class_name EnemyDiedEvent
