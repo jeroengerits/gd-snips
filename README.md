@@ -2,17 +2,6 @@
 
 Personal code snippets for **Godot 4.5.1+** game projects—handy scripts, experiments, and reusable patterns collected across builds to speed up prototyping and gameplay development.
 
-## Overview
-
-This repository contains a collection of code snippets, utility scripts, and reusable patterns.
-
-## Contents
-
-- **Scripts**: Reusable GDScript components and utilities
-- **Experiments**: Proof-of-concept code and gameplay mechanics
-- **Patterns**: Common architectural patterns and best practices
-- **Utilities**: Helper functions and tools for faster development
-
 ## Requirements
 
 - Godot Engine **4.5.1** or later
@@ -24,4 +13,4 @@ Feel free to copy, modify, and adapt any code snippets to fit your project needs
 
 ## License
 
-Personal use—adapt as needed for your projects.
+Personal use—adapt as needed for your projects. 
