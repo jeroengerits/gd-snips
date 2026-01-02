@@ -8,7 +8,7 @@ class_name Message
 ##
 ## @example Direct instantiation:
 ##   var msg = Message.new("damage", {"amount": 10, "target": player})
-##   var msg2 = Message.create("heal", {"amount": 5}, "Heal player")
+##   var msg2 = Message.create("heal", {"amount": 5}, "Heal")
 ##
 ## @example Subclassing:
 ##   extends Message
@@ -19,61 +19,52 @@ class_name Message
 
 var _id: String
 var _type: String
-var _description: String
+var _desc: String
 var _data: Dictionary
 
-func _init(type: String, data: Dictionary = {}, description: String = "") -> void:
+func _init(type: String, data: Dictionary = {}, desc: String = "") -> void:
 	_id = str(get_instance_id())
 	_type = type
-	_description = description
-	_data = data.duplicate(true) # deep copy to discourage external mutation
+	_desc = desc
+	_data = data.duplicate(true)
 
 ## Unique identifier for this message instance.
-##
-## Used for tracking, logging, or preventing duplicate processing.
-func get_id() -> String:
+func id() -> String:
 	return _id
 
-## Message type identifier (e.g., "damage", "ui_notification").
-##
-## Used by handlers to determine processing logic.
-func get_type() -> String:
+## Message type identifier.
+func type() -> String:
 	return _type
 
-## Human-readable description for debugging and logging.
-##
-## Optional metadata. Defaults to empty string if not provided.
-func get_description() -> String:
-	return _description
+## Human-readable description for debugging.
+func desc() -> String:
+	return _desc
 
 ## Message payload data as a dictionary.
-##
-## Returns a deep copy to prevent external mutation.
-## Structure depends on message type. Common keys: "amount", "source", "target".
-func get_data() -> Dictionary:
+func data() -> Dictionary:
 	return _data.duplicate(true)
 
 ## String representation for debugging.
-func to_string() -> String:
-	return "[Message id=%s type=%s desc=%s data=%s]" % [_id, _type, _description, _data]
+func txt() -> String:
+	return "[Message id=%s type=%s desc=%s data=%s]" % [_id, _type, _desc, _data]
 
 ## Serialize message to dictionary.
-func to_dict() -> Dictionary:
+func dict() -> Dictionary:
 	return {
 		"id": _id,
 		"type": _type,
-		"description": _description,
+		"desc": _desc,
 		"data": _data.duplicate(true)
 	}
 
 ## Check if this message equals another (by ID).
-func equals(other: Message) -> bool:
-	return other != null and other.get_id() == _id
+func eq(other: Message) -> bool:
+	return other != null and other.id() == _id
 
-## Hash value for use in dictionaries/sets (based on ID).
+## Hash value for use in dictionaries/sets.
 func hash() -> int:
 	return _id.hash()
 
-## Static factory method for convenient instantiation.
-static func create(type: String, data: Dictionary = {}, description: String = "") -> Message:
-	return Message.new(type, data, description)
+## Static factory method.
+static func create(type: String, data: Dictionary = {}, desc: String = "") -> Message:
+	return Message.new(type, data, desc)

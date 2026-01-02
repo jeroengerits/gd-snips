@@ -24,12 +24,12 @@ var evt = Event.create("damage_dealt", {"amount": 10, "target": enemy})
 
 # Setup bus
 var bus = Bus.new()
-bus.register_command_handler("deal_damage", func(command: Command): print("Dealt damage"))
-bus.subscribe("damage_dealt", func(event: Event): print("Damage was dealt"))
+bus.handle("deal_damage", func(cmd: Command): print("Dealt damage"))
+bus.on("damage_dealt", func(evt: Event): print("Damage was dealt"))
 
 # Dispatch and publish
-bus.dispatch(cmd)
-bus.publish(evt)
+bus.send(cmd)
+bus.emit(evt)
 ```
 
 ### Architecture
@@ -57,24 +57,24 @@ bus.publish(evt)
 
 All message classes provide:
 
-- `get_id() -> String` - Unique identifier
-- `get_type() -> String` - Message type
-- `get_description() -> String` - Optional description
-- `get_data() -> Dictionary` - Message payload (returns deep copy)
-- `to_string() -> String` - Debug representation
-- `to_dict() -> Dictionary` - Serialization
-- `equals(other: Message) -> bool` - Equality by ID
+- `id() -> String` - Unique identifier
+- `type() -> String` - Message type
+- `desc() -> String` - Optional description
+- `data() -> Dictionary` - Message payload (returns deep copy)
+- `txt() -> String` - Debug representation
+- `dict() -> Dictionary` - Serialization
+- `eq(other: Message) -> bool` - Equality by ID
 - `hash() -> int` - Hash for dictionaries/sets
-- `static create(type, data, description)` - Factory method (returns Message/Command/Event based on class)
+- `static create(type, data, desc)` - Factory method (returns Message/Command/Event based on class)
 
 ### Bus API
 
-- `register_command_handler(type, handler)` - Register handler for command type
-- `unregister_command_handler(type)` - Remove command handler
-- `subscribe(type, subscriber)` - Subscribe to event type
-- `unsubscribe(type, subscriber)` - Unsubscribe from event type
-- `dispatch(command)` - Dispatch command to handler (returns result)
-- `publish(event)` - Publish event to all subscribers
+- `handle(type, fn)` - Register handler for command type
+- `unhandle(type)` - Remove command handler
+- `on(type, fn)` - Subscribe to event type
+- `off(type, fn)` - Unsubscribe from event type
+- `send(cmd)` - Dispatch command to handler (returns result)
+- `emit(evt)` - Publish event to all subscribers
 - `clear()` - Clear all handlers and subscribers
 
 ### Project Structure

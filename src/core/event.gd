@@ -7,10 +7,10 @@ class_name Event
 ## Typically handled by multiple subscribers and do not return results.
 
 ## String representation for debugging.
-func to_string() -> String:
-	return "[Event id=%s type=%s desc=%s data=%s]" % [get_id(), get_type(), get_description(), get_data()]
+func txt() -> String:
+	return "[Event id=%s type=%s desc=%s data=%s]" % [id(), type(), desc(), data()]
 
-## Static factory method for convenient instantiation.
-static func create(type: String, data: Dictionary = {}, description: String = "") -> Event:
-	return Event.new(type, data, description)
+## Static factory method.
+static func create(type: String, data: Dictionary = {}, desc: String = "") -> Event:
+	return Event.new(type, data, desc)
 
