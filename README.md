@@ -15,6 +15,8 @@ Lightweight, type-safe messaging system with commands and events for decoupling 
 - 🔒 **Type-Safe** — Compile-time message type checking
 - ⚡ **Async Support** — Built-in async/await capabilities
 - 🎚️ **Priority System** — Control subscriber execution order
+- 🔌 **Middleware** — Intercept and transform messages before/after delivery
+- 📊 **Performance Metrics** — Built-in timing and counting for profiling
 
 **[📖 Full Documentation →](messaging/README.md)**
 

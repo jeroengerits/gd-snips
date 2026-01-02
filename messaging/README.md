@@ -153,7 +153,7 @@ func _handle_damage(cmd: DealDamageCommand) -> bool:
 
 # Dispatch from anywhere
 var result = await command_bus.dispatch(DealDamageCommand.new(enemy, 25))
-if result is Messaging.CommandBus.CommandBusError:
+if result is Messaging.CommandBus.CommandError:
     print("Failed to deal damage: ", result.message)
 ```
 
@@ -209,6 +209,23 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
     await save_game_data()
     return true
 )
+
+# Error handling: GDScript has no try/catch, so listener errors will propagate
+# Enable error logging to log context before crashes occur
+event_bus.set_collect_errors(true)
+event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
+
+# Middleware: Intercept messages before/after delivery
+var log_middleware_id = event_bus.add_middleware_pre(func(evt: Event, key: StringName) -> bool:
+    print("Event published: ", key)
+    return true  # Return false to cancel delivery
+)
+
+# Performance metrics: Track message delivery performance
+event_bus.set_metrics_enabled(true)
+event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
+var metrics = event_bus.get_metrics(EnemyDiedEvent)
+print("Event metrics: ", metrics)  # {count: int, avg_time: float, min_time: float, max_time: float}
 ```
 
 ## API Reference
@@ -222,10 +239,16 @@ const Messaging = preload("res://messaging/messaging.gd")
 **CommandBus** (`Messaging.CommandBus`):
 
 - `handle(command_type, handler: Callable)` - Register handler (replaces existing)
-- `dispatch(command: CoreMessagingCommand) -> Variant` - Dispatch command, returns result
-- `unregister_handler(command_type)` - Remove handler
+- `dispatch(command: Command) -> Variant` - Dispatch command, returns result
+- `unregister(command_type)` - Remove handler
 - `has_handler(command_type) -> bool` - Check if handler exists
 - `get_subscription_count(command_type) -> int` - Get number of handlers (should be 0 or 1)
+- `add_middleware_pre(callback: Callable, priority=0) -> int` - Add pre-processing middleware (before dispatch)
+- `add_middleware_post(callback: Callable, priority=0) -> int` - Add post-processing middleware (after dispatch)
+- `remove_middleware(middleware_id: int) -> bool` - Remove middleware by ID
+- `set_metrics_enabled(enabled: bool)` - Enable/disable performance metrics tracking
+- `get_metrics(command_type) -> Dictionary` - Get performance metrics for a command type
+- `get_all_metrics() -> Dictionary` - Get all performance metrics
 - `set_verbose(enabled: bool)` - Enable/disable verbose logging
 - `set_tracing(enabled: bool)` - Enable/disable message delivery tracing
 - `clear()` - Clear all handlers
@@ -233,14 +256,20 @@ const Messaging = preload("res://messaging/messaging.gd")
 **EventBus** (`Messaging.EventBus`):
 
 - `subscribe(event_type, listener: Callable, priority=0, one_shot=false, bound_object=null) -> int` - Subscribe to events
-- `publish(event: CoreMessagingEvent)` - Publish event (fire-and-forget)
-- `publish_async(event: CoreMessagingEvent)` - Publish and await async listeners
+- `publish(event: Event)` - Publish event (fire-and-forget, may block briefly for async listeners)
+- `publish_async(event: Event)` - Publish and await all async listeners
 - `unsubscribe(event_type, listener: Callable)` - Unsubscribe
 - `unsubscribe_by_id(event_type, sub_id: int)` - Unsubscribe by subscription ID
 - `get_listeners(event_type) -> Array` - Get all listeners for an event type
 - `get_subscription_count(event_type) -> int` - Get number of listeners for an event type
-- `get_registered_types() -> Array[StringName]` - Get all registered event types
-- `set_collect_errors(enabled: bool)` - Enable/disable error collection for debugging
+- `get_types() -> Array[StringName]` - Get all registered event types
+- `add_middleware_pre(callback: Callable, priority=0) -> int` - Add pre-processing middleware (before publish)
+- `add_middleware_post(callback: Callable, priority=0) -> int` - Add post-processing middleware (after publish)
+- `remove_middleware(middleware_id: int) -> bool` - Remove middleware by ID
+- `set_metrics_enabled(enabled: bool)` - Enable/disable performance metrics tracking
+- `get_metrics(event_type) -> Dictionary` - Get performance metrics for an event type
+- `get_all_metrics() -> Dictionary` - Get all performance metrics
+- `set_collect_errors(enabled: bool)` - Enable/disable error logging (logs context before crashes)
 - `set_verbose(enabled: bool)` - Enable/disable verbose logging
 - `set_tracing(enabled: bool)` - Enable/disable message delivery tracing
 - `clear()` - Clear all subscribers
@@ -255,7 +284,7 @@ const Messaging = preload("res://messaging/messaging.gd")
 - `get_data_value(key: String, default) -> Variant` - Get data value by key
 - `has_data_key(key: String) -> bool` - Check if data contains key
 - `to_string() -> String` - Debug representation
-- `equals(other: CoreMessagingMessage) -> bool` - Content-based equality comparison
+- `equals(other: Message) -> bool` - Content-based equality comparison
 
 **Command-Specific Methods** (`Messaging.Command`):
 
@@ -266,7 +295,7 @@ const Messaging = preload("res://messaging/messaging.gd")
 
 - These are domain services that encapsulate business rules
 - Used internally by the buses but can be accessed directly for testing or custom validation
-- `CommandRules.validate_handler_count(count: int) -> CommandRules.ValidationResult` - Validate handler count
+- `CommandRules.validate_count(count: int) -> CommandRules.ValidationResult` - Validate handler count
 - `CommandRules.is_valid_handler_count(count: int) -> bool` - Check if handler count is valid
 - `SubscriptionRules.should_process_before(a_priority: int, b_priority: int) -> bool` - Compare priorities
 - `SubscriptionRules.should_remove_after_delivery(one_shot: bool) -> bool` - Check if subscription should be removed
@@ -294,7 +323,7 @@ print("EnemyDiedEvent has ", event_bus.get_subscription_count(EnemyDiedEvent), "
 print("MovePlayerCommand handler exists: ", command_bus.has_handler(MovePlayerCommand))
 
 # Get all registered message types
-var event_types = event_bus.get_registered_types()
+var event_types = event_bus.get_types()
 print("Registered event types: ", event_types)
 
 # Get all listeners for an event type
@@ -302,8 +331,76 @@ var listeners = event_bus.get_listeners(EnemyDiedEvent)
 for listener in listeners:
     print("Listener: ", listener)
 
-# Enable error collection in EventBus (for debugging listener failures)
+# Enable error logging (logs context before crashes)
+# Note: GDScript has no try/catch, so listener errors will still crash
 event_bus.set_collect_errors(true)
+```
+
+## Async & Error Handling Notes
+
+**Async Event Handling:**
+
+The `publish()` method is fire-and-forget for synchronous listeners, but async listeners are still awaited to prevent memory leaks. This means `publish()` may block briefly if listeners are async. For truly non-blocking behavior from a Node context, you can wrap the call:
+
+```gdscript
+# From a Node: truly non-blocking publish
+call_deferred("_publish_event", event_bus, my_event)
+
+func _publish_event(bus: Messaging.EventBus, evt: Event) -> void:
+    bus.publish(evt)
+```
+
+**Error Handling:**
+
+GDScript has no try/catch mechanism, so errors in event listeners will always propagate and crash. The `set_collect_errors()` method enables logging of context information before errors occur (helps with debugging). Ensure your listeners handle errors internally, or use defensive programming techniques.
+
+**Middleware:**
+
+Both CommandBus and EventBus support middleware for intercepting messages before and after delivery. Pre-middleware can cancel delivery by returning `false`. Middleware runs in priority order (higher priority first).
+
+```gdscript
+# Logging middleware
+var log_id = event_bus.add_middleware_pre(func(evt: Event, key: StringName) -> bool:
+    print("Publishing event: ", key)
+    return true  # Continue delivery
+)
+
+# Validation middleware (can cancel delivery)
+var validate_id = event_bus.add_middleware_pre(func(evt: Event, key: StringName) -> bool:
+    if not evt.is_valid():
+        print("Invalid event: ", key)
+        return false  # Cancel delivery
+    return true
+)
+
+# Post-processing middleware
+event_bus.add_middleware_post(func(evt: Event, key: StringName, result):
+    print("Event delivered: ", key)
+)
+
+# Remove middleware
+event_bus.remove_middleware(log_id)
+```
+
+**Performance Metrics:**
+
+Enable performance tracking to monitor message delivery times. Metrics track count, total time, average time, minimum time, and maximum time per message type.
+
+```gdscript
+# Enable metrics
+command_bus.set_metrics_enabled(true)
+
+# Dispatch commands (metrics are tracked automatically)
+await command_bus.dispatch(SaveGameCommand.new())
+
+# Get metrics
+var metrics = command_bus.get_metrics(SaveGameCommand)
+# Returns: {count: 5, total_time: 0.123, avg_time: 0.0246, min_time: 0.01, max_time: 0.05}
+
+# Get all metrics
+var all_metrics = command_bus.get_all_metrics()
+# Returns: Dictionary mapping message types to their metrics
+```
 ```
 
 ## Rules
@@ -328,7 +425,7 @@ These rules make business rules explicit and testable. They're used internally b
 const Messaging = preload("res://messaging/messaging.gd")
 
 # Access rules directly for testing or custom logic
-var validation = Messaging.CommandRules.validate_handler_count(handler_count)
+var validation = Messaging.CommandRules.validate_count(handler_count)
 if validation == Messaging.CommandRules.ValidationResult.VALID:
     # Proceed with dispatch
     pass
@@ -353,14 +450,14 @@ if validation == Messaging.CommandRules.ValidationResult.VALID:
 
 **Types** (`types/`):
 
-- `message.gd` - Base message class (class: `CoreMessagingMessage`)
-- `command.gd` - Command base class (class: `CoreMessagingCommand`)
-- `event.gd` - Event base class (class: `CoreMessagingEvent`)
+- `message.gd` - Base message class (class: `Message`)
+- `command.gd` - Command base class (class: `Command`)
+- `event.gd` - Event base class (class: `Event`)
 
 **Buses** (`buses/`):
 
-- `command_bus.gd` - Command bus (class: `CoreMessagingCommandBus`)
-- `event_bus.gd` - Event bus (class: `CoreMessagingEventBus`)
+- `command_bus.gd` - Command bus (class: `CommandBus`)
+- `event_bus.gd` - Event bus (class: `EventBus`)
 
 **Internal** (`internal/`):
 
@@ -376,7 +473,6 @@ if validation == Messaging.CommandRules.ValidationResult.VALID:
 >
 > - Only import from `messaging.gd` in your code
 > - `types/`, `buses/`, `internal/`, and `rules/` files are implementation details and should not be imported directly
-> - All public classes use `CoreMessaging` prefix to avoid naming collisions across packages
 
 ## See Also
 

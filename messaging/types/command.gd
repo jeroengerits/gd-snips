@@ -1,7 +1,7 @@
 const Message = preload("res://messaging/types/message.gd")
 
 extends Message
-class_name CoreMessagingCommand
+class_name Command
 
 ## Command messages for imperative actions.
 ##
@@ -23,6 +23,6 @@ func to_string() -> String:
 	return "[Command id=%s type=%s desc=%s data=%s]" % [id(), type(), description(), data()]
 
 ## Static factory method.
-static func create(type: String, data: Dictionary = {}, desc: String = "") -> CoreMessagingCommand:
-	return CoreMessagingCommand.new(type, data, desc)
+static func create(type: String, data: Dictionary = {}, desc: String = "") -> Command:
+	return Command.new(type, data, desc)
 

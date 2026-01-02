@@ -3,7 +3,7 @@ const SubscriptionRules = preload("res://messaging/rules/subscription_rules.gd")
 const Event = preload("res://messaging/types/event.gd")
 
 extends MessageBus
-class_name CoreMessagingEventBus
+class_name EventBus
 
 ## Event bus for publishing events with 0..N subscribers.
 ##
@@ -19,11 +19,43 @@ class_name CoreMessagingEventBus
 ##   )
 ##   bus.publish(EnemyDiedEvent.new(enemy_id, 100))
 
-var _collect_errors: bool = false  # Optionally collect listener errors
+var _collect_errors: bool = false  # Optionally enable error logging
 
-## Enable error collection (errors from listeners are collected, not thrown).
+## Enable error collection (logs error context before crashes).
+## Note: GDScript has no try/catch, so errors will still crash, but error
+## collection logs context information before the crash occurs.
 func set_collect_errors(enabled: bool) -> void:
 	_collect_errors = enabled
+
+## Add pre-processing middleware (before event delivery).
+## [code]callback[/code]: Callable(event: Event, key: StringName) -> bool (return false to cancel)
+## [code]priority[/code]: Higher priority runs first (default: 0)
+## Returns: Middleware ID for removal
+func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
+	return super.add_middleware_pre(callback, priority)
+
+## Add post-processing middleware (after event delivery).
+## [code]callback[/code]: Callable(event: Event, key: StringName, result: Variant) -> void
+## [code]priority[/code]: Higher priority runs first (default: 0)
+## Returns: Middleware ID for removal
+func add_middleware_post(callback: Callable, priority: int = 0) -> int:
+	return super.add_middleware_post(callback, priority)
+
+## Remove middleware by ID.
+func remove_middleware(middleware_id: int) -> bool:
+	return super.remove_middleware(middleware_id)
+
+## Enable performance metrics tracking.
+func set_metrics_enabled(enabled: bool) -> void:
+	super.set_metrics_enabled(enabled)
+
+## Get performance metrics for an event type.
+func get_metrics(event_type) -> Dictionary:
+	return super.get_metrics(event_type)
+
+## Get all performance metrics.
+func get_all_metrics() -> Dictionary:
+	return super.get_all_metrics()
 
 ## Subscribe to an event type.
 ## [code]event_type[/code]: Event class or StringName
@@ -43,30 +75,40 @@ func unsubscribe(event_type, listener: Callable) -> int:
 func unsubscribe_by_id(event_type, sub_id: int) -> bool:
 	return super.unsubscribe_by_id(event_type, sub_id)
 
-## Publish an event to all subscribers (fire-and-forget, synchronous).
-## Listeners are called in priority order. Errors from listeners are isolated
-## (one bad listener won't break others) unless error collection is enabled.
-func publish(evt: CoreMessagingEvent) -> void:
+## Publish an event to all subscribers (fire-and-forget).
+## Listeners are called in priority order.
+## 
+## Note: Async listeners are still awaited to prevent memory leaks. This means
+## publish() may block briefly if listeners are async. For truly non-blocking
+## behavior, wrap the call: call_deferred("publish", evt) from a Node context.
+func publish(evt: Event) -> void:
 	await _publish_internal(evt, false)
 
 ## Publish an event and await all async listeners.
 ## Use this when you need to wait for async listeners to complete.
-func publish_async(evt: CoreMessagingEvent) -> void:
+func publish_async(evt: Event) -> void:
 	await _publish_internal(evt, true)
 
 ## Internal publish implementation.
-func _publish_internal(evt: CoreMessagingEvent, await_async: bool) -> void:
-	var key = get_key_from_message(evt)
-	var subs = _get_valid_subscriptions(key)
+func _publish_internal(evt: Event, await_async: bool) -> void:
+	var key = get_key_from(evt)
 	
-	if _trace_enabled:
+	# Execute pre-middleware (can cancel delivery)
+	if not super._execute_middleware_pre(evt, key):
+		if super._trace_enabled:
+			print("[EventBus] Publishing ", key, " cancelled by middleware")
+		return
+	
+	var subs = super._get_valid_subscriptions(key)
+	
+	if super._trace_enabled:
 		print("[EventBus] Publishing ", key, " -> ", subs.size(), " listener(s)")
 	
 	if subs.is_empty():
 		return
 	
-	var errors: Array = []
 	var one_shots_to_remove: Array = []
+	var start_time = Time.get_ticks_msec()
 	
 	# Create a snapshot for safe iteration (subscribers may unsubscribe during dispatch)
 	var subs_snapshot = subs.duplicate()
@@ -80,9 +122,14 @@ func _publish_internal(evt: CoreMessagingEvent, await_async: bool) -> void:
 			continue
 		
 		var result = null
+		var listener_start_time = Time.get_ticks_msec()
 		
-		# Call listener and isolate failures
-		# GDScript doesn't have try/catch, so errors will propagate but we continue
+		# Call listener - errors will propagate (GDScript has no try/catch)
+		# Error collection logs context before errors crash
+		if _collect_errors:
+			# Log context before calling (helps debug if error occurs)
+			push_warning("[EventBus] Calling listener for event: %s (sub_id=%d)" % [key, sub.id])
+		
 		result = sub.callable.call(evt)
 		
 		# Handle async results
@@ -91,10 +138,13 @@ func _publish_internal(evt: CoreMessagingEvent, await_async: bool) -> void:
 				# Await async listener completion
 				result = await result
 			else:
-				# Fire-and-forget: still await to prevent leaks, but don't block caller
-				# In practice, this will still block, but it's the best we can do
-				# For true fire-and-forget, caller should use call_deferred
-				await result
+				# Fire-and-forget: still await to prevent memory leaks
+				# Note: This causes brief blocking, but prevents GDScriptFunctionState leaks
+				result = await result
+		
+		# Record metrics for this listener (if enabled)
+		var listener_elapsed = (Time.get_ticks_msec() - listener_start_time) / 1000.0
+		super._record_metrics(key, listener_elapsed)
 		
 		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)
 		if SubscriptionRules.should_remove_after_delivery(sub.one_shot):
@@ -102,13 +152,15 @@ func _publish_internal(evt: CoreMessagingEvent, await_async: bool) -> void:
 	
 	# Remove one-shot subscriptions after iteration
 	for item in one_shots_to_remove:
-		_mark_for_removal(item.key, item.sub)
+		super._mark_for_removal(item.key, item.sub)
 	
-	if _collect_errors and not errors.is_empty():
-		if _verbose:
-			print("[EventBus] Errors occurred in ", errors.size(), " listener(s) for ", key)
+	# Record overall metrics (if enabled, already recorded per-listener above)
+	var elapsed = (Time.get_ticks_msec() - start_time) / 1000.0
+	super._record_metrics(key, elapsed)
+	
+	# Execute post-middleware
+	super._execute_middleware_post(evt, key, null)
 
 ## Get all listeners for an event type.
 func get_listeners(event_type) -> Array:
 	return get_subscriptions(event_type)
-

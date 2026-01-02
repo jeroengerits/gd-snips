@@ -55,8 +55,8 @@ func _test_command_no_handler() -> void:
 	var cmd = MovePlayerCommand.new(Vector2(10, 20))
 	var result = await command_bus.dispatch(cmd)
 	
-	# Should return a CommandBusError
-	test_results[test_name] = result is Messaging.CommandBus.CommandBusError
+	# Should return a CommandError
+	test_results[test_name] = result is Messaging.CommandBus.CommandError
 	print("✓ " if test_results[test_name] else "✗ ", test_name)
 
 func _test_command_multiple_handlers() -> void:

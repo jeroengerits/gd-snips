@@ -12,20 +12,20 @@ enum ValidationResult {
 	MULTIPLE_HANDLERS
 }
 
-## Validate handler count against command routing rules.
+## Validate count against command routing rules.
 ##
 ## Domain rule: Commands must have exactly one handler.
 ##
-## [code]handler_count[/code]: Number of registered handlers
+## [code]count[/code]: Number of registered handlers
 ## Returns: ValidationResult indicating if routing rules are satisfied
-static func validate_handler_count(handler_count: int) -> ValidationResult:
-	if handler_count == 0:
+static func validate_count(count: int) -> ValidationResult:
+	if count == 0:
 		return ValidationResult.NO_HANDLER
-	if handler_count > 1:
+	if count > 1:
 		return ValidationResult.MULTIPLE_HANDLERS
 	return ValidationResult.VALID
 
 ## Check if handler count satisfies command routing rules.
 static func is_valid_handler_count(handler_count: int) -> bool:
-	return validate_handler_count(handler_count) == ValidationResult.VALID
+	return validate_count(handler_count) == ValidationResult.VALID
 

@@ -14,6 +14,22 @@ extends RefCounted
 ## - One-shot subscriptions
 ## - Safe iteration during dispatch
 ## - Debugging and tracing support
+## - Middleware/interception support
+## - Performance metrics
+
+## Middleware entry for intercepting messages
+class Middleware:
+	var callback: Callable
+	var priority: int = 0
+	var id: int
+	
+	static var _next_id: int = 0
+	
+	func _init(callback: Callable, priority: int = 0):
+		self.callback = callback
+		self.priority = priority
+		self.id = _next_id
+		_next_id += 1
 
 ## Subscription entry for tracking handlers/listeners
 class Subscription:
@@ -44,6 +60,10 @@ class Subscription:
 var _subscriptions: Dictionary = {}  # StringName -> Array[Subscription]
 var _verbose: bool = false
 var _trace_enabled: bool = false
+var _middleware_pre: Array[Middleware] = []  # Pre-processing middleware
+var _middleware_post: Array[Middleware] = []  # Post-processing middleware
+var _metrics_enabled: bool = false
+var _metrics: Dictionary = {}  # StringName -> {count: int, total_time: float, min_time: float, max_time: float}
 
 ## Enable verbose logging for debugging.
 func set_verbose(enabled: bool) -> void:
@@ -53,14 +73,139 @@ func set_verbose(enabled: bool) -> void:
 func set_tracing(enabled: bool) -> void:
 	_trace_enabled = enabled
 
-## Extract StringName key from a message type or instance.
+## Add middleware for pre-processing (before message delivery).
+## [code]callback[/code]: Callable(message, key) -> bool (return false to cancel delivery)
+## [code]priority[/code]: Higher priority middleware runs first (default: 0)
+## Returns: Middleware ID for removal
+func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
+	var mw = Middleware.new(callback, priority)
+	_middleware_pre.append(mw)
+	SubscriptionRules.sort_by_priority(_middleware_pre)
+	if _verbose:
+		print("[MessageBus] Added pre-middleware (priority=", priority, ")")
+	return mw.id
+
+## Add middleware for post-processing (after message delivery).
+## [code]callback[/code]: Callable(message, key, result) -> void
+## [code]priority[/code]: Higher priority middleware runs first (default: 0)
+## Returns: Middleware ID for removal
+func add_middleware_post(callback: Callable, priority: int = 0) -> int:
+	var mw = Middleware.new(callback, priority)
+	_middleware_post.append(mw)
+	SubscriptionRules.sort_by_priority(_middleware_post)
+	if _verbose:
+		print("[MessageBus] Added post-middleware (priority=", priority, ")")
+	return mw.id
+
+## Remove middleware by ID.
+func remove_middleware(middleware_id: int) -> bool:
+	var removed = false
+	for i in range(_middleware_pre.size() - 1, -1, -1):
+		if _middleware_pre[i].id == middleware_id:
+			_middleware_pre.remove_at(i)
+			removed = true
+			if _verbose:
+				print("[MessageBus] Removed pre-middleware (id=", middleware_id, ")")
+	
+	for i in range(_middleware_post.size() - 1, -1, -1):
+		if _middleware_post[i].id == middleware_id:
+			_middleware_post.remove_at(i)
+			removed = true
+			if _verbose:
+				print("[MessageBus] Removed post-middleware (id=", middleware_id, ")")
+	
+	return removed
+
+## Clear all middleware.
+func clear_middleware() -> void:
+	_middleware_pre.clear()
+	_middleware_post.clear()
+	if _verbose:
+		print("[MessageBus] Cleared all middleware")
+
+## Enable performance metrics tracking.
+func set_metrics_enabled(enabled: bool) -> void:
+	_metrics_enabled = enabled
+	if not enabled:
+		_metrics.clear()
+
+## Get performance metrics for a message type.
+## Returns: Dictionary with {count: int, total_time: float, avg_time: float, min_time: float, max_time: float} or null
+func get_metrics(message_type) -> Dictionary:
+	if not _metrics_enabled:
+		return {}
+	
+	var key = get_key(message_type)
+	if not _metrics.has(key):
+		return {}
+	
+	var m = _metrics[key]
+	var result = m.duplicate()
+	if m.count > 0:
+		result.avg_time = m.total_time / m.count
+	else:
+		result.avg_time = 0.0
+	return result
+
+## Get all performance metrics.
+func get_all_metrics() -> Dictionary:
+	if not _metrics_enabled:
+		return {}
+	
+	var result = {}
+	for key in _metrics.keys():
+		var m = _metrics[key]
+		var metrics_dict = m.duplicate()
+		if m.count > 0:
+			metrics_dict.avg_time = m.total_time / m.count
+		else:
+			metrics_dict.avg_time = 0.0
+		result[key] = metrics_dict
+	return result
+
+## Clear all performance metrics.
+func clear_metrics() -> void:
+	_metrics.clear()
+
+## Internal: Execute pre-middleware, return false if delivery should be cancelled.
+func _execute_middleware_pre(message: Object, key: StringName) -> bool:
+	for mw in _middleware_pre:
+		if not mw.callback.is_valid():
+			continue
+		var result = mw.callback.call(message, key)
+		if result == false:  # Middleware can cancel delivery
+			return false
+	return true
+
+## Internal: Execute post-middleware.
+func _execute_middleware_post(message: Object, key: StringName, delivery_result) -> void:
+	for mw in _middleware_post:
+		if not mw.callback.is_valid():
+			continue
+		mw.callback.call(message, key, delivery_result)
+
+## Internal: Record performance metrics.
+func _record_metrics(key: StringName, elapsed_time: float) -> void:
+	if not _metrics_enabled:
+		return
+	
+	if not _metrics.has(key):
+		_metrics[key] = {"count": 0, "total_time": 0.0, "min_time": INF, "max_time": 0.0}
+	
+	var m = _metrics[key]
+	m.count += 1
+	m.total_time += elapsed_time
+	m.min_time = min(m.min_time, elapsed_time)
+	m.max_time = max(m.max_time, elapsed_time)
+
+## Extract StringName key from a message type.
 ## Delegates to MessageTypeResolver for infrastructure concerns.
-static func get_message_key(message_type) -> StringName:
+static func get_key(message_type) -> StringName:
 	return MessageTypeResolver.resolve_type(message_type)
 
-## Get message key from a message instance.
+## Get key from a message instance.
 ## Delegates to MessageTypeResolver for infrastructure concerns.
-static func get_key_from_message(message: Object) -> StringName:
+static func get_key_from(message: Object) -> StringName:
 	return MessageTypeResolver.resolve_type(message)
 
 ## Subscribe to a message type.
@@ -70,7 +215,7 @@ static func get_key_from_message(message: Object) -> StringName:
 ## [code]bound_object[/code]: Auto-unsubscribe when this object is freed (default: null)
 ## Returns: Subscription ID for manual unsubscription
 func subscribe(message_type, handler: Callable, priority: int = 0, one_shot: bool = false, bound_object: Object = null) -> int:
-	var key = get_message_key(message_type)
+	var key = get_key(message_type)
 	var sub = Subscription.new(handler, priority, one_shot, bound_object)
 	
 	if not _subscriptions.has(key):
@@ -86,7 +231,7 @@ func subscribe(message_type, handler: Callable, priority: int = 0, one_shot: boo
 
 ## Unsubscribe by subscription ID.
 func unsubscribe_by_id(message_type, sub_id: int) -> bool:
-	var key = get_message_key(message_type)
+	var key = get_key(message_type)
 	if not _subscriptions.has(key):
 		return false
 	
@@ -103,7 +248,7 @@ func unsubscribe_by_id(message_type, sub_id: int) -> bool:
 
 ## Unsubscribe by callable (removes all matching subscriptions).
 func unsubscribe(message_type, handler: Callable) -> int:
-	var key = get_message_key(message_type)
+	var key = get_key(message_type)
 	if not _subscriptions.has(key):
 		return 0
 	
@@ -130,7 +275,7 @@ func unsubscribe(message_type, handler: Callable) -> int:
 
 ## Get all subscriptions for a message type (cleaned of invalid entries).
 func get_subscriptions(message_type) -> Array:
-	var key = get_message_key(message_type)
+	var key = get_key(message_type)
 	if not _subscriptions.has(key):
 		return []
 	
@@ -152,8 +297,8 @@ func _cleanup_invalid_subscriptions(key: StringName, subs: Array) -> void:
 		_subscriptions.erase(key)
 
 ## Clear all subscriptions for a message type.
-func clear_message_type(message_type) -> void:
-	var key = get_message_key(message_type)
+func clear_type(message_type) -> void:
+	var key = get_key(message_type)
 	_subscriptions.erase(key)
 	if _verbose:
 		print("[MessageBus] Cleared subscriptions for ", key)
@@ -165,7 +310,7 @@ func clear() -> void:
 		print("[MessageBus] Cleared all subscriptions")
 
 ## Get all registered message types.
-func get_registered_types() -> Array[StringName]:
+func get_types() -> Array[StringName]:
 	var types: Array[StringName] = []
 	for key in _subscriptions.keys():
 		var subs = _subscriptions[key]
@@ -176,7 +321,7 @@ func get_registered_types() -> Array[StringName]:
 
 ## Get subscription count for a message type.
 func get_subscription_count(message_type) -> int:
-	var key = get_message_key(message_type)
+	var key = get_key(message_type)
 	if not _subscriptions.has(key):
 		return 0
 	var subs = _subscriptions[key]
@@ -185,7 +330,7 @@ func get_subscription_count(message_type) -> int:
 
 ## Internal: Get valid subscriptions for a message type, sorted by priority.
 func _get_valid_subscriptions(message_type) -> Array[Subscription]:
-	var key = get_message_key(message_type)
+	var key = get_key(message_type)
 	if not _subscriptions.has(key):
 		return []
 	
@@ -201,4 +346,3 @@ func _mark_for_removal(key: StringName, sub: Subscription) -> void:
 		subs.remove_at(index)
 		if subs.is_empty():
 			_subscriptions.erase(key)
-
