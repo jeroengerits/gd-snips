@@ -35,7 +35,7 @@ These utilities are designed to be reusable across different packages in this co
 
 Development insights and architectural decisions are documented in the [developer diary](docs/developer-diary/):
 
-- [Naming Refactoring & Architecture Deep Dive](docs/developer-diary/2026-01-02-naming-and-architecture-deep-dive.md) — January 2, 2026
 - [Utility Extraction Refactoring](docs/developer-diary/2026-01-03-utility-extraction-refactoring.md) — January 3, 2026
+- [Naming Refactoring & Architecture Deep Dive](docs/developer-diary/2026-01-02-naming-and-architecture-deep-dive.md) — January 2, 2026
 
 These entries document the thought process behind design decisions and refactoring work.
