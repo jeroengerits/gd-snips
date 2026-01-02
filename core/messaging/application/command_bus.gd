@@ -55,18 +55,25 @@ func unregister_handler(command_type) -> void:
 ## Throws CommandBusError if no handler or multiple handlers are registered.
 func dispatch(command: Command) -> Variant:
 	var key = get_key_from_message(command)
-	# Use the command instance itself for subscription lookup (get_key_from_message handles it)
 	var subs = _get_valid_subscriptions(key)
 	
-	if subs.is_empty():
-		var err = CommandBusError.new("No handler registered for command type: %s" % key, CommandBusError.ErrorCode.NO_HANDLER)
-		push_error(err.to_string())
-		return err
+	# Use domain service to validate routing rules
+	var validation = CommandRoutingPolicy.validate_handler_count(subs.size())
 	
-	if subs.size() > 1:
-		var err = CommandBusError.new("Multiple handlers registered for command type: %s (expected exactly one)" % key, CommandBusError.ErrorCode.MULTIPLE_HANDLERS)
-		push_error(err.to_string())
-		return err
+	match validation:
+		CommandRoutingPolicy.ValidationResult.NO_HANDLER:
+			var err = CommandBusError.new("No handler registered for command type: %s" % key, CommandBusError.ErrorCode.NO_HANDLER)
+			push_error(err.to_string())
+			return err
+		
+		CommandRoutingPolicy.ValidationResult.MULTIPLE_HANDLERS:
+			var err = CommandBusError.new("Multiple handlers registered for command type: %s (expected exactly one)" % key, CommandBusError.ErrorCode.MULTIPLE_HANDLERS)
+			push_error(err.to_string())
+			return err
+		
+		_:
+			# VALID - continue with dispatch
+			pass
 	
 	var sub = subs[0]
 	

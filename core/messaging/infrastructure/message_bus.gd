@@ -54,49 +54,14 @@ func set_tracing(enabled: bool) -> void:
 	_trace_enabled = enabled
 
 ## Extract StringName key from a message type or instance.
-## Accepts: Script resources (class_name), class instances, StringName, or String.
+## Delegates to MessageTypeResolver for infrastructure concerns.
 static func get_message_key(message_type) -> StringName:
-	if message_type is StringName:
-		return message_type
-	elif message_type is String:
-		return StringName(message_type)
-	elif message_type is GDScript:
-		# Handle Script resource (e.g., when passing MovePlayerCommand class directly)
-		var path = message_type.resource_path
-		if path != "":
-			return StringName(path.get_file().get_basename())
-		return StringName("UnknownScript")
-	elif message_type is Object:
-		# For instances, prefer get_class_name() if available
-		if message_type.has_method("get_class_name"):
-			var class_name = message_type.get_class_name()
-			if class_name is StringName:
-				return class_name
-			elif class_name is String:
-				return StringName(class_name)
-		# Fallback: use script path or class name
-		var script = message_type.get_script()
-		if script != null:
-			var path = script.resource_path
-			if path != "":
-				return StringName(path.get_file().get_basename())
-		return StringName(message_type.get_class())
-	return StringName(str(message_type))
+	return MessageTypeResolver.resolve_type(message_type)
 
 ## Get message key from a message instance.
+## Delegates to MessageTypeResolver for infrastructure concerns.
 static func get_key_from_message(message: Object) -> StringName:
-	if message.has_method("get_class_name"):
-		var class_name = message.get_class_name()
-		if class_name is StringName:
-			return class_name
-		elif class_name is String:
-			return StringName(class_name)
-	# Fallback to script-based identification
-	var script = message.get_script()
-	if script != null:
-		return get_message_key(script)
-	# Last resort: use class name
-	return StringName(message.get_class())
+	return MessageTypeResolver.resolve_type(message)
 
 ## Subscribe to a message type.
 ## [code]handler[/code]: Callable to invoke

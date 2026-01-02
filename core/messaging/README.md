@@ -54,8 +54,8 @@ func _init(target_node: Node, damage: int) -> void:
     amount = damage
     super._init("deal_damage", {"target": target_node, "amount": damage})
 
-func get_class_name() -> StringName:
-    return StringName("DealDamageCommand")
+# Type identification is handled automatically by MessageTypeResolver
+# No need to implement get_class_name() - it's resolved from the script path
 ```
 
 **Custom Event:**
@@ -71,8 +71,8 @@ func _init(id: int, death_cause: String) -> void:
     cause = death_cause
     super._init("player_died", {"player_id": id, "cause": death_cause})
 
-func get_class_name() -> StringName:
-    return StringName("PlayerDiedEvent")
+# Type identification is handled automatically by MessageTypeResolver
+# No need to implement get_class_name() - it's resolved from the script path
 ```
 
 ## Usage Examples
@@ -211,12 +211,14 @@ event_bus.set_collect_errors(true)
 ## Files
 
 **Domain Layer** (`domain/`):
-- `message.gd` - Base message class (core domain value object)
+- `message.gd` - Base message class (core domain value object with invariants)
 - `command.gd` - Command base class (extends Message)
 - `event.gd` - Event base class (extends Message)
+- `services/command_routing_policy.gd` - Domain service for command routing rules
 
 **Infrastructure Layer** (`infrastructure/`):
 - `message_bus.gd` - Generic message bus core (subscription management, routing)
+- `message_type_resolver.gd` - Resolves message types from scripts/classes (infrastructure concern)
 
 **Application Layer** (`application/`):
 - `command_bus.gd` - Command bus implementation (single handler dispatch, extends MessageBus)

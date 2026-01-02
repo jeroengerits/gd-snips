@@ -23,10 +23,27 @@ var _desc: String
 var _data: Dictionary
 
 func _init(type: String, data: Dictionary = {}, desc: String = "") -> void:
-	_id = str(get_instance_id())
+	# Domain invariants: enforce message type is not empty
+	if type.is_empty():
+		push_error("Message type cannot be empty")
+		type = "unknown"
+	
+	# Domain invariants: ensure data is not null
+	if data == null:
+		push_error("Message data cannot be null")
+		data = {}
+	
+	# Generate domain identity (content-based for value object equality)
+	_id = _generate_domain_id(type, data)
 	_type = type
 	_desc = desc
 	_data = data.duplicate(true)
+
+## Generate domain identity based on message content (value object pattern).
+## Two messages with identical type and data should have the same identity.
+func _generate_domain_id(type: String, data: Dictionary) -> String:
+	var data_hash = hash(data)
+	return "%s_%d" % [type, data_hash]
 
 ## Unique identifier for this message instance.
 func id() -> String:
@@ -57,23 +74,33 @@ func to_dict() -> Dictionary:
 		"data": _data.duplicate(true)
 	}
 
-## Check if this message equals another (by ID).
+## Check if this message equals another (content-based equality for value objects).
+## Two messages are equal if they have the same type and data.
 func equals(other: Message) -> bool:
-	return other != null and other.id() == _id
+	if other == null:
+		return false
+	return _type == other._type and _data == other._data
 
-## Hash value for use in dictionaries/sets.
+## Hash value for use in dictionaries/sets (content-based).
 func hash() -> int:
-	return _id.hash()
+	return _type.hash() ^ _data.hash()
 
-## Get the class name for type identification (used by MessageBus).
-## Subclasses should override this to return their class_name.
-func get_class_name() -> StringName:
-	var script = get_script()
-	if script != null:
-		var path = script.resource_path
-		if path != "":
-			return StringName(path.get_file().get_basename())
-	return StringName(get_class())
+## Check if this message is valid (has required domain invariants).
+func is_valid() -> bool:
+	return not _type.is_empty()
+
+## Check if this message has data payload.
+func has_data() -> bool:
+	return not _data.is_empty()
+
+## Get a specific data value by key.
+## Returns default value if key doesn't exist.
+func get_data_value(key: String, default = null):
+	return _data.get(key, default)
+
+## Check if this message has a specific data key.
+func has_data_key(key: String) -> bool:
+	return _data.has(key)
 
 ## Static factory method.
 static func create(type: String, data: Dictionary = {}, desc: String = "") -> Message:
