@@ -2,7 +2,7 @@
 
 A lightweight, type-safe messaging system with commands and events for decoupling game components.
 
-> **Architecture**: This system follows Domain-Driven Design (DDD) principles. See [DDD_STRUCTURE.md](DDD_STRUCTURE.md) for architectural details.
+> **Architecture**: This system follows Domain-Driven Design (DDD) principles with clear layer separation (Domain/Infrastructure/Application).
 
 ## Quick Start
 
@@ -225,10 +225,12 @@ event_bus.set_collect_errors(true)
 - `command_bus.gd` - Command bus implementation (single handler dispatch, extends MessageBus)
 - `event_bus.gd` - Event bus implementation (multi-subscriber publish, extends MessageBus)
 
-> **Note**: This structure follows Domain-Driven Design (DDD) principles. See [DDD_STRUCTURE.md](DDD_STRUCTURE.md) for architectural details.
+> **Note**: This structure follows Domain-Driven Design (DDD) principles:
+> - **Domain Layer**: Pure business concepts (Message, Command, Event, domain services)
+> - **Infrastructure Layer**: Technical implementation (MessageBus, type resolution)
+> - **Application Layer**: Use cases and orchestration (CommandBus, EventBus)
 
 ## See Also
 
-- [Design Documentation](../../DESIGN.md) - Architecture and design decisions
 - [Examples](../../src/examples/) - Usage examples and tests
 
