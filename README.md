@@ -1,9 +1,9 @@
 # Godot Snips
 
-Personal code snippets for **Godot 4.5.1+** game projects—reusable patterns for prototyping and gameplay development.
+Code snippets for Godot 4.5.1+ game development.
 
 ## Messaging System
 
-A lightweight, type-safe messaging system with commands and events for decoupling game components.
+Commands and events for decoupling game components.
 
-> 📖 **Full Documentation**: See [messaging/README.md](messaging/README.md) for complete usage guide, API reference, and examples.
+See [messaging/README.md](messaging/README.md) for full documentation and examples.
