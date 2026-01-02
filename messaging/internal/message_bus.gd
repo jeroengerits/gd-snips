@@ -1,5 +1,7 @@
 const MessageTypeResolver = preload("res://messaging/internal/message_type_resolver.gd")
 const SubscriptionRules = preload("res://messaging/rules/subscription_rules.gd")
+const CollectionUtils = preload("res://utilities/collection_utils.gd")
+const MetricsUtils = preload("res://messaging/utilities/metrics_utils.gd")
 
 extends RefCounted
 ## Generic message bus core supporting different delivery semantics.
@@ -142,10 +144,7 @@ func get_metrics(message_type) -> Dictionary:
 	
 	var m: Dictionary = _metrics[key]
 	var result: Dictionary = m.duplicate()
-	if m.count > 0:
-		result.avg_time = m.total_time / m.count
-	else:
-		result.avg_time = 0.0
+	result.avg_time = MetricsUtils.calculate_average_time(m)
 	return result
 
 ## Get all performance metrics.
@@ -157,10 +156,7 @@ func get_all_metrics() -> Dictionary:
 	for key in _metrics.keys():
 		var m: Dictionary = _metrics[key]
 		var metrics_dict: Dictionary = m.duplicate()
-		if m.count > 0:
-			metrics_dict.avg_time = m.total_time / m.count
-		else:
-			metrics_dict.avg_time = 0.0
+		metrics_dict.avg_time = MetricsUtils.calculate_average_time(m)
 		result[key] = metrics_dict
 	return result
 
@@ -192,7 +188,7 @@ func _record_metrics(key: StringName, elapsed_time: float) -> void:
 		return
 	
 	if not _metrics.has(key):
-		_metrics[key] = {"count": 0, "total_time": 0.0, "min_time": INF, "max_time": 0.0}
+		_metrics[key] = MetricsUtils.create_empty_metrics()
 	
 	var m: Dictionary = _metrics[key]
 	m.count += 1
@@ -243,8 +239,7 @@ func unsubscribe_by_id(message_type, sub_id: int) -> bool:
 	var index: int = subs.find(func(s): return s.id == sub_id)
 	if index >= 0:
 		subs.remove_at(index)
-		if subs.is_empty():
-			_subscriptions.erase(key)
+		CollectionUtils.cleanup_empty_key(subs, _subscriptions, key)
 		if _verbose:
 			print("[MessageBus] Unsubscribed from ", key, " (id=", sub_id, ")")
 		return true
@@ -270,8 +265,7 @@ func unsubscribe(message_type, handler: Callable) -> int:
 		subs.remove_at(i)
 		removed += 1
 	
-	if subs.is_empty():
-		_subscriptions.erase(key)
+	CollectionUtils.cleanup_empty_key(subs, _subscriptions, key)
 	
 	if _verbose and removed > 0:
 		print("[MessageBus] Unsubscribed ", removed, " subscription(s) from ", key)
@@ -298,8 +292,8 @@ func _cleanup_invalid_subscriptions(key: StringName, subs: Array) -> void:
 	for i in to_remove:
 		subs.remove_at(i)
 	
-	if subs.is_empty() and to_remove.size() > 0:
-		_subscriptions.erase(key)
+	if to_remove.size() > 0:
+		CollectionUtils.cleanup_empty_key(subs, _subscriptions, key)
 
 ## Clear all subscriptions for a message type.
 func clear_type(message_type) -> void:
@@ -349,5 +343,4 @@ func _mark_for_removal(key: StringName, sub: Subscription) -> void:
 	var index: int = subs.find(sub)
 	if index >= 0:
 		subs.remove_at(index)
-		if subs.is_empty():
-			_subscriptions.erase(key)
+		CollectionUtils.cleanup_empty_key(subs, _subscriptions, key)
