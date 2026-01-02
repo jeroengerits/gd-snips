@@ -4,6 +4,6 @@ A collection of packages and utilities for tinkering with Godot 4.5.1+.
 
 ## Messaging System
 
-A lightweight, type-safe messaging system with commands and events for decoupling game components.
+[messaging/README.md](messaging/README.md) 
 
-See [messaging/README.md](messaging/README.md) for documentation and examples.
+A lightweight, type-safe messaging system with commands and events for decoupling game components.
