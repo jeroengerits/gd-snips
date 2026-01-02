@@ -79,13 +79,20 @@ event_bus.publish(evt)
 ### Project Structure
 
 ```
-src/core/
-  message.gd       # Base message class
-  command.gd       # Command messages
-  event.gd         # Event messages
-  message_bus.gd   # Base message bus class
-  command_bus.gd   # Command bus (extends MessageBus)
-  event_bus.gd     # Event bus (extends MessageBus)
+core/                    # Generic, reusable core files
+  message.gd            # Base message class
+  command.gd            # Command messages
+  event.gd              # Event messages
+  message_bus.gd        # Base message bus class
+  command_bus.gd        # Command bus (extends MessageBus)
+  event_bus.gd          # Event bus (extends MessageBus)
+
+src/                     # Game-specific files
+  move_player_command.gd      # Example command
+  enemy_died_event.gd         # Example event
+  examples/                   # Usage examples and tests
+    main_example.gd
+    test_messaging.gd
 ```
 
 ## Usage

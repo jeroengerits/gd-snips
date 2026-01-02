@@ -65,6 +65,16 @@ func equals(other: Message) -> bool:
 func hash() -> int:
 	return _id.hash()
 
+## Get the class name for type identification (used by MessageBus).
+## Subclasses should override this to return their class_name.
+func get_class_name() -> StringName:
+	var script = get_script()
+	if script != null:
+		var path = script.resource_path
+		if path != "":
+			return StringName(path.get_file().get_basename())
+	return StringName(get_class())
+
 ## Static factory method.
 static func create(type: String, data: Dictionary = {}, desc: String = "") -> Message:
 	return Message.new(type, data, desc)
