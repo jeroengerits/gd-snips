@@ -4,7 +4,7 @@ Personal code snippets for **Godot 4.5.1+** game projects—handy scripts, exper
 
 ## Overview
 
-This repository contains a private collection of code snippets, utility scripts, and reusable patterns.
+This repository contains a collection of code snippets, utility scripts, and reusable patterns.
 
 ## Contents
 
