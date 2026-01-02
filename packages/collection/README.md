@@ -7,20 +7,20 @@ A fluent, object-oriented wrapper for working with arrays, inspired by Laravel's
 **Import the Collection class:**
 
 ```gdscript
-const Collection = preload("res://collection/collection.gd")
+const Collection = preload("res://packages/collection/collection.gd")
 ```
 
 **Or use the package barrel file:**
 
 ```gdscript
-const CollectionPackage = preload("res://collection/collection_package.gd")
+const CollectionPackage = preload("res://packages/collection/collection_package.gd")
 var collection = CollectionPackage.Collection.new([1, 2, 3])
 ```
 
 **Basic Usage:**
 
 ```gdscript
-const Collection = preload("res://collection/collection.gd")
+const Collection = preload("res://packages/collection/collection.gd")
 
 # Create a collection
 var collection = Collection.new([1, 2, 3, 4, 5])
@@ -95,7 +95,7 @@ collection.push(4)  # Modifies my_array directly
 Common pattern for managing arrays in dictionaries (caches, registries, subscriptions):
 
 ```gdscript
-const Collection = preload("res://collection/collection.gd")
+const Collection = preload("res://packages/collection/collection.gd")
 
 var subscriptions: Dictionary = {}
 var listeners: Array = []

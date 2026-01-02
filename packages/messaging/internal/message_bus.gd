@@ -1,7 +1,7 @@
-const MessageTypeResolver = preload("res://messaging/internal/message_type_resolver.gd")
-const SubscriptionRules = preload("res://messaging/rules/subscription_rules.gd")
-const Collection = preload("res://collection/collection.gd")
-const MetricsUtils = preload("res://messaging/utilities/metrics_utils.gd")
+const MessageTypeResolver = preload("res://packages/messaging/internal/message_type_resolver.gd")
+const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
+const Collection = preload("res://packages/collection/collection.gd")
+const MetricsUtils = preload("res://packages/messaging/utilities/metrics_utils.gd")
 
 extends RefCounted
 ## Generic message bus core supporting different delivery semantics.

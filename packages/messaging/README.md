@@ -73,7 +73,7 @@ Publish Event → EventBus → Listener 1 → Listener 2 → ... → Listener N
 **Import the messaging library:**
 
 ```gdscript
-const Messaging = preload("res://messaging/messaging.gd")
+const Messaging = preload("res://packages/messaging/messaging.gd")
 ```
 
 **Create Instances of CommandBus and EventBus:**

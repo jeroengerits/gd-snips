@@ -14,4 +14,4 @@ These utilities are domain-agnostic and designed for reuse. Package-specific uti
 
 - [Messaging Package](../messaging/README.md) - Uses Collection internally
 - [Collection Package](../collection/README.md) - Fluent array wrapper
-- [Developer Diary: Utility Extraction](../docs/developer-diary/2026-01-03-utility-extraction-refactoring.md) - Background on utility design
+- [Developer Diary: Utility Extraction](../../docs/developer-diary/2026-01-03-utility-extraction-refactoring.md) - Background on utility design

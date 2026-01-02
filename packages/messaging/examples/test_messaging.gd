@@ -10,7 +10,7 @@ extends Node
 ## - One-shot listener
 ## - Error isolation
 
-const Messaging = preload("res://messaging/messaging.gd")
+const Messaging = preload("res://packages/messaging/messaging.gd")
 
 var command_bus: Messaging.CommandBus
 var event_bus: Messaging.EventBus

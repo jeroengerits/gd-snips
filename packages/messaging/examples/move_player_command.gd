@@ -1,4 +1,4 @@
-const Messaging = preload("res://messaging/messaging.gd")
+const Messaging = preload("res://packages/messaging/messaging.gd")
 
 extends Messaging.Command
 class_name MovePlayerCommand

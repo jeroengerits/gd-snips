@@ -1,7 +1,7 @@
-const MessageBus = preload("res://messaging/internal/message_bus.gd")
-const SubscriptionRules = preload("res://messaging/rules/subscription_rules.gd")
-const Event = preload("res://messaging/types/event.gd")
-const Collection = preload("res://collection/collection.gd")
+const MessageBus = preload("res://packages/messaging/internal/message_bus.gd")
+const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
+const Event = preload("res://packages/messaging/types/event.gd")
+const Collection = preload("res://packages/collection/collection.gd")
 
 extends MessageBus
 class_name EventBus
@@ -18,7 +18,7 @@ class_name EventBus
 ## you need to wait for completion.
 ##
 ## Usage:
-##   const Messaging = preload("res://messaging/messaging.gd")
+##   const Messaging = preload("res://packages/messaging/messaging.gd")
 ##   var bus = Messaging.EventBus.new()
 ##   bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 ##       update_score(evt.points)
