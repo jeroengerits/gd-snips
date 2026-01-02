@@ -18,3 +18,38 @@ Lightweight, type-safe messaging system with commands and events for decoupling 
 - ✅ **Best Practices** — Follows Godot style guide and conventions
 
 **[📖 Documentation →](messaging/README.md)**
+
+## 🛠️ Shared Utilities
+
+The project includes shared utility functions that can be used across packages:
+
+- **`utilities/collection_utils.gd`** — Generic array and dictionary manipulation utilities
+  - Cleanup patterns for managing collections in dictionaries
+  - Safe array removal with automatic key cleanup
+
+These utilities are designed to be reusable across different packages in this collection.
+
+## 📚 Project Structure
+
+```
+gd-snips/
+├── messaging/          # Messaging system package
+│   ├── buses/         # CommandBus and EventBus implementations
+│   ├── examples/      # Usage examples and tests
+│   ├── internal/      # Internal implementation details
+│   ├── rules/         # Domain rules (CommandRules, SubscriptionRules)
+│   ├── types/         # Message base classes (Message, Command, Event)
+│   └── utilities/     # Messaging-specific utilities
+├── utilities/         # Shared utilities (used across packages)
+└── docs/              # Developer documentation
+    └── developer-diary/  # Development notes and insights
+```
+
+## 📝 Developer Diary
+
+Development insights and architectural decisions are documented in the [developer diary](docs/developer-diary/):
+
+- [Naming Refactoring & Architecture Deep Dive](docs/developer-diary/2026-01-02-naming-and-architecture-deep-dive.md)
+- [Utility Extraction Refactoring](docs/developer-diary/2026-01-03-utility-extraction-refactoring.md)
+
+These entries document the thought process behind design decisions and refactoring work.
