@@ -12,7 +12,7 @@ A high-performance, type-safe messaging framework that rigorously separates acti
 
 ## Utilities
 
-Shared utility functions for use across packages. Domain-agnostic helpers for common patterns.
+A fluent Collection class for working with arrays, plus domain-agnostic helpers for common patterns.
 
 **[Documentation →](utilities/README.md)**
 
