@@ -14,16 +14,17 @@ A lightweight messaging system with commands and events. All messages are immuta
 ### Quick Start
 
 ```gdscript
-# Create a message bus
-var bus = Bus.create()
+# Create command and event buses
+var command_bus = CommandBus.create()
+var event_bus = EventBus.create()
 
 # Register a command handler
-bus.handle("deal_damage", func(cmd: Command):
+command_bus.handle("deal_damage", func(cmd: Command):
     print("Dealt ", cmd.data()["amount"], " damage")
 )
 
 # Subscribe to events
-bus.on("damage_dealt", func(evt: Event):
+event_bus.on("damage_dealt", func(evt: Event):
     print("Damage was dealt: ", evt.description())
 )
 
@@ -31,8 +32,8 @@ bus.on("damage_dealt", func(evt: Event):
 var cmd = Command.create("deal_damage", {"amount": 10})
 var evt = Event.create("damage_dealt", {"amount": 10}, "Player took damage")
 
-bus.send(cmd)
-bus.emit(evt)
+command_bus.send(cmd)
+event_bus.emit(evt)
 ```
 
 ### Commands vs Events
@@ -57,24 +58,29 @@ bus.emit(evt)
 - `equals(other: Message) -> bool` - Equality by ID
 - `static create(type, data, desc)` - Factory method
 
-**Bus class**:
+**CommandBus class**:
 - `handle(type, fn)` - Register command handler
 - `unregister_handler(type)` - Remove command handler
+- `send(cmd)` - Dispatch command (returns result)
+- `clear()` - Clear all handlers
+- `static create()` - Factory method
+
+**EventBus class**:
 - `on(type, fn)` - Subscribe to event type
 - `off(type, fn)` - Unsubscribe from event type
-- `send(cmd)` - Dispatch command (returns result)
 - `emit(evt)` - Publish event to all subscribers
-- `clear()` - Clear all handlers and subscribers
+- `clear()` - Clear all subscribers
 - `static create()` - Factory method
 
 ### Project Structure
 
 ```
 src/core/
-  message.gd    # Base message class
-  command.gd    # Command messages
-  event.gd      # Event messages
-  bus.gd        # Message bus
+  message.gd       # Base message class
+  command.gd       # Command messages
+  event.gd         # Event messages
+  command_bus.gd   # Command bus
+  event_bus.gd     # Event bus
 ```
 
 ## Usage

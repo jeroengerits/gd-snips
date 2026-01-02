@@ -1,21 +1,12 @@
 extends Node
-class_name Bus
+class_name EventBus
 
-## Message bus for dispatching commands and events.
+## Event bus for publishing events.
 ##
-## Register handlers for commands and subscribers for events, then dispatch/publish messages.
+## Register subscribers for events, then publish messages.
 ## Can be used as an autoload singleton or instantiated as needed.
 
-var _handlers: Dictionary = {}
 var _subscribers: Dictionary = {}
-
-## Register a handler for a command type.
-func handle(type: String, fn: Callable) -> void:
-	_handlers[type] = fn
-
-## Unregister a command handler.
-func unregister_handler(type: String) -> void:
-	_handlers.erase(type)
 
 ## Register a subscriber for an event type.
 func on(type: String, fn: Callable) -> void:
@@ -30,25 +21,17 @@ func off(type: String, fn: Callable) -> void:
 		if _subscribers[type].is_empty():
 			_subscribers.erase(type)
 
-## Dispatch a command to its handler.
-func send(cmd: Command):
-	var fn = _handlers.get(cmd.type())
-	if fn != null:
-		return fn.call(cmd)
-	return null
-
 ## Publish an event to all subscribers.
 func emit(evt: Event) -> void:
 	var subs = _subscribers.get(evt.type(), [])
 	for sub in subs:
 		sub.call(evt)
 
-## Clear all handlers and subscribers.
+## Clear all subscribers.
 func clear() -> void:
-	_handlers.clear()
 	_subscribers.clear()
 
 ## Static factory method.
-static func create() -> Bus:
-	return Bus.new()
+static func create() -> EventBus:
+	return EventBus.new()
 
