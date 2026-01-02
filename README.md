@@ -1,10 +1,11 @@
 # Godot Snips
 
-Personal code snippets for **Godot+** game projects, reusable patterns and contracts for prototyping and gameplay development.
+Personal code snippets for **Godot 4.5.1+** game projects—reusable patterns and contracts for prototyping and gameplay development.
 
 ## Requirements
 
 - Godot Engine **4.5.1** or later
+- GDScript knowledge
 
 ## Usage
 
