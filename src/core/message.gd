@@ -37,7 +37,7 @@ func type() -> String:
 	return _type
 
 ## Human-readable description for debugging.
-func desc() -> String:
+func description() -> String:
 	return _desc
 
 ## Message payload data as a dictionary.
@@ -45,11 +45,11 @@ func data() -> Dictionary:
 	return _data.duplicate(true)
 
 ## String representation for debugging.
-func txt() -> String:
+func to_string() -> String:
 	return "[Message id=%s type=%s desc=%s data=%s]" % [_id, _type, _desc, _data]
 
 ## Serialize message to dictionary.
-func dict() -> Dictionary:
+func to_dict() -> Dictionary:
 	return {
 		"id": _id,
 		"type": _type,
@@ -58,7 +58,7 @@ func dict() -> Dictionary:
 	}
 
 ## Check if this message equals another (by ID).
-func eq(other: Message) -> bool:
+func equals(other: Message) -> bool:
 	return other != null and other.id() == _id
 
 ## Hash value for use in dictionaries/sets.

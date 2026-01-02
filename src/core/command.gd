@@ -7,8 +7,8 @@ class_name Command
 ## Typically handled by a single handler and may return results.
 
 ## String representation for debugging.
-func txt() -> String:
-	return "[Command id=%s type=%s desc=%s data=%s]" % [id(), type(), desc(), data()]
+func to_string() -> String:
+	return "[Command id=%s type=%s desc=%s data=%s]" % [id(), type(), description(), data()]
 
 ## Static factory method.
 static func create(type: String, data: Dictionary = {}, desc: String = "") -> Command:

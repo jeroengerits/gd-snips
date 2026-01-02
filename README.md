@@ -59,18 +59,18 @@ All message classes provide:
 
 - `id() -> String` - Unique identifier
 - `type() -> String` - Message type
-- `desc() -> String` - Optional description
+- `description() -> String` - Optional description
 - `data() -> Dictionary` - Message payload (returns deep copy)
-- `txt() -> String` - Debug representation
-- `dict() -> Dictionary` - Serialization
-- `eq(other: Message) -> bool` - Equality by ID
+- `to_string() -> String` - Debug representation
+- `to_dict() -> Dictionary` - Serialization
+- `equals(other: Message) -> bool` - Equality by ID
 - `hash() -> int` - Hash for dictionaries/sets
 - `static create(type, data, desc)` - Factory method (returns Message/Command/Event based on class)
 
 ### Bus API
 
 - `handle(type, fn)` - Register handler for command type
-- `unhandle(type)` - Remove command handler
+- `unregister_handler(type)` - Remove command handler
 - `on(type, fn)` - Subscribe to event type
 - `off(type, fn)` - Unsubscribe from event type
 - `send(cmd)` - Dispatch command to handler (returns result)

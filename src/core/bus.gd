@@ -7,28 +7,28 @@ class_name Bus
 ## Can be used as an autoload singleton or instantiated as needed.
 
 var _handlers: Dictionary = {}
-var _subs: Dictionary = {}
+var _subscribers: Dictionary = {}
 
 ## Register a handler for a command type.
 func handle(type: String, fn: Callable) -> void:
 	_handlers[type] = fn
 
 ## Unregister a command handler.
-func unhandle(type: String) -> void:
+func unregister_handler(type: String) -> void:
 	_handlers.erase(type)
 
 ## Register a subscriber for an event type.
 func on(type: String, fn: Callable) -> void:
-	if not _subs.has(type):
-		_subs[type] = []
-	_subs[type].append(fn)
+	if not _subscribers.has(type):
+		_subscribers[type] = []
+	_subscribers[type].append(fn)
 
 ## Unregister an event subscriber.
 func off(type: String, fn: Callable) -> void:
-	if _subs.has(type):
-		_subs[type].erase(fn)
-		if _subs[type].is_empty():
-			_subs.erase(type)
+	if _subscribers.has(type):
+		_subscribers[type].erase(fn)
+		if _subscribers[type].is_empty():
+			_subscribers.erase(type)
 
 ## Dispatch a command to its handler.
 func send(cmd: Command):
@@ -39,14 +39,14 @@ func send(cmd: Command):
 
 ## Publish an event to all subscribers.
 func emit(evt: Event) -> void:
-	var subs = _subs.get(evt.type(), [])
+	var subs = _subscribers.get(evt.type(), [])
 	for sub in subs:
 		sub.call(evt)
 
 ## Clear all handlers and subscribers.
 func clear() -> void:
 	_handlers.clear()
-	_subs.clear()
+	_subscribers.clear()
 
 ## Static factory method.
 static func create() -> Bus:
