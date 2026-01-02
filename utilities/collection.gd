@@ -8,8 +8,8 @@ class_name Collection
 ##
 ## Usage:
 ##   var collection = Collection.new([1, 2, 3, 4, 5])
-##   var evens = collection.filter(func(item): return item % 2 == 0).to_array()
-##   var doubled = collection.map(func(item): return item * 2).to_array()
+##   var evens = collection.filter(func(item): return item % 2 == 0).array()
+##   var doubled = collection.map(func(item): return item * 2).array()
 
 var _items: Array = []
 
@@ -24,7 +24,7 @@ func _init(items: Array = [], copy: bool = true) -> void:
 		_items = items
 
 ## Get the underlying array.
-func to_array() -> Array:
+func array() -> Array:
 	return _items.duplicate()
 
 ## Get the number of items in the collection.
@@ -32,11 +32,11 @@ func count() -> int:
 	return _items.size()
 
 ## Check if the collection is empty.
-func is_empty() -> bool:
+func empty() -> bool:
 	return _items.is_empty()
 
 ## Check if the collection is not empty.
-func is_not_empty() -> bool:
+func not_empty() -> bool:
 	return not _items.is_empty()
 
 ## Get the first item in the collection.
@@ -69,7 +69,7 @@ func contains(value) -> bool:
 ## Check if the collection contains any of the given values.
 ##
 ## [code]values[/code]: Array of values to check
-func contains_any(values: Array) -> bool:
+func any(values: Array) -> bool:
 	for value in values:
 		if _items.has(value):
 			return true
@@ -78,7 +78,7 @@ func contains_any(values: Array) -> bool:
 ## Check if the collection contains all of the given values.
 ##
 ## [code]values[/code]: Array of values to check
-func contains_all(values: Array) -> bool:
+func all(values: Array) -> bool:
 	for value in values:
 		if not _items.has(value):
 			return false
@@ -184,7 +184,7 @@ func remove(value) -> Collection:
 ##
 ## [code]indices[/code]: Array of indices to remove
 ## Returns: Self for method chaining
-func remove_at_indices(indices: Array) -> Collection:
+func remove_at(indices: Array) -> Collection:
 	if indices.is_empty():
 		return self
 	
@@ -213,7 +213,7 @@ func clear() -> Collection:
 func merge(other) -> Collection:
 	var merged: Array = _items.duplicate()
 	if other is Collection:
-		merged.append_array(other.to_array())
+		merged.append_array(other.array())
 	elif other is Array:
 		merged.append_array(other)
 	return Collection.new(merged)
@@ -289,7 +289,7 @@ func chunk(size: int) -> Collection:
 ## [code]dict[/code]: Dictionary that may need key erased
 ## [code]key[/code]: Key to erase from dict if collection is empty
 ## Returns: Self for method chaining
-func cleanup_empty_key(dict: Dictionary, key) -> Collection:
+func cleanup(dict: Dictionary, key) -> Collection:
 	if _items.is_empty():
 		dict.erase(key)
 	return self
@@ -300,9 +300,9 @@ func cleanup_empty_key(dict: Dictionary, key) -> Collection:
 ## [code]dict[/code]: Dictionary that may need key erased
 ## [code]key[/code]: Key to erase from dict if collection becomes empty
 ## Returns: Self for method chaining
-func remove_and_cleanup_key(indices: Array, dict: Dictionary, key) -> Collection:
-	remove_at_indices(indices)
-	cleanup_empty_key(dict, key)
+func remove_cleanup(indices: Array, dict: Dictionary, key) -> Collection:
+	remove_at(indices)
+	cleanup(dict, key)
 	return self
 
 ## Convert collection to string representation.

@@ -112,7 +112,7 @@ func remove_middleware(middleware_id: int) -> bool:
 			pre_to_remove.append(i)
 	
 	if pre_to_remove.size() > 0:
-		pre_collection.remove_at_indices(pre_to_remove)
+		pre_collection.remove_at(pre_to_remove)
 		removed = true
 		if _verbose:
 			print("[MessageBus] Removed pre-middleware (id=", middleware_id, ")")
@@ -125,7 +125,7 @@ func remove_middleware(middleware_id: int) -> bool:
 			post_to_remove.append(i)
 	
 	if post_to_remove.size() > 0:
-		post_collection.remove_at_indices(post_to_remove)
+		post_collection.remove_at(post_to_remove)
 		removed = true
 		if _verbose:
 			print("[MessageBus] Removed post-middleware (id=", middleware_id, ")")
@@ -251,7 +251,7 @@ func unsubscribe_by_id(message_type, sub_id: int) -> bool:
 	var subs: Array = _subscriptions[key]
 	var index: int = subs.find(func(s): return s.id == sub_id)
 	if index >= 0:
-		Collection.new(subs, false).remove_at_indices([index]).cleanup_empty_key(_subscriptions, key)
+		Collection.new(subs, false).remove_at([index]).cleanup(_subscriptions, key)
 		if _verbose:
 			print("[MessageBus] Unsubscribed from ", key, " (id=", sub_id, ")")
 		return true
@@ -273,7 +273,7 @@ func unsubscribe(message_type, handler: Callable) -> int:
 		if sub.callable == handler:
 			to_remove.append(i)
 	
-	Collection.new(subs, false).remove_at_indices(to_remove).cleanup_empty_key(_subscriptions, key)
+	Collection.new(subs, false).remove_at(to_remove).cleanup(_subscriptions, key)
 	removed = to_remove.size()
 	
 	if _verbose and removed > 0:
@@ -299,7 +299,7 @@ func _cleanup_invalid_subscriptions(key: StringName, subs: Array) -> void:
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		Collection.new(subs, false).remove_at_indices(to_remove).cleanup_empty_key(_subscriptions, key)
+		Collection.new(subs, false).remove_at(to_remove).cleanup(_subscriptions, key)
 
 ## Clear all subscriptions for a message type.
 func clear_type(message_type) -> void:
@@ -348,4 +348,4 @@ func _mark_for_removal(key: StringName, sub: Subscription) -> void:
 	var subs: Array = _subscriptions.get(key, [])
 	var index: int = subs.find(sub)
 	if index >= 0:
-		Collection.new(subs, false).remove_at_indices([index]).cleanup_empty_key(_subscriptions, key)
+		Collection.new(subs, false).remove_at([index]).cleanup(_subscriptions, key)

@@ -19,27 +19,27 @@ const Collection = preload("res://utilities/collection.gd")
 var collection = Collection.new([1, 2, 3, 4, 5])
 
 # Filter items
-var evens = collection.filter(func(item): return item % 2 == 0).to_array()
+var evens = collection.filter(func(item): return item % 2 == 0).array()
 
 # Map items
-var doubled = collection.map(func(item): return item * 2).to_array()
+var doubled = collection.map(func(item): return item * 2).array()
 
 # Chain operations
-var result = collection.filter(func(x): return x > 2).map(func(x): return x * 2).to_array()
+var result = collection.filter(func(x): return x > 2).map(func(x): return x * 2).array()
 ```
 
 ### Common Methods
 
 **Querying:**
 - `count()` - Get the number of items
-- `is_empty()` / `is_not_empty()` - Check if collection is empty
+- `empty()` / `not_empty()` - Check if collection is empty
 - `first(default)` / `last(default)` - Get first/last item
 - `get(index, default)` - Get item at index
 - `contains(value)` - Check if collection contains value
-- `contains_any(values)` - Check if collection contains any of the given values
-- `contains_all(values)` - Check if collection contains all of the given values
+- `any(values)` - Check if collection contains any of the given values
+- `all(values)` - Check if collection contains all of the given values
 - `find(callback, default)` - Find first item matching callback
-- `to_array()` - Get the underlying array (returns a copy)
+- `array()` - Get the underlying array (returns a copy)
 
 **Transformation:**
 - `filter(callback)` - Filter items (returns new Collection)
@@ -61,13 +61,13 @@ var result = collection.filter(func(x): return x > 2).map(func(x): return x * 2)
 - `unshift(item)` - Add item to beginning
 - `shift()` - Remove and return first item
 - `remove(value)` - Remove item by value
-- `remove_at_indices(indices)` - Remove items at indices
+- `remove_at(indices)` - Remove items at indices
 - `clear()` - Clear all items
 - `merge(other)` - Merge with another collection or array
 
 **Dictionary Cleanup:**
-- `cleanup_empty_key(dict, key)` - Erase dict key if collection is empty
-- `remove_and_cleanup_key(indices, dict, key)` - Remove items and cleanup if empty
+- `cleanup(dict, key)` - Erase dict key if collection is empty
+- `remove_cleanup(indices, dict, key)` - Remove items and cleanup if empty
 
 ### Working with References
 
@@ -91,11 +91,11 @@ var listeners: Array = []
 
 # Remove a single item and cleanup if empty
 listeners.erase(listener)
-Collection.new(listeners, false).cleanup_empty_key(subscriptions, "my_event")
+Collection.new(listeners, false).cleanup(subscriptions, "my_event")
 
 # Remove multiple items and cleanup if empty
 var to_remove: Array = [0, 2]  # Indices to remove
-Collection.new(listeners, false).remove_and_cleanup_key(to_remove, subscriptions, "my_event")
+Collection.new(listeners, false).remove_cleanup(to_remove, subscriptions, "my_event")
 ```
 
 ## Design Principles
