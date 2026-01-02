@@ -11,7 +11,7 @@ Personal code snippets for **Godot 4.5.1+** game projects—reusable patterns an
 
 This repository contains reusable code snippets and patterns for Godot projects. More features will be added over time.
 
-### Message Bus System
+### Messaging
 
 A lightweight messaging system with concrete value objects for commands and events. All messages are immutable, reference-counted, and can be instantiated directly or extended for type safety.
 
@@ -28,8 +28,8 @@ var evt = Event.create("damage_dealt", {"amount": 10, "target": enemy})
 ### Architecture
 
 - **`Message`** - Base class for all messages (immutable value objects)
-- **`Command`** - Requests to perform actions (typically handled by single handler)
-- **`Event`** - Notifications that something happened (typically handled by multiple subscribers)
+    - **`Command`** - Requests to perform actions (typically handled by single handler)
+    - **`Event`** - Notifications that something happened (typically handled by multiple subscribers)
 
 ### When to Use Commands vs Events
 
