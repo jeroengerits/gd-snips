@@ -103,19 +103,32 @@ func add_middleware_post(callback: Callable, priority: int = 0) -> int:
 func remove_middleware(middleware_id: int) -> bool:
 	assert(middleware_id >= 0, "Middleware ID must be non-negative")
 	var removed: bool = false
-	for i in range(_middleware_pre.size() - 1, -1, -1):
-		if _middleware_pre[i].id == middleware_id:
-			_middleware_pre.remove_at(i)
-			removed = true
-			if _verbose:
-				print("[MessageBus] Removed pre-middleware (id=", middleware_id, ")")
 	
-	for i in range(_middleware_post.size() - 1, -1, -1):
+	# Use Collection to find and remove from pre-middleware
+	var pre_collection = Collection.new(_middleware_pre, false)
+	var pre_to_remove: Array = []
+	for i in range(_middleware_pre.size()):
+		if _middleware_pre[i].id == middleware_id:
+			pre_to_remove.append(i)
+	
+	if pre_to_remove.size() > 0:
+		pre_collection.remove_at_indices(pre_to_remove)
+		removed = true
+		if _verbose:
+			print("[MessageBus] Removed pre-middleware (id=", middleware_id, ")")
+	
+	# Use Collection to find and remove from post-middleware
+	var post_collection = Collection.new(_middleware_post, false)
+	var post_to_remove: Array = []
+	for i in range(_middleware_post.size()):
 		if _middleware_post[i].id == middleware_id:
-			_middleware_post.remove_at(i)
-			removed = true
-			if _verbose:
-				print("[MessageBus] Removed post-middleware (id=", middleware_id, ")")
+			post_to_remove.append(i)
+	
+	if post_to_remove.size() > 0:
+		post_collection.remove_at_indices(post_to_remove)
+		removed = true
+		if _verbose:
+			print("[MessageBus] Removed post-middleware (id=", middleware_id, ")")
 	
 	return removed
 

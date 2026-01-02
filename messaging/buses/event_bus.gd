@@ -1,6 +1,7 @@
 const MessageBus = preload("res://messaging/internal/message_bus.gd")
 const SubscriptionRules = preload("res://messaging/rules/subscription_rules.gd")
 const Event = preload("res://messaging/types/event.gd")
+const Collection = preload("res://utilities/collection.gd")
 
 extends MessageBus
 class_name EventBus
@@ -174,9 +175,11 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 		if SubscriptionRules.should_remove_after_delivery(sub.one_shot):
 			one_shots_to_remove.append({"key": key, "sub": sub})
 	
-	# Remove one-shot subscriptions after iteration
-	for item in one_shots_to_remove:
+	# Remove one-shot subscriptions after iteration using Collection
+	var one_shots_collection = Collection.new(one_shots_to_remove)
+	one_shots_collection.each(func(item: Dictionary):
 		super._mark_for_removal(item.key, item.sub)
+	)
 	
 	# Record overall metrics (if enabled, already recorded per-listener above)
 	var elapsed: float = (Time.get_ticks_msec() - start_time) / 1000.0
