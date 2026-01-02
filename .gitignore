@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Godot
+.import/
+export.cfg
+export_presets.cfg
+*.tmp
+*.bak
+*.swp
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build outputs
+*.a
+*.o
+*.so
+*.dylib
+
+# Temporary files
+*.log
+*.tmp
+
