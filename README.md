@@ -1,9 +1,23 @@
-# Godot Snips
+# 🎮 Godot Snips
 
-A collection of packages and utilities for tinkering with Godot 4.5.1+.
+> A personal collection of packages and utilities for tinkering with **Godot 4.5.1+**
 
-## Messaging System
+---
 
-[messaging/README.md](messaging/README.md) 
+## 📦 Packages
 
-A lightweight, type-safe messaging system with commands and events for decoupling game components.
+### 📨 Messaging
+
+Lightweight, type-safe messaging system with commands and events for decoupling game components.
+
+**Key Features:**
+
+- ✨ **Command Bus** — Single-handler routing with result returns
+- 🎯 **Event Bus** — Multi-subscriber support with priority ordering
+- 🔒 **Type-Safe** — Compile-time message type checking
+- ⚡ **Async Support** — Built-in async/await capabilities
+- 🎚️ **Priority System** — Control subscriber execution order
+
+**[📖 Full Documentation →](messaging/README.md)**
+
+---
