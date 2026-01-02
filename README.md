@@ -17,7 +17,7 @@ Lightweight, type-safe messaging system with commands and events for decoupling 
 - 📊 **Performance Metrics** — Built-in timing and counting for profiling
 - ✅ **Best Practices** — Follows Godot style guide and conventions
 
-**[📖 Documentation →](messaging/README.md)**
+**[📖 Messaging Docs →](messaging/README.md)**
 
 ## 🛠️ Shared Utilities
 
@@ -29,7 +29,7 @@ The project includes shared utility functions that can be used across packages:
 
 These utilities are designed to be reusable across different packages in this collection.
 
-**[📖 Utilities Documentation →](utilities/README.md)**
+**[📖 Utilities Docs →](utilities/README.md)**
 
 ## 📝 Developer Diary
 
