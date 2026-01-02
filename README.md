@@ -1,23 +1,23 @@
-# 🎮 Godot Snips
+# Godot Snips
 
-A personal collection of packages and utilities for tinkering with **Godot 4.5.1+**
+A curated collection of packages and utilities for **Godot 4.5.1+**, designed for modular game architecture and clean code practices.
 
-## 📦 Packages
+## Packages
 
-### 📨 Messaging
+### Messaging
 
-Lightweight, type-safe messaging system with commands and events for decoupling game components.
+A high-performance, type-safe messaging framework that rigorously separates actions (commands) from notifications (events).
 
-**[📖 Documentation →](messaging/README.md)**
+**[Documentation →](messaging/README.md)**
 
-## 🛠️ Utilities
+## Utilities
 
-Shared utility functions for use across packages.
+Shared utility functions for use across packages. Domain-agnostic helpers for common patterns.
 
-**[📖 Documentation →](utilities/README.md)**
+**[Documentation →](utilities/README.md)**
 
-## 📝 Developer Diary
+## Developer Diary
 
-Development insights and architectural decisions.
+Development insights, architectural decisions, and design rationale documented over time.
 
-**[📖 Developer Diary →](docs/developer-diary/)**
+**[Developer Diary →](docs/developer-diary/)**
