@@ -48,3 +48,7 @@ func clear() -> void:
 	_handlers.clear()
 	_subs.clear()
 
+## Static factory method.
+static func create() -> Bus:
+	return Bus.new()
+

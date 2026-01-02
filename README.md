@@ -23,7 +23,7 @@ var cmd = Command.create("deal_damage", {"amount": 10, "target": enemy})
 var evt = Event.create("damage_dealt", {"amount": 10, "target": enemy})
 
 # Setup bus
-var bus = Bus.new()
+var bus = Bus.create()
 bus.handle("deal_damage", func(cmd: Command): print("Dealt damage"))
 bus.on("damage_dealt", func(evt: Event): print("Damage was dealt"))
 
