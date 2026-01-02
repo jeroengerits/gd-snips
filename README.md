@@ -18,11 +18,18 @@ A lightweight messaging system with concrete value objects for commands and even
 ### Quick Start
 
 ```gdscript
-# Commands
+# Create messages
 var cmd = Command.create("deal_damage", {"amount": 10, "target": enemy})
-
-# Events
 var evt = Event.create("damage_dealt", {"amount": 10, "target": enemy})
+
+# Setup bus
+var bus = Bus.new()
+bus.register_command_handler("deal_damage", func(command: Command): print("Dealt damage"))
+bus.subscribe("damage_dealt", func(event: Event): print("Damage was dealt"))
+
+# Dispatch and publish
+bus.dispatch(cmd)
+bus.publish(evt)
 ```
 
 ### Architecture
@@ -30,6 +37,7 @@ var evt = Event.create("damage_dealt", {"amount": 10, "target": enemy})
 - **`Message`** - Base class for all messages (immutable value objects)
     - **`Command`** - Requests to perform actions (typically handled by single handler)
     - **`Event`** - Notifications that something happened (typically handled by multiple subscribers)
+- **`Bus`** - Message bus for dispatching commands and publishing events
 
 ### When to Use Commands vs Events
 
@@ -59,6 +67,16 @@ All message classes provide:
 - `hash() -> int` - Hash for dictionaries/sets
 - `static create(type, data, description)` - Factory method (returns Message/Command/Event based on class)
 
+### Bus API
+
+- `register_command_handler(type, handler)` - Register handler for command type
+- `unregister_command_handler(type)` - Remove command handler
+- `subscribe(type, subscriber)` - Subscribe to event type
+- `unsubscribe(type, subscriber)` - Unsubscribe from event type
+- `dispatch(command)` - Dispatch command to handler (returns result)
+- `publish(event)` - Publish event to all subscribers
+- `clear()` - Clear all handlers and subscribers
+
 ### Project Structure
 
 ```
@@ -67,6 +85,7 @@ src/
     message.gd    # Base message class
     command.gd    # Command messages
     event.gd      # Event messages
+    bus.gd        # Message bus for dispatching
 ```
 
 _More features coming soon..._
