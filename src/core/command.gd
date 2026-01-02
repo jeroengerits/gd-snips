@@ -1,24 +1,10 @@
 extends Message
 class_name Command
 
-## Concrete value object for command messages.
+## Command messages for imperative actions.
 ##
-## Commands represent requests to perform an action. They are typically handled
-## by a single handler and may return a result. Use commands for imperative
-## operations like "deal damage", "move player", or "open inventory".
-##
-## Can be instantiated directly or extended for specialized types.
-##
-## @example Direct instantiation:
-##   var cmd = Command.new("deal_damage", {"amount": 10, "target": enemy})
-##   var cmd2 = Command.create("move_player", {"direction": Vector2.UP})
-##
-## @example Subclassing:
-##   extends Command
-##   class_name DealDamageCommand
-##
-##   func _init(amount: int, target: Node) -> void:
-##       super._init("deal_damage", {"amount": amount, "target": target})
+## Use for requests to perform actions like "deal_damage", "move_player", "open_inventory".
+## Typically handled by a single handler and may return results.
 
 ## String representation for debugging.
 func to_string() -> String:

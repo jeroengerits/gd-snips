@@ -19,11 +19,11 @@ A lightweight messaging system with concrete value objects for commands and even
 
 ```gdscript
 # Commands - requests to perform actions
-var cmd = Command.new("deal_damage", {"amount": 10, "target": enemy})
+var cmd = Command.create("deal_damage", {"amount": 10, "target": enemy})
 var cmd2 = Command.create("move_player", {"direction": Vector2.UP})
 
 # Events - notifications that something happened
-var evt = Event.new("damage_dealt", {"amount": 10, "target": enemy})
+var evt = Event.create("damage_dealt", {"amount": 10, "target": enemy})
 var evt2 = Event.create("player_died", {"player": player_node}, "Player died")
 
 # Subclassing for type safety
