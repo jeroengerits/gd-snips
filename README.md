@@ -10,9 +10,15 @@ A high-performance, type-safe messaging framework that rigorously separates acti
 
 **[Documentation →](messaging/README.md)**
 
+### Collection
+
+A fluent, object-oriented wrapper for working with arrays, inspired by Laravel's Collection class. Provides method chaining and expressive syntax for common array operations.
+
+**[Documentation →](collection/README.md)**
+
 ## Utilities
 
-A fluent Collection class for working with arrays, plus domain-agnostic helpers for common patterns.
+Domain-agnostic helper utilities for common patterns.
 
 **[Documentation →](utilities/README.md)**
 
