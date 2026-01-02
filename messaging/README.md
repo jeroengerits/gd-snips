@@ -89,7 +89,7 @@ func _ready():
 
 - Use for: `EnemyDiedEvent`, `PlayerHealthChangedEvent`, `LevelCompletedEvent`
 - Zero or more listeners can subscribe
-- Fire-and-forget (no return values)
+- Fire-and-forget style (no return values, but may block briefly for async listeners)
 
 ## Creating Your Own Messages
 
@@ -211,7 +211,8 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 )
 
 # Error handling: GDScript has no try/catch, so listener errors will propagate
-# Enable error logging to log context before crashes occur
+# Enable error logging to log context (event type, subscription ID) before errors occur
+# Note: This does NOT collect or store errors - it only logs context for debugging
 event_bus.set_collect_errors(true)
 event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
 
@@ -256,8 +257,8 @@ const Messaging = preload("res://messaging/messaging.gd")
 **EventBus** (`Messaging.EventBus`):
 
 - `subscribe(event_type, listener: Callable, priority=0, one_shot=false, bound_object=null) -> int` - Subscribe to events
-- `publish(event: Event)` - Publish event (fire-and-forget, may block briefly for async listeners)
-- `publish_async(event: Event)` - Publish and await all async listeners
+- `publish(event: Event)` - Publish event (fire-and-forget style, but may block briefly for async listeners to prevent memory leaks)
+- `publish_async(event: Event)` - Publish and await all async listeners (explicitly waits for completion)
 - `unsubscribe(event_type, listener: Callable)` - Unsubscribe
 - `unsubscribe_by_id(event_type, sub_id: int)` - Unsubscribe by subscription ID
 - `get_listeners(event_type) -> Array` - Get all listeners for an event type
@@ -269,7 +270,7 @@ const Messaging = preload("res://messaging/messaging.gd")
 - `set_metrics_enabled(enabled: bool)` - Enable/disable performance metrics tracking
 - `get_metrics(event_type) -> Dictionary` - Get performance metrics for an event type
 - `get_all_metrics() -> Dictionary` - Get all performance metrics
-- `set_collect_errors(enabled: bool)` - Enable/disable error logging (logs context before crashes)
+- `set_collect_errors(enabled: bool)` - Enable/disable error logging (logs context before listener errors occur, does NOT collect/store errors)
 - `set_verbose(enabled: bool)` - Enable/disable verbose logging
 - `set_tracing(enabled: bool)` - Enable/disable message delivery tracing
 - `clear()` - Clear all subscribers
@@ -331,8 +332,9 @@ var listeners = event_bus.get_listeners(EnemyDiedEvent)
 for listener in listeners:
     print("Listener: ", listener)
 
-# Enable error logging (logs context before crashes)
-# Note: GDScript has no try/catch, so listener errors will still crash
+# Enable error logging (logs context before listener errors occur)
+# Note: This does NOT collect or store errors - it only logs context for debugging.
+# GDScript has no try/catch, so listener errors will still crash.
 event_bus.set_collect_errors(true)
 ```
 
@@ -340,7 +342,13 @@ event_bus.set_collect_errors(true)
 
 **Async Event Handling:**
 
-The `publish()` method is fire-and-forget for synchronous listeners, but async listeners are still awaited to prevent memory leaks. This means `publish()` may block briefly if listeners are async. For truly non-blocking behavior from a Node context, you can wrap the call:
+The `publish()` method is described as "fire-and-forget" because it doesn't return a result and doesn't explicitly wait for listeners to complete. However, async listeners are still awaited sequentially to prevent `GDScriptFunctionState` memory leaks. This means `publish()` may block briefly if listeners are async.
+
+**Key differences:**
+- `publish()` - Fire-and-forget style, but awaits async listeners to prevent leaks (may block briefly)
+- `publish_async()` - Explicitly waits for all async listeners to complete before returning
+
+For truly non-blocking behavior from a Node context, you can wrap the call:
 
 ```gdscript
 # From a Node: truly non-blocking publish
@@ -352,7 +360,9 @@ func _publish_event(bus: Messaging.EventBus, evt: Event) -> void:
 
 **Error Handling:**
 
-GDScript has no try/catch mechanism, so errors in event listeners will always propagate and crash. The `set_collect_errors()` method enables logging of context information before errors occur (helps with debugging). Ensure your listeners handle errors internally, or use defensive programming techniques.
+GDScript has no try/catch mechanism, so errors in event listeners will always propagate and crash. The `set_collect_errors()` method enables logging of context information (event type, subscription ID) before listener errors occur. This helps with debugging by showing which listener was being called when an error happened.
+
+**Important:** `set_collect_errors()` does NOT collect or store errors - it only logs context for debugging purposes. Errors will still crash the application. Ensure your listeners handle errors internally, or use defensive programming techniques.
 
 **Middleware:**
 
@@ -456,6 +466,7 @@ This messaging system follows Godot best practices:
 - Errors are logged with `push_error()` and warnings with `push_warning()`
 - Command errors are returned as `CommandError` objects (GDScript doesn't support exceptions)
 - Event listener errors will propagate (use defensive programming in listeners)
+- Use `set_collect_errors(true)` on EventBus to log context before listener errors occur (helps debugging, but does NOT prevent crashes)
 
 ### Code Organization
 - Follows Godot's naming conventions: `snake_case` for functions/variables, `PascalCase` for classes

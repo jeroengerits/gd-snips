@@ -8,8 +8,13 @@ class_name EventBus
 ## Event bus for publishing events with 0..N subscribers.
 ##
 ## Events represent notifications that something happened. Multiple subscribers
-## can listen to the same event type. Publish is fire-and-forget by default,
-## but can await async listeners if needed.
+## can listen to the same event type. 
+##
+## Note on publish() behavior: While publish() is described as "fire-and-forget",
+## it will still await async listeners to prevent memory leaks. This means
+## publish() may block briefly if listeners are async. For truly non-blocking
+## behavior from a Node context, use call_deferred() or publish_async() when
+## you need to wait for completion.
 ##
 ## Usage:
 ##   const Messaging = preload("res://messaging/messaging.gd")
@@ -21,9 +26,15 @@ class_name EventBus
 
 var _collect_errors: bool = false  # Optionally enable error logging
 
-## Enable error collection (logs error context before crashes).
-## Note: GDScript has no try/catch, so errors will still crash, but error
-## collection logs context information before the crash occurs.
+## Enable error logging (logs context before listener errors occur).
+##
+## Note: This does NOT collect or store errors - it only logs context information
+## (event type, subscription ID) before calling listeners. This helps with
+## debugging when errors occur, as you'll see which listener was being called.
+##
+## GDScript has no try/catch mechanism, so errors in listeners will still
+## propagate and crash. This method only provides better error context for
+## debugging purposes.
 func set_collect_errors(enabled: bool) -> void:
 	_collect_errors = enabled
 
@@ -76,12 +87,19 @@ func unsubscribe(event_type, listener: Callable) -> int:
 func unsubscribe_by_id(event_type, sub_id: int) -> bool:
 	return super.unsubscribe_by_id(event_type, sub_id)
 
-## Publish an event to all subscribers (fire-and-forget).
-## Listeners are called in priority order.
-## 
-## Note: Async listeners are still awaited to prevent memory leaks. This means
-## publish() may block briefly if listeners are async. For truly non-blocking
-## behavior, wrap the call: call_deferred("publish", evt) from a Node context.
+## Publish an event to all subscribers.
+##
+## This method is "fire-and-forget" in the sense that it doesn't return a result
+## and doesn't wait for listeners to complete (unlike publish_async()). However,
+## async listeners are still awaited sequentially to prevent GDScriptFunctionState
+## memory leaks. This means publish() may block briefly if listeners are async.
+##
+## Listeners are called in priority order (higher priority first).
+##
+## For truly non-blocking behavior from a Node context:
+##   call_deferred("_publish_event", event_bus, evt)
+##
+## If you need to wait for async listeners to complete, use publish_async() instead.
 func publish(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
@@ -130,7 +148,7 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 		var listener_start_time: int = Time.get_ticks_msec()
 		
 		# Call listener - errors will propagate (GDScript has no try/catch)
-		# Error collection logs context before errors crash
+		# Error logging provides context before errors crash (if enabled)
 		if _collect_errors:
 			# Log context before calling (helps debug if error occurs)
 			push_warning("[EventBus] Calling listener for event: %s (sub_id=%d)" % [key, sub.id])
@@ -143,8 +161,9 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 				# Await async listener completion
 				result = await result
 			else:
-				# Fire-and-forget: still await to prevent memory leaks
-				# Note: This causes brief blocking, but prevents GDScriptFunctionState leaks
+				# Fire-and-forget mode: still await to prevent memory leaks
+				# Note: This causes brief blocking, but prevents GDScriptFunctionState leaks.
+				# This is why publish() may block even though it's "fire-and-forget".
 				result = await result
 		
 		# Record metrics for this listener (if enabled)
