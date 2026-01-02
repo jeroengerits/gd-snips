@@ -19,8 +19,8 @@ A lightweight messaging system with concrete value objects for commands and even
 
 ```gdscript
 # Create messages
-var cmd = Command.create("deal_damage", {"amount": 10, "target": enemy})
-var evt = Event.create("damage_dealt", {"amount": 10, "target": enemy})
+var cmd = Command.create("deal_damage", {"amount": 10, "target": enemy}, "Deal 10 damage")
+var evt = Event.create("damage_dealt", {"amount": 10, "target": enemy}, "10 damage dealt")
 
 # Setup bus
 var bus = Bus.create()
@@ -30,6 +30,13 @@ bus.on("damage_dealt", func(evt: Event): print("Damage was dealt"))
 # Dispatch and publish
 bus.send(cmd)
 bus.emit(evt)
+
+# Working with messages
+print(cmd.description())  # "Deal 10 damage"
+print(cmd.to_string())    # "[Command id=... type=deal_damage ...]"
+var data = cmd.to_dict()  # Serialize to dictionary
+if cmd1.equals(cmd2):     # Compare messages
+    # ...
 ```
 
 ### Architecture
