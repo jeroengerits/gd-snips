@@ -8,7 +8,7 @@ extends Node
 ## - Dispatching commands and publishing events
 ## - Using priorities, one-shot subscriptions, and lifecycle binding
 
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 var command_bus: Messaging.CommandBus
 var event_bus: Messaging.EventBus

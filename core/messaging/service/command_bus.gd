@@ -1,6 +1,6 @@
-const MessageBus = preload("res://core/messaging/src/message_bus.gd")
-const CommandRules = preload("res://core/messaging/src/command_rules.gd")
-const Command = preload("res://core/messaging/src/command.gd")
+const MessageBus = preload("res://core/messaging/service/message_bus.gd")
+const CommandRules = preload("res://core/messaging/service/command_rules.gd")
+const Command = preload("res://core/messaging/object/command.gd")
 
 extends MessageBus
 class_name CoreMessagingCommandBus
@@ -12,7 +12,7 @@ class_name CoreMessagingCommandBus
 ## multiple handlers are registered.
 ##
 ## Usage:
-##   const Messaging = preload("res://core/messaging/messaging.gd")
+##   const Messaging = preload("res://core/messaging/api.gd")
 ##   var bus = Messaging.CommandBus.new()
 ##   bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
 ##       return move_player(cmd.target_position)

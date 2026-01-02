@@ -6,7 +6,7 @@ A lightweight, type-safe messaging system with commands and events for decouplin
 
 ```gdscript
 # Import the messaging API
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 # Create buses (instantiate directly)
 var command_bus = Messaging.CommandBus.new()
@@ -32,7 +32,7 @@ event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
 
 ```gdscript
 # Quick verification script (no scenes required)
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 # Create test command class
 extends Messaging.Command
@@ -93,7 +93,7 @@ func _ready():
 
 **Custom Command:**
 ```gdscript
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 extends Messaging.Command
 class_name DealDamageCommand
@@ -111,7 +111,7 @@ func _init(target_node: Node, damage: int) -> void:
 
 **Custom Event:**
 ```gdscript
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 extends Messaging.Event
 class_name PlayerDiedEvent
@@ -131,7 +131,7 @@ func _init(id: int, death_cause: String) -> void:
 
 **Command Bus - Handling Actions:**
 ```gdscript
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 # Setup (typically in _ready() or initialization)
 var command_bus: Messaging.CommandBus
@@ -154,7 +154,7 @@ if result is Messaging.CommandBus.CommandBusError:
 
 **Event Bus - Subscribing to Notifications:**
 ```gdscript
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 # Setup with priorities (higher priority listeners called first)
 var event_bus: Messaging.EventBus
@@ -178,7 +178,7 @@ func _on_enemy_died_cleanup(evt: EnemyDiedEvent) -> void:
 **Advanced Features:**
 
 ```gdscript
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 var command_bus = Messaging.CommandBus.new()
 var event_bus = Messaging.EventBus.new()
@@ -209,7 +209,7 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 
 **Import:**
 ```gdscript
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 ```
 
 **CommandBus** (`Messaging.CommandBus`):
@@ -264,7 +264,7 @@ const Messaging = preload("res://core/messaging/messaging.gd")
 ## Debugging & Inspection
 
 ```gdscript
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 var command_bus = Messaging.CommandBus.new()
 var event_bus = Messaging.EventBus.new()
@@ -311,7 +311,7 @@ The messaging system includes rules classes that encapsulate business rules:
 These rules make business rules explicit and testable. They're used internally by the buses but can be accessed directly if needed:
 
 ```gdscript
-const Messaging = preload("res://core/messaging/messaging.gd")
+const Messaging = preload("res://core/messaging/api.gd")
 
 # Access rules directly for testing or custom logic
 var validation = Messaging.CommandRules.validate_handler_count(handler_count)
@@ -334,22 +334,24 @@ if validation == Messaging.CommandRules.ValidationResult.VALID:
 ## Files
 
 **Entry Point**:
-- `messaging.gd` - Barrel entrypoint (import this to use the system)
+- `api.gd` - Barrel entrypoint (import this to use the system)
 
-**Source Files** (`src/`):
-- `command_bus.gd` - Command bus (class: `CoreMessagingCommandBus`)
-- `event_bus.gd` - Event bus (class: `CoreMessagingEventBus`)
+**Message Objects** (`object/`):
 - `message.gd` - Base message class (class: `CoreMessagingMessage`)
 - `command.gd` - Command base class (class: `CoreMessagingCommand`)
 - `event.gd` - Event base class (class: `CoreMessagingEvent`)
-- `command_rules.gd` - Command routing rules (class: `CommandRules`)
-- `subscription_rules.gd` - Subscription behavior rules (class: `SubscriptionRules`)
+
+**Services** (`service/`):
+- `command_bus.gd` - Command bus (class: `CoreMessagingCommandBus`)
+- `event_bus.gd` - Event bus (class: `CoreMessagingEventBus`)
 - `message_bus.gd` - Internal message bus implementation (no class_name)
 - `message_type_resolver.gd` - Internal type resolution (no class_name)
+- `command_rules.gd` - Command routing rules (class: `CommandRules`)
+- `subscription_rules.gd` - Subscription behavior rules (class: `SubscriptionRules`)
 
 > **Note**: 
-> - Only import from `messaging.gd` in your code
-> - `src/` files are implementation details and should not be imported directly
+> - Only import from `api.gd` in your code
+> - `object/` and `service/` files are implementation details and should not be imported directly
 > - All public classes use `CoreMessaging` prefix to avoid naming collisions across packages
 
 ## See Also
