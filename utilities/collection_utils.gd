@@ -3,6 +3,11 @@ extends RefCounted
 ##
 ## These utilities are shared across packages and can be used anywhere
 ## array/dictionary cleanup patterns are needed (caching, registries, collections).
+##
+## Note: These functions are now thin wrappers around the Collection class.
+## For new code, consider using Collection directly for a fluent API.
+
+const Collection = preload("res://utilities/collection.gd")
 
 ## Erase dictionary key if array is empty (helper for cleanup pattern).
 ##
@@ -13,8 +18,7 @@ extends RefCounted
 ## [code]dict[/code]: Dictionary that may need key erased
 ## [code]key[/code]: Key to erase from dict if array is empty
 static func cleanup_empty_key(array: Array, dict: Dictionary, key) -> void:
-	if array.is_empty():
-		dict.erase(key)
+	Collection.new(array, false).cleanup_empty_key(dict, key)
 
 ## Remove items from array at given indices, then erase dictionary key if array becomes empty.
 ##
@@ -26,19 +30,5 @@ static func cleanup_empty_key(array: Array, dict: Dictionary, key) -> void:
 ## [code]dict[/code]: Dictionary that may need key erased
 ## [code]key[/code]: Key to erase from dict if array becomes empty after removal
 static func remove_from_array_and_cleanup_key(array: Array, indices: Array, dict: Dictionary, key) -> void:
-	if indices.is_empty():
-		return
-	
-	# Sort indices in descending order for safe removal
-	var sorted_indices: Array = indices.duplicate()
-	sorted_indices.sort()
-	sorted_indices.reverse()
-	
-	# Remove items (from highest index to lowest to avoid index shifting issues)
-	for i in sorted_indices:
-		if i >= 0 and i < array.size():
-			array.remove_at(i)
-	
-	# Clean up dictionary key if array is now empty
-	cleanup_empty_key(array, dict, key)
+	Collection.new(array, false).remove_and_cleanup_key(indices, dict, key)
 
