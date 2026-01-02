@@ -1,6 +1,6 @@
-const MessageBus = preload("res://core/messaging/internal/message_bus.gd")
-const SubscriptionRules = preload("res://core/messaging/rules/subscription_rules.gd")
-const Event = preload("res://core/messaging/messages/event.gd")
+const MessageBus = preload("res://core/messaging/src/message_bus.gd")
+const SubscriptionRules = preload("res://core/messaging/src/subscription_rules.gd")
+const Event = preload("res://core/messaging/src/event.gd")
 
 extends MessageBus
 class_name CoreMessagingEventBus
@@ -12,7 +12,7 @@ class_name CoreMessagingEventBus
 ## but can await async listeners if needed.
 ##
 ## Usage:
-##   const Messaging = preload("res://core/messaging/api/messaging.gd")
+##   const Messaging = preload("res://core/messaging/messaging.gd")
 ##   var bus = Messaging.EventBus.new()
 ##   bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 ##       update_score(evt.points)

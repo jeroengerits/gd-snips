@@ -1,4 +1,4 @@
-const Message = preload("res://core/messaging/messages/message.gd")
+const Message = preload("res://core/messaging/src/message.gd")
 
 extends Message
 class_name CoreMessagingEvent
