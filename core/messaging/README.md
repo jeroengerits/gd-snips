@@ -166,10 +166,19 @@ command_bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
 
 **Message Base Classes:**
 - `Message`, `Command`, `Event` - Base classes for creating your own messages
-- `id() -> String` - Unique message identifier
+- `id() -> String` - Unique message identifier (content-based)
 - `type() -> String` - Message type string
 - `data() -> Dictionary` - Message payload (deep copy)
+- `is_valid() -> bool` - Check if message satisfies domain invariants
+- `has_data() -> bool` - Check if message has data payload
+- `get_data_value(key: String, default) -> Variant` - Get data value by key
+- `has_data_key(key: String) -> bool` - Check if data contains key
 - `to_string() -> String` - Debug representation
+- `equals(other: Message) -> bool` - Content-based equality comparison
+
+**Command-Specific Methods:**
+- `is_executable() -> bool` - Check if command can be executed
+- `has_required_data() -> bool` - Validate required fields (override in subclasses)
 
 ## Debugging & Inspection
 
@@ -199,6 +208,21 @@ for listener in listeners:
 event_bus.set_collect_errors(true)
 ```
 
+## Domain Services
+
+The messaging system includes domain services that encapsulate business rules:
+
+**CommandRoutingPolicy** - Validates command routing rules:
+- Commands must have exactly one handler (domain invariant)
+- Used internally by `CommandBus` to enforce routing semantics
+
+**SubscriptionPolicy** - Defines subscription behavior rules:
+- Priority ordering (higher priority subscribers processed first)
+- One-shot subscription semantics (auto-unsubscribe after delivery)
+- Lifecycle binding validation (subscriptions invalid when bound object freed)
+
+These services make domain rules explicit and testable. They're used internally by the buses but can be accessed directly if needed.
+
 ## Tips
 
 - Use commands for actions that need a response or error handling
@@ -207,6 +231,8 @@ event_bus.set_collect_errors(true)
 - Bound subscriptions automatically clean up when objects are freed
 - Enable verbose logging and tracing during development for debugging
 - Use `get_subscription_count()` to verify listeners are registered correctly
+- Messages use content-based equality - two messages with same type and data are equal
+- Message constructors enforce domain invariants (type cannot be empty, data cannot be null)
 
 ## Files
 
