@@ -9,11 +9,10 @@ All packages are organized under the `packages/` directory:
 ```
 packages/
 ├── messaging/    # Command/Event messaging framework
-├── collection/   # Fluent array wrapper
-└── utilities/    # Shared utility functions
+└── collection/   # Fluent array wrapper
 ```
 
-Each package is self-contained with its own documentation and can be used independently.
+Each package is self-contained with its own documentation and can be used independently. Package-specific utilities live within each package's `utilities/` folder.
 
 ## Packages
 
@@ -38,12 +37,6 @@ const Collection = preload("res://packages/collection/collection.gd")
 ```
 
 **[Documentation →](packages/collection/README.md)**
-
-## Utilities
-
-Domain-agnostic helper utilities for common patterns.
-
-**[Documentation →](packages/utilities/README.md)**
 
 ## Quick Start
 

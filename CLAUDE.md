@@ -22,8 +22,7 @@ packages/
 │   ├── rules/     # Domain rules (CommandRules, SubscriptionRules)
 │   ├── internal/   # MessageBus foundation class
 │   └── utilities/  # Package-specific utilities
-├── collection/     # Fluent array wrapper
-└── utilities/      # Shared utilities across packages
+└── collection/     # Fluent array wrapper
 ```
 
 ## Architectural Decisions
