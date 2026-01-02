@@ -55,7 +55,7 @@ func _init(target_node: Node, damage: int) -> void:
     super._init("deal_damage", {"target": target_node, "amount": damage})
 
 # Type identification is handled automatically by MessageTypeResolver
-# No need to implement get_class_name() - it's resolved from the script path
+# Resolved from the script path based on class_name
 ```
 
 **Custom Event:**
@@ -72,7 +72,7 @@ func _init(id: int, death_cause: String) -> void:
     super._init("player_died", {"player_id": id, "cause": death_cause})
 
 # Type identification is handled automatically by MessageTypeResolver
-# No need to implement get_class_name() - it's resolved from the script path
+# Resolved from the script path based on class_name
 ```
 
 ## Usage Examples

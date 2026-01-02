@@ -17,8 +17,7 @@ func _init(e_id: int, pts: int, pos: Vector2 = Vector2.ZERO) -> void:
 	position = pos
 	super._init("enemy_died", {"enemy_id": e_id, "points": pts, "position": pos}, "Enemy %d died (worth %d points)" % [e_id, pts])
 
-func get_class_name() -> StringName:
-	return StringName("EnemyDiedEvent")
+# Type identification handled automatically by MessageTypeResolver from class_name
 
 func to_string() -> String:
 	return "[EnemyDiedEvent enemy_id=%d points=%d position=%s]" % [enemy_id, points, position]

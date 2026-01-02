@@ -15,8 +15,7 @@ func _init(pos: Vector2, player: int = 0) -> void:
 	player_id = player
 	super._init("move_player", {"target_position": pos, "player_id": player}, "Move player to position")
 
-func get_class_name() -> StringName:
-	return StringName("MovePlayerCommand")
+# Type identification handled automatically by MessageTypeResolver from class_name
 
 func to_string() -> String:
 	return "[MovePlayerCommand position=%s player_id=%d]" % [target_position, player_id]
