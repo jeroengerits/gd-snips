@@ -1,4 +1,4 @@
-extends Node
+extends MessageBus
 class_name CommandBus
 
 ## Command bus for dispatching commands.

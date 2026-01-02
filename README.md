@@ -79,8 +79,9 @@ src/core/
   message.gd       # Base message class
   command.gd       # Command messages
   event.gd         # Event messages
-  command_bus.gd   # Command bus
-  event_bus.gd     # Event bus
+  message_bus.gd   # Base message bus class
+  command_bus.gd   # Command bus (extends MessageBus)
+  event_bus.gd     # Event bus (extends MessageBus)
 ```
 
 ## Usage

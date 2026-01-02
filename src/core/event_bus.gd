@@ -1,4 +1,4 @@
-extends Node
+extends MessageBus
 class_name EventBus
 
 ## Event bus for publishing events.
