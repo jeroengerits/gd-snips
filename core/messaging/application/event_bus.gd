@@ -92,8 +92,8 @@ func _publish_internal(event: Event, await_async: bool) -> void:
 				# For true fire-and-forget, caller should use call_deferred
 				await result
 		
-		# Handle one-shot subscriptions
-		if sub.one_shot:
+		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)
+		if SubscriptionPolicy.should_remove_after_delivery(sub.one_shot):
 			one_shots_to_remove.append({"key": key, "sub": sub})
 	
 	# Remove one-shot subscriptions after iteration

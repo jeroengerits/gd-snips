@@ -198,7 +198,14 @@ var validation = CommandRoutingPolicy.validate_handler_count(subs.size())
 
 **Current Design**: MessageBus in infrastructure, which is acceptable but blurs boundaries.
 
-**Recommendation**: Keep as-is (it's routing infrastructure) but extract subscription rules to domain.
+**Status**: ✅ **FIXED** - Subscription rules extracted to domain service.
+
+**Implementation**: Created `SubscriptionPolicy` domain service that encapsulates:
+- Priority ordering rules (higher priority first)
+- One-shot subscription semantics (auto-unsubscribe after delivery)
+- Lifecycle binding validation (subscription invalid when object freed)
+
+MessageBus now uses `SubscriptionPolicy` for all subscription-related domain rules, keeping infrastructure focused on routing while domain expresses subscription semantics.
 
 ---
 

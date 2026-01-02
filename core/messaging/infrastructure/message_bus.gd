@@ -34,7 +34,7 @@ class Subscription:
 		_next_id += 1
 	
 	func is_valid() -> bool:
-		if bound_object != null and not is_instance_valid(bound_object):
+		if not SubscriptionPolicy.is_valid_for_lifecycle(bound_object):
 			return false
 		return callable.is_valid()
 	
@@ -77,7 +77,7 @@ func subscribe(message_type, handler: Callable, priority: int = 0, one_shot: boo
 		_subscriptions[key] = []
 	
 	_subscriptions[key].append(sub)
-	_subscriptions[key].sort_custom(func(a, b): return a.priority > b.priority)
+	SubscriptionPolicy.sort_by_priority(_subscriptions[key])
 	
 	if _verbose:
 		print("[MessageBus] Subscribed to ", key, " (priority=", priority, ", one_shot=", one_shot, ")")

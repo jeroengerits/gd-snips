@@ -215,6 +215,7 @@ event_bus.set_collect_errors(true)
 - `command.gd` - Command base class (extends Message)
 - `event.gd` - Event base class (extends Message)
 - `services/command_routing_policy.gd` - Domain service for command routing rules
+- `services/subscription_policy.gd` - Domain service for subscription behavior rules
 
 **Infrastructure Layer** (`infrastructure/`):
 - `message_bus.gd` - Generic message bus core (subscription management, routing)
