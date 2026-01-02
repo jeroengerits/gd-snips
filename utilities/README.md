@@ -36,13 +36,17 @@ var result = collection.filter(func(x): return x > 2).map(func(x): return x * 2)
 - `first(default)` / `last(default)` - Get first/last item
 - `get(index, default)` - Get item at index
 - `contains(value)` - Check if collection contains value
+- `contains_any(values)` - Check if collection contains any of the given values
+- `contains_all(values)` - Check if collection contains all of the given values
 - `find(callback, default)` - Find first item matching callback
+- `to_array()` - Get the underlying array (returns a copy)
 
 **Transformation:**
 - `filter(callback)` - Filter items (returns new Collection)
 - `map(callback)` - Transform items (returns new Collection)
 - `reduce(callback, initial)` - Reduce to single value
 - `reject(callback)` - Remove items matching callback
+- `each(callback)` - Execute callback for each item (returns self for chaining)
 - `unique()` - Get unique items
 - `reverse()` - Reverse the collection
 - `sort(reverse)` - Sort the collection
