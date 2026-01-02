@@ -9,7 +9,10 @@ class_name MovePlayerCommand
 ##   var cmd = MovePlayerCommand.new(Vector2(100, 200))
 ##   var result = await command_bus.dispatch(cmd)
 
+## Target position for player movement
 var target_position: Vector2
+
+## ID of the player to move (0 = default player)
 var player_id: int = 0
 
 func _init(pos: Vector2, player: int = 0) -> void:

@@ -65,6 +65,7 @@ func get_all_metrics() -> Dictionary:
 ## [code]bound_object[/code]: Auto-unsubscribe when this object is freed (default: null)
 ## Returns: Subscription ID for manual unsubscription
 func subscribe(event_type, listener: Callable, priority: int = 0, one_shot: bool = false, bound_object: Object = null) -> int:
+	assert(listener.is_valid(), "Listener callable must be valid")
 	return super.subscribe(event_type, listener, priority, one_shot, bound_object)
 
 ## Unsubscribe from an event type.
@@ -82,16 +83,20 @@ func unsubscribe_by_id(event_type, sub_id: int) -> bool:
 ## publish() may block briefly if listeners are async. For truly non-blocking
 ## behavior, wrap the call: call_deferred("publish", evt) from a Node context.
 func publish(evt: Event) -> void:
+	assert(evt != null, "Event cannot be null")
+	assert(evt is Event, "Event must be an instance of Event")
 	await _publish_internal(evt, false)
 
 ## Publish an event and await all async listeners.
 ## Use this when you need to wait for async listeners to complete.
 func publish_async(evt: Event) -> void:
+	assert(evt != null, "Event cannot be null")
+	assert(evt is Event, "Event must be an instance of Event")
 	await _publish_internal(evt, true)
 
 ## Internal publish implementation.
 func _publish_internal(evt: Event, await_async: bool) -> void:
-	var key = get_key_from(evt)
+	var key: StringName = get_key_from(evt)
 	
 	# Execute pre-middleware (can cancel delivery)
 	if not super._execute_middleware_pre(evt, key):
@@ -99,7 +104,7 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 			print("[EventBus] Publishing ", key, " cancelled by middleware")
 		return
 	
-	var subs = super._get_valid_subscriptions(key)
+	var subs: Array = super._get_valid_subscriptions(key)
 	
 	if super._trace_enabled:
 		print("[EventBus] Publishing ", key, " -> ", subs.size(), " listener(s)")
@@ -108,10 +113,10 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 		return
 	
 	var one_shots_to_remove: Array = []
-	var start_time = Time.get_ticks_msec()
+	var start_time: int = Time.get_ticks_msec()
 	
 	# Create a snapshot for safe iteration (subscribers may unsubscribe during dispatch)
-	var subs_snapshot = subs.duplicate()
+	var subs_snapshot: Array = subs.duplicate()
 	
 	for sub in subs_snapshot:
 		# Re-check validity (object might have been freed since snapshot)
@@ -121,8 +126,8 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 		if not sub.callable.is_valid():
 			continue
 		
-		var result = null
-		var listener_start_time = Time.get_ticks_msec()
+		var result: Variant = null
+		var listener_start_time: int = Time.get_ticks_msec()
 		
 		# Call listener - errors will propagate (GDScript has no try/catch)
 		# Error collection logs context before errors crash
@@ -143,7 +148,7 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 				result = await result
 		
 		# Record metrics for this listener (if enabled)
-		var listener_elapsed = (Time.get_ticks_msec() - listener_start_time) / 1000.0
+		var listener_elapsed: float = (Time.get_ticks_msec() - listener_start_time) / 1000.0
 		super._record_metrics(key, listener_elapsed)
 		
 		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)
@@ -155,7 +160,7 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 		super._mark_for_removal(item.key, item.sub)
 	
 	# Record overall metrics (if enabled, already recorded per-listener above)
-	var elapsed = (Time.get_ticks_msec() - start_time) / 1000.0
+	var elapsed: float = (Time.get_ticks_msec() - start_time) / 1000.0
 	super._record_metrics(key, elapsed)
 	
 	# Execute post-middleware

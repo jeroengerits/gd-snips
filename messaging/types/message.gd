@@ -24,11 +24,13 @@ var _data: Dictionary
 
 func _init(type: String, data: Dictionary = {}, desc: String = "") -> void:
 	# Domain invariants: enforce message type is not empty
+	assert(not type.is_empty(), "Message type cannot be empty")
 	if type.is_empty():
 		push_error("Message type cannot be empty")
 		type = "unknown"
 	
 	# Domain invariants: ensure data is not null
+	assert(data != null, "Message data cannot be null")
 	if data == null:
 		push_error("Message data cannot be null")
 		data = {}
@@ -42,7 +44,7 @@ func _init(type: String, data: Dictionary = {}, desc: String = "") -> void:
 ## Generate domain identity based on message content (value object pattern).
 ## Two messages with identical type and data should have the same identity.
 func _generate_domain_id(type: String, data: Dictionary) -> String:
-	var data_hash = hash(data)
+	var data_hash: int = hash(data)
 	return "%s_%d" % [type, data_hash]
 
 ## Unique identifier for this message instance.
@@ -77,13 +79,15 @@ func to_dict() -> Dictionary:
 ## Check if this message equals another (content-based equality for value objects).
 ## Two messages are equal if they have the same type and data.
 func equals(other: Message) -> bool:
-	if other == null:
+	if other == null or not other is Message:
 		return false
 	return _type == other._type and _data == other._data
 
 ## Hash value for use in dictionaries/sets (content-based).
 func hash() -> int:
-	return _type.hash() ^ _data.hash()
+	var type_hash: int = _type.hash()
+	var data_hash: int = _data.hash()
+	return type_hash ^ data_hash
 
 ## Check if this message is valid (has required domain invariants).
 func is_valid() -> bool:
@@ -95,7 +99,7 @@ func has_data() -> bool:
 
 ## Get a specific data value by key.
 ## Returns default value if key doesn't exist.
-func get_data_value(key: String, default = null):
+func get_data_value(key: String, default = null) -> Variant:
 	return _data.get(key, default)
 
 ## Check if this message has a specific data key.

@@ -99,7 +99,8 @@ func add_middleware_post(callback: Callable, priority: int = 0) -> int:
 
 ## Remove middleware by ID.
 func remove_middleware(middleware_id: int) -> bool:
-	var removed = false
+	assert(middleware_id >= 0, "Middleware ID must be non-negative")
+	var removed: bool = false
 	for i in range(_middleware_pre.size() - 1, -1, -1):
 		if _middleware_pre[i].id == middleware_id:
 			_middleware_pre.remove_at(i)
@@ -130,17 +131,17 @@ func set_metrics_enabled(enabled: bool) -> void:
 		_metrics.clear()
 
 ## Get performance metrics for a message type.
-## Returns: Dictionary with {count: int, total_time: float, avg_time: float, min_time: float, max_time: float} or null
+## Returns: Dictionary with {count: int, total_time: float, avg_time: float, min_time: float, max_time: float} or empty Dictionary
 func get_metrics(message_type) -> Dictionary:
 	if not _metrics_enabled:
 		return {}
 	
-	var key = get_key(message_type)
+	var key: StringName = get_key(message_type)
 	if not _metrics.has(key):
 		return {}
 	
-	var m = _metrics[key]
-	var result = m.duplicate()
+	var m: Dictionary = _metrics[key]
+	var result: Dictionary = m.duplicate()
 	if m.count > 0:
 		result.avg_time = m.total_time / m.count
 	else:
@@ -152,10 +153,10 @@ func get_all_metrics() -> Dictionary:
 	if not _metrics_enabled:
 		return {}
 	
-	var result = {}
+	var result: Dictionary = {}
 	for key in _metrics.keys():
-		var m = _metrics[key]
-		var metrics_dict = m.duplicate()
+		var m: Dictionary = _metrics[key]
+		var metrics_dict: Dictionary = m.duplicate()
 		if m.count > 0:
 			metrics_dict.avg_time = m.total_time / m.count
 		else:
@@ -172,7 +173,7 @@ func _execute_middleware_pre(message: Object, key: StringName) -> bool:
 	for mw in _middleware_pre:
 		if not mw.callback.is_valid():
 			continue
-		var result = mw.callback.call(message, key)
+		var result: Variant = mw.callback.call(message, key)
 		if result == false:  # Middleware can cancel delivery
 			return false
 	return true
@@ -186,13 +187,14 @@ func _execute_middleware_post(message: Object, key: StringName, delivery_result)
 
 ## Internal: Record performance metrics.
 func _record_metrics(key: StringName, elapsed_time: float) -> void:
+	assert(elapsed_time >= 0.0, "Elapsed time must be non-negative")
 	if not _metrics_enabled:
 		return
 	
 	if not _metrics.has(key):
 		_metrics[key] = {"count": 0, "total_time": 0.0, "min_time": INF, "max_time": 0.0}
 	
-	var m = _metrics[key]
+	var m: Dictionary = _metrics[key]
 	m.count += 1
 	m.total_time += elapsed_time
 	m.min_time = min(m.min_time, elapsed_time)
@@ -215,8 +217,9 @@ static func get_key_from(message: Object) -> StringName:
 ## [code]bound_object[/code]: Auto-unsubscribe when this object is freed (default: null)
 ## Returns: Subscription ID for manual unsubscription
 func subscribe(message_type, handler: Callable, priority: int = 0, one_shot: bool = false, bound_object: Object = null) -> int:
-	var key = get_key(message_type)
-	var sub = Subscription.new(handler, priority, one_shot, bound_object)
+	assert(handler.is_valid(), "Handler callable must be valid")
+	var key: StringName = get_key(message_type)
+	var sub: Subscription = Subscription.new(handler, priority, one_shot, bound_object)
 	
 	if not _subscriptions.has(key):
 		_subscriptions[key] = []
@@ -231,12 +234,13 @@ func subscribe(message_type, handler: Callable, priority: int = 0, one_shot: boo
 
 ## Unsubscribe by subscription ID.
 func unsubscribe_by_id(message_type, sub_id: int) -> bool:
-	var key = get_key(message_type)
+	assert(sub_id >= 0, "Subscription ID must be non-negative")
+	var key: StringName = get_key(message_type)
 	if not _subscriptions.has(key):
 		return false
 	
-	var subs = _subscriptions[key]
-	var index = subs.find(func(s): return s.id == sub_id)
+	var subs: Array = _subscriptions[key]
+	var index: int = subs.find(func(s): return s.id == sub_id)
 	if index >= 0:
 		subs.remove_at(index)
 		if subs.is_empty():
@@ -248,16 +252,17 @@ func unsubscribe_by_id(message_type, sub_id: int) -> bool:
 
 ## Unsubscribe by callable (removes all matching subscriptions).
 func unsubscribe(message_type, handler: Callable) -> int:
-	var key = get_key(message_type)
+	assert(handler.is_valid(), "Handler callable must be valid")
+	var key: StringName = get_key(message_type)
 	if not _subscriptions.has(key):
 		return 0
 	
-	var subs = _subscriptions[key]
-	var removed = 0
-	var to_remove = []
+	var subs: Array = _subscriptions[key]
+	var removed: int = 0
+	var to_remove: Array = []
 	
 	for i in range(subs.size() - 1, -1, -1):
-		var sub = subs[i]
+		var sub: Subscription = subs[i]
 		if sub.callable == handler:
 			to_remove.append(i)
 	
@@ -285,7 +290,7 @@ func get_subscriptions(message_type) -> Array:
 
 ## Clean up invalid subscriptions (freed objects, invalid callables).
 func _cleanup_invalid_subscriptions(key: StringName, subs: Array) -> void:
-	var to_remove = []
+	var to_remove: Array = []
 	for i in range(subs.size() - 1, -1, -1):
 		if not subs[i].is_valid():
 			to_remove.append(i)
@@ -321,27 +326,27 @@ func get_types() -> Array[StringName]:
 
 ## Get subscription count for a message type.
 func get_subscription_count(message_type) -> int:
-	var key = get_key(message_type)
+	var key: StringName = get_key(message_type)
 	if not _subscriptions.has(key):
 		return 0
-	var subs = _subscriptions[key]
+	var subs: Array = _subscriptions[key]
 	_cleanup_invalid_subscriptions(key, subs)
 	return subs.size()
 
 ## Internal: Get valid subscriptions for a message type, sorted by priority.
 func _get_valid_subscriptions(message_type) -> Array[Subscription]:
-	var key = get_key(message_type)
+	var key: StringName = get_key(message_type)
 	if not _subscriptions.has(key):
 		return []
 	
-	var subs = _subscriptions[key]
+	var subs: Array = _subscriptions[key]
 	_cleanup_invalid_subscriptions(key, subs)
 	return subs.duplicate()
 
 ## Internal: Mark subscription for removal (one-shot or invalid).
 func _mark_for_removal(key: StringName, sub: Subscription) -> void:
-	var subs = _subscriptions.get(key, [])
-	var index = subs.find(sub)
+	var subs: Array = _subscriptions.get(key, [])
+	var index: int = subs.find(sub)
 	if index >= 0:
 		subs.remove_at(index)
 		if subs.is_empty():

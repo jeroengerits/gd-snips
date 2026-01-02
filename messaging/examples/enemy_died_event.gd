@@ -9,8 +9,13 @@ class_name EnemyDiedEvent
 ##   var evt = EnemyDiedEvent.new(42, 100, Vector2(50, 60))
 ##   event_bus.publish(evt)
 
+## Unique identifier of the enemy that died
 var enemy_id: int
+
+## Points awarded for defeating this enemy
 var points: int
+
+## Position where the enemy died (for effects, loot, etc.)
 var position: Vector2
 
 func _init(e_id: int, pts: int, pos: Vector2 = Vector2.ZERO) -> void:

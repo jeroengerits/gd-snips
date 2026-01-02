@@ -30,7 +30,9 @@ class CommandError extends RefCounted:
 		HANDLER_FAILED
 	}
 	
-	func _init(msg: String, err_code: int):
+	func _init(msg: String, err_code: int) -> void:
+		assert(not msg.is_empty(), "CommandError message cannot be empty")
+		assert(err_code >= 0, "CommandError code must be non-negative")
 		message = msg
 		code = err_code
 	
@@ -71,8 +73,9 @@ func get_all_metrics() -> Dictionary:
 ## [code]command_type[/code]: Command class or StringName
 ## [code]handler[/code]: Callable that takes the command and returns a result
 func handle(command_type, handler: Callable) -> void:
-	var key = get_key(command_type)
-	var existing = get_subscription_count(command_type)
+	assert(handler.is_valid(), "Handler callable must be valid")
+	var key: StringName = get_key(command_type)
+	var existing: int = get_subscription_count(command_type)
 	
 	if existing > 0:
 		clear_type(command_type)
@@ -89,8 +92,10 @@ func unregister(command_type) -> void:
 ## Returns the handler's result (may be Variant, including async results).
 ## Returns CommandError if no handler or multiple handlers are registered.
 func dispatch(cmd: Command) -> Variant:
-	var key = get_key_from(cmd)
-	var start_time = Time.get_ticks_msec()
+	assert(cmd != null, "Command cannot be null")
+	assert(cmd is Command, "Command must be an instance of Command")
+	var key: StringName = get_key_from(cmd)
+	var start_time: int = Time.get_ticks_msec()
 	
 	# Execute pre-middleware (can cancel delivery)
 	if not super._execute_middleware_pre(cmd, key):
@@ -98,20 +103,20 @@ func dispatch(cmd: Command) -> Variant:
 			print("[CommandBus] Dispatching ", key, " cancelled by middleware")
 		return CommandError.new("Command dispatch cancelled by middleware", CommandError.ErrorCode.HANDLER_FAILED)
 	
-	var subs = super._get_valid_subscriptions(key)
+	var subs: Array = super._get_valid_subscriptions(key)
 	
 	# Use domain service to validate routing rules
-	var validation = CommandRules.validate_count(subs.size())
+	var validation: CommandRules.ValidationResult = CommandRules.validate_count(subs.size())
 	
 	match validation:
 		CommandRules.ValidationResult.NO_HANDLER:
-			var err = CommandError.new("No handler registered for command type: %s" % key, CommandError.ErrorCode.NO_HANDLER)
+			var err: CommandError = CommandError.new("No handler registered for command type: %s" % key, CommandError.ErrorCode.NO_HANDLER)
 			push_error(err.to_string())
 			_execute_middleware_post(cmd, key, err)
 			return err
 		
 		CommandRules.ValidationResult.MULTIPLE_HANDLERS:
-			var err = CommandError.new("Multiple handlers registered for command type: %s (expected exactly one)" % key, CommandError.ErrorCode.MULTIPLE_HANDLERS)
+			var err: CommandError = CommandError.new("Multiple handlers registered for command type: %s (expected exactly one)" % key, CommandError.ErrorCode.MULTIPLE_HANDLERS)
 			push_error(err.to_string())
 			_execute_middleware_post(cmd, key, err)
 			return err
@@ -126,19 +131,19 @@ func dispatch(cmd: Command) -> Variant:
 		print("[CommandBus] Dispatching ", key, " -> handler (priority=", sub.priority, ")")
 	
 	if not sub.is_valid():
-		var err = CommandError.new("Handler is invalid (freed object) for command type: %s" % key, CommandError.ErrorCode.HANDLER_FAILED)
+		var err: CommandError = CommandError.new("Handler is invalid (freed object) for command type: %s" % key, CommandError.ErrorCode.HANDLER_FAILED)
 		push_error(err.to_string())
 		_execute_middleware_post(cmd, key, err)
 		return err
 	
-	var result = sub.callable.call(cmd)
+	var result: Variant = sub.callable.call(cmd)
 	
 	# Support async handlers (if they return GDScriptFunctionState)
 	if result is GDScriptFunctionState:
 		result = await result
 	
 	# Record performance metrics (if enabled)
-	var elapsed = (Time.get_ticks_msec() - start_time) / 1000.0
+	var elapsed: float = (Time.get_ticks_msec() - start_time) / 1000.0
 	super._record_metrics(key, elapsed)
 	
 	# Execute post-middleware

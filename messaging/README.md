@@ -442,6 +442,39 @@ if validation == Messaging.CommandRules.ValidationResult.VALID:
 - Messages use content-based equality - two messages with same type and data are equal
 - Message constructors enforce validation rules (type cannot be empty, data cannot be null)
 
+## Best Practices
+
+This messaging system follows Godot best practices:
+
+### Type Safety
+- All methods use explicit type annotations for parameters and return types
+- Type checking is enforced at runtime with assertions
+- Use `class_name` declarations for message types to ensure deterministic type resolution
+
+### Error Handling
+- The system uses `assert()` statements for invariant checks during development
+- Errors are logged with `push_error()` and warnings with `push_warning()`
+- Command errors are returned as `CommandError` objects (GDScript doesn't support exceptions)
+- Event listener errors will propagate (use defensive programming in listeners)
+
+### Code Organization
+- Follows Godot's naming conventions: `snake_case` for functions/variables, `PascalCase` for classes
+- Private methods use `_` prefix consistently
+- Clear separation between public API and internal implementation
+- Domain rules are encapsulated in dedicated Rules classes
+
+### Performance
+- Lightweight `RefCounted` base classes (no scene tree dependency)
+- Efficient Dictionary-based subscription storage (O(1) lookup)
+- Lazy cleanup of invalid subscriptions (only when accessed)
+- Performance metrics available for profiling
+
+### Usage Patterns
+- Use `autoload` for global buses (singleton pattern)
+- Use lifecycle-bound subscriptions (`bound_object`) for automatic cleanup
+- Use one-shot subscriptions for temporary event handling
+- Enable metrics and tracing during development, disable in production
+
 ## Files
 
 **Entry Point**:

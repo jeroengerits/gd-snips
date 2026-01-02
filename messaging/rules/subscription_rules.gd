@@ -11,6 +11,8 @@ class_name SubscriptionRules
 ## Compare two subscription priorities.
 ## Domain rule: Higher priority subscribers are processed first.
 ##
+## [code]a_priority[/code]: Priority of first subscription
+## [code]b_priority[/code]: Priority of second subscription
 ## Returns: true if subscription a should be processed before subscription b
 static func should_process_before(a_priority: int, b_priority: int) -> bool:
 	return a_priority > b_priority
