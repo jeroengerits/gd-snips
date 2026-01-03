@@ -10,7 +10,7 @@ extends Node
 ## - One-shot listener
 ## - Error isolation
 
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 var command_bus: Transport.CommandBus
 var event_bus: Transport.EventBus

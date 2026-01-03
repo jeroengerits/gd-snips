@@ -1,4 +1,4 @@
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 extends Transport.Event
 class_name EnemyDiedEvent

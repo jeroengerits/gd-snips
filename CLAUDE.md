@@ -12,32 +12,38 @@ This document provides context for AI assistants working with this codebase, inc
 
 ## Project Structure
 
-All packages live under `packages/`:
+All addons live under `addons/`:
 
 ```
-packages/
-└── transport/     # Command/Event transport framework
+addons/
+└── transport/     # Command/Event transport framework (Godot addon)
+    ├── plugin.cfg # Addon configuration
+    ├── transport.gd # Public API barrel file
     ├── type/      # Message, Command, Event base classes
     ├── utils/     # Metrics utilities
     ├── core/      # Shared infrastructure (Subscribers)
+    ├── middleware/# Middleware base classes
     ├── event/     # EventBus, Validator, EventSignalBridge, EventSubscriber
-    └── command/   # CommandBus, Validator
+    └── command/   # CommandBus, Validator, CommandSignalBridge
 ```
 
 ## Architectural Decisions
 
-### Package Organization
+### Addon Organization
 
-**Decision:** All packages moved to `packages/` directory (January 2026)
+**Decision:** Converted packages to proper Godot addons in `addons/` directory (January 2026)
 
 **Rationale:**
-- Clear separation between packages and project-level files
-- Consistent import paths: `res://packages/{package}/...`
-- Easier to understand project structure at a glance
+- Standard Godot addon structure enables plugin system integration
+- Users can enable/disable addons through Godot's plugin interface
+- Consistent with Godot ecosystem conventions
+- Better discoverability and management
 
 **Impact:**
-- All preload paths use `res://packages/` prefix
-- Documentation links updated accordingly
+- All preload paths use `res://addons/` prefix
+- Each addon has a `plugin.cfg` configuration file
+- Addons can be enabled/disabled in Project Settings → Plugins
+- Documentation and examples updated accordingly
 - No breaking changes to API, only path changes
 
 ### Collection Package Removal
@@ -185,9 +191,9 @@ command_adapter.connect_signal_to_command($SaveButton, "pressed", SaveGameComman
 
 ### Import Patterns
 
-**Package Import (Barrel Files):**
+**Addon Import (Barrel Files):**
 ```gdscript
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 # Use via barrel file
 var command_bus = Transport.CommandBus.new()
@@ -196,9 +202,9 @@ var event_bus = Transport.EventBus.new()
 
 **Direct Import (for internal files):**
 ```gdscript
-const Subscribers = preload("res://packages/transport/core/subscribers.gd")
-const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
-const ArrayUtils = preload("res://packages/transport/utils/array_utils.gd")
+const Subscribers = preload("res://addons/transport/core/subscribers.gd")
+const MessageTypeResolver = preload("res://addons/transport/type/message_type_resolver.gd")
+const ArrayUtils = preload("res://addons/transport/utils/array_utils.gd")
 ```
 
 **Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations or `ArrayUtils` for common array operations.
@@ -222,9 +228,10 @@ const ArrayUtils = preload("res://packages/transport/utils/array_utils.gd")
 
 **Symptom:** `preload()` fails with "Resource not found"
 
-**Solution:** Ensure all paths use `res://packages/` prefix:
-- ✅ `res://packages/transport/transport.gd`
+**Solution:** Ensure all paths use `res://addons/` prefix:
+- ✅ `res://addons/transport/transport.gd`
 - ❌ `res://transport/transport.gd`
+- ❌ `res://packages/transport/transport.gd` (old path, no longer valid)
 
 ### Issue: Multiple Command Handlers
 
@@ -323,6 +330,29 @@ if not source.connect(signal_name, callback):
 - Organized by functionality (types, utils, events, commands)
 
 ## Recent Improvements (January 2026)
+
+### Addon Conversion
+
+**Decision:** Converted from `packages/` to `addons/` structure (January 2026)
+
+**Rationale:**
+- Proper Godot addon structure enables plugin system integration
+- Users can enable/disable addons through Project Settings → Plugins
+- Standard Godot ecosystem convention
+- Better integration with Godot's plugin management
+
+**Implementation:**
+- Moved all files from `packages/transport/` to `addons/transport/`
+- Created `plugin.cfg` configuration file for each addon
+- Updated all preload paths from `res://packages/transport/` to `res://addons/transport/`
+- Updated documentation and examples with new paths
+- Removed obsolete `packages/` directory
+
+**Impact:**
+- Breaking change: All import paths changed from `res://packages/` to `res://addons/`
+- Users must update their code to use new paths
+- Addons can now be enabled/disabled through Godot's plugin interface
+- Better alignment with Godot ecosystem standards
 
 ### Folder Structure Refactoring
 
@@ -497,7 +527,7 @@ The codebase demonstrates solid architectural thinking with good separation of c
 
 ## References
 
-- [Transport Package README](packages/transport/README.md)
+- [Transport Addon README](addons/transport/README.md)
 - [Developer Diary](docs/developer-diary/)
 - [Tech Stack Documentation](docs/TECH_STACK.md)
 - [Code Review](CODE_REVIEW.md) - CLEAN Code and SOLID principles analysis

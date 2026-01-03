@@ -35,7 +35,9 @@ A simple, type-safe messaging framework for Godot 4.5.1+ that helps you build mo
 
 ## Installation
 
-Copy the `packages/transport` directory into your Godot project.
+1. Copy the `addons/transport` directory into your Godot project's `addons/` folder
+2. In Godot, go to **Project → Project Settings → Plugins**
+3. Enable the "Transport" plugin
 
 **Requirements:** Godot 4.5.1 or later
 
@@ -44,7 +46,7 @@ Copy the `packages/transport` directory into your Godot project.
 Here's everything you need to get started in 30 seconds:
 
 ```gdscript
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 # Create your command and event bus instances
 var command_bus = Transport.CommandBus.new()
@@ -107,7 +109,7 @@ Events announce that something has already happened in your game. Think of them 
 Commands must extend `Transport.Command`:
 
 ```gdscript
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 extends Transport.Command
 class_name MovePlayerCommand
@@ -126,7 +128,7 @@ func _init(pos: Vector2, player: int = 0) -> void:
 Events must extend `Transport.Event`:
 
 ```gdscript
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 extends Transport.Event
 class_name EnemyDiedEvent
@@ -279,7 +281,7 @@ command_bus.remove_middleware(middleware_id)
 For reusable middleware, extend the `Middleware` base class:
 
 ```gdscript
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 # Create a logging middleware
 class LoggingMiddleware extends Transport.Middleware:
@@ -352,7 +354,7 @@ The transport system is designed as an alternative to Godot signals, but sometim
 
 **Event Signal Bridge:**
 ```gdscript
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 var event_bus = Transport.EventBus.new()
 var event_signal_bridge = Transport.EventSignalBridge.new(event_bus)
@@ -374,7 +376,7 @@ event_signal_bridge.disconnect_all()
 
 **Command Signal Bridge:**
 ```gdscript
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 var command_bus = Transport.CommandBus.new()
 var command_signal_bridge = Transport.CommandSignalBridge.new(command_bus)

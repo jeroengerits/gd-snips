@@ -1,8 +1,8 @@
-const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
-const MetricsUtils = preload("res://packages/transport/utils/metrics_utils.gd")
-const ArrayUtils = preload("res://packages/transport/utils/array_utils.gd")
-const MiddlewareEntry = preload("res://packages/transport/middleware/middleware_entry.gd")
-const EventSubscriber = preload("res://packages/transport/event/event_subscriber.gd")
+const MessageTypeResolver = preload("res://addons/transport/type/message_type_resolver.gd")
+const MetricsUtils = preload("res://addons/transport/utils/metrics_utils.gd")
+const ArrayUtils = preload("res://addons/transport/utils/array_utils.gd")
+const MiddlewareEntry = preload("res://addons/transport/middleware/middleware_entry.gd")
+const EventSubscriber = preload("res://addons/transport/event/event_subscriber.gd")
 
 extends RefCounted
 ## Internal subscribers registry. Manages subscriptions, middleware, and metrics.

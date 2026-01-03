@@ -5,7 +5,7 @@ extends Node
 ## This shows how to bridge Godot signals to transport events
 ## using the Bridge utility.
 
-const Transport = preload("res://packages/transport/transport.gd")
+const Transport = preload("res://addons/transport/transport.gd")
 
 # Example event types
 class ButtonPressedEvent extends Transport.Event:
