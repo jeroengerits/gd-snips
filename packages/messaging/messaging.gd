@@ -32,3 +32,9 @@ const CommandRules = preload("res://packages/messaging/rules/command_rules.gd")
 ## Public API: Subscription rules domain service
 const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
 
+## Public API: Signal-to-Event adapter utility
+const SignalEventAdapter = preload("res://packages/messaging/utilities/signal_event_adapter.gd")
+
+## Public API: Event-to-Signal adapter utility
+const EventSignalAdapter = preload("res://packages/messaging/utilities/event_signal_adapter.gd")
+

@@ -98,6 +98,84 @@ event_bus.publish(EnemyDiedEvent.new(enemy_id, 100))
 - Bind subscriptions to object lifecycles to prevent leaks
 - Enable tracing and metrics during development for deep diagnostics
 
+## Signal Integration
+
+While this messaging system is designed as an alternative to Godot signals, there are cases where bridging between signals and messaging is useful:
+
+- **UI interactions** (button clicks, input events)
+- **Scene tree events** (area_entered, body_entered)
+- **Third-party plugins** that emit signals
+- **Legacy code migration** from signals to messaging
+
+### Signal → Event (SignalEventAdapter)
+
+Bridge Node signals to EventBus:
+
+```gdscript
+const Messaging = preload("res://packages/messaging/messaging.gd")
+
+var event_bus = Messaging.EventBus.new()
+var adapter = Messaging.SignalEventAdapter.new(event_bus)
+
+# Bridge button signal to event
+adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
+
+# Custom data mapping
+adapter.connect_signal_to_event(
+    $Area2D,
+    "body_entered",
+    AreaEnteredEvent,
+    func(body): return {"body_name": body.name}
+)
+```
+
+### Event → Signal (EventSignalAdapter)
+
+Expose messaging events as signals:
+
+```gdscript
+const Messaging = preload("res://packages/messaging/messaging.gd")
+
+signal enemy_died(enemy_id: int, points: int)
+
+var event_bus = Messaging.EventBus.new()
+var adapter = Messaging.EventSignalAdapter.new()
+adapter.set_event_bus(event_bus)
+
+# Connect event to signal
+adapter.connect_event_to_signal(EnemyDiedEvent, "enemy_died")
+
+# Custom data extraction
+adapter.connect_event_to_signal(
+    PlayerHealthChangedEvent,
+    "health_changed",
+    func(evt): return [evt.current_health, evt.max_health]
+)
+
+# Listen to the signal
+adapter.enemy_died.connect(_on_enemy_died)
+```
+
+### When to Use Each
+
+**Use messaging (preferred for game logic):**
+- Business logic and domain events
+- Cross-system communication
+- Commands requiring single handler
+- Priority ordering and middleware needs
+
+**Use signals (preferred for UI/Godot-specific):**
+- UI interactions (button clicks, input)
+- Scene tree lifecycle events
+- Godot built-in events (area_entered, etc.)
+- Third-party plugin integrations
+
+**Use bridges when:**
+- Migrating from signals to messaging
+- Integrating legacy signal-based code
+- Connecting UI signals to game logic
+- Exposing messaging events to signal-based systems
+
 ## Design Principles
 
 - Prefer explicitness over “magic”

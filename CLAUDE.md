@@ -114,6 +114,38 @@ Infrastructure (MessageTypeResolver)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
 - **Type Resolution:** Handles Godot's type system complexity transparently
 
+### Signal Integration
+
+**Decision:** Provide adapter utilities for bridging Godot signals and messaging (January 2026)
+
+**Rationale:**
+- Messaging system is designed as alternative to signals, but integration is sometimes needed
+- UI interactions, scene tree events, and third-party plugins often use signals
+- Adapters enable gradual migration from signals to messaging
+- Bridges allow exposing messaging events to signal-based systems
+
+**Adapters:**
+- **SignalEventAdapter:** Bridges Node signals → EventBus (RefCounted utility)
+- **EventSignalAdapter:** Bridges EventBus → Node signals (Node-based utility)
+
+**Usage Guidelines:**
+- Use messaging for game logic and domain events
+- Use signals for UI interactions and Godot-specific events
+- Use adapters when bridging between the two systems
+- Keep adapters thin—only convert formats, no business logic
+
+**Pattern:**
+```gdscript
+# Signal → Event
+var adapter = Messaging.SignalEventAdapter.new(event_bus)
+adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
+
+# Event → Signal
+var adapter = Messaging.EventSignalAdapter.new()
+adapter.set_event_bus(event_bus)
+adapter.connect_event_to_signal(EnemyDiedEvent, "enemy_died")
+```
+
 ## Development Patterns
 
 ### Import Patterns
