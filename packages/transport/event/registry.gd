@@ -1,7 +1,7 @@
 const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
 const Validator = preload("res://packages/transport/event/validator.gd")
 const MetricsUtils = preload("res://packages/transport/utils/metrics_utils.gd")
-const MiddlewareEntry = preload("res://packages/transport/event/middleware_entry.gd")
+const MiddlewareEntry = preload("res://packages/transport/middleware/middleware_entry.gd")
 const SubscriptionEntry = preload("res://packages/transport/event/subscription_entry.gd")
 
 extends RefCounted
