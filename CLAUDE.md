@@ -302,7 +302,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 - `command/` - CommandBus (command_bus.gd), Validator (validator.gd)
 
 **File Naming:**
-- Files match class names: `command_bus.gd`, `event_bus.gd`, `registry.gd`, `signal_bridge.gd`, `validator.gd`
+- Files match class names: `command_bus.gd`, `event_bus.gd`, `registry.gd`, `signal_bridge.gd`, `command_signal_bridge.gd`, `validator.gd`
 - Class names match filenames (CommandBus, EventBus, etc.)
 - All files are at most one level deep from package root
 
