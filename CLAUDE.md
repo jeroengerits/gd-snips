@@ -16,12 +16,11 @@ All addons live under `addons/`:
 
 ```
 addons/
-├── engine/        # Unified entry point for all addons (Godot addon)
-│   ├── plugin.cfg # Addon configuration
+├── engine/        # Unified entry point for all addons (only Godot plugin)
+│   ├── plugin.cfg # Addon configuration (only plugin that needs to be enabled)
 │   └── src/       # Source code directory
 │       └── engine.gd # Public API barrel file (loads all addons)
-├── event/         # Event bus system (Godot addon)
-│   ├── plugin.cfg # Addon configuration
+├── event/         # Event bus system (library, loaded by Engine)
 │   ├── event.gd   # Public API barrel file
 │   └── src/       # Source code directory
 │       ├── event_bus.gd          # EventBus class
@@ -30,8 +29,7 @@ addons/
 │       ├── event_subscriber.gd   # EventSubscriber class
 │       ├── event_validator.gd    # EventValidator class
 │       └── event_signal_bridge.gd # EventSignalBridge class
-├── command/       # Command bus system (Godot addon)
-│   ├── plugin.cfg # Addon configuration
+├── command/       # Command bus system (library, loaded by Engine)
 │   ├── command.gd # Public API barrel file
 │   └── src/       # Source code directory
 │       ├── command_bus.gd          # CommandBus class
@@ -39,26 +37,22 @@ addons/
 │       ├── command_validator.gd    # CommandValidator class
 │       ├── command_signal_bridge.gd # CommandSignalBridge class
 │       └── command_routing_error.gd # CommandRoutingError class
-├── message/       # Message base types (Godot addon)
-│   ├── plugin.cfg # Addon configuration
+├── message/       # Message base types (library, loaded by Engine)
 │   ├── message.gd # Public API barrel file
 │   └── src/       # Source code directory
 │       ├── message.gd              # Message base class
 │       └── message_type_resolver.gd # MessageTypeResolver class
-├── middleware/    # Middleware infrastructure (Godot addon)
-│   ├── plugin.cfg # Addon configuration
+├── middleware/    # Middleware infrastructure (library, loaded by Engine)
 │   ├── middleware.gd # Public API barrel file
 │   └── src/       # Source code directory
 │       ├── middleware.gd        # Middleware base class
 │       └── middleware_entry.gd  # MiddlewareEntry class
-├── utils/         # Utility functions (Godot addon)
-│   ├── plugin.cfg # Addon configuration
+├── utils/         # Utility functions (library, loaded by Engine)
 │   ├── utils.gd   # Public API barrel file
 │   └── src/       # Source code directory
 │       ├── metrics_utils.gd           # MetricsUtils class
 │       └── signal_connection_tracker.gd # SignalConnectionTracker class
-└── support/       # Support utility functions (Godot addon)
-    ├── plugin.cfg # Addon configuration
+└── support/       # Support utility functions (library, loaded by Engine)
     ├── support.gd # Public API barrel file
     └── src/       # Source code directory
         ├── array.gd   # Array utility functions
@@ -79,10 +73,10 @@ addons/
 
 **Impact:**
 - All preload paths use `res://addons/` prefix
-- Each addon has a `plugin.cfg` configuration file
-- Addons can be enabled/disabled in Project Settings → Plugins
 - Documentation and examples updated accordingly
 - No breaking changes to API, only path changes
+
+**Note (January 2026):** Initially each addon had its own `plugin.cfg` file. This was later changed so only the Engine addon has a `plugin.cfg` file and is the only plugin that needs to be enabled. Other addons are libraries loaded by Engine. See "Engine-Only Plugin Architecture" section for details.
 
 ### Collection Package Removal
 
@@ -116,7 +110,7 @@ addons/
 - Follows single responsibility principle - each addon has a focused purpose
 
 **Implementation:**
-- Created new `addons/utils/` directory with `plugin.cfg`
+- Created new `addons/utils/` directory (initially with `plugin.cfg`, later removed - see "Engine-Only Plugin Architecture")
 - Moved `array_utils.gd` from `addons/transport/utils/` to `addons/utils/` (note: transport addon was later split into separate addons)
 - Updated transport addon to preload from new location
 - Created README.md for utils addon
@@ -223,8 +217,8 @@ addons/
 
 **Implementation:**
 - Updated `addons/transport/plugin.cfg`: version `1.0.0` → `0.0.1`, author `""` → `"Jeroen Gerits"` (note: transport addon was later split)
-- Updated `addons/support/plugin.cfg`: version `1.0.0` → `0.0.1`, author `""` → `"Jeroen Gerits"`
-- All new addons (event, command, message, middleware, utils, engine) use version `0.0.1` and author `"Jeroen Gerits"`
+- Updated `addons/support/plugin.cfg`: version `1.0.0` → `0.0.1`, author `""` → `"Jeroen Gerits"` (note: plugin.cfg was later removed - see "Engine-Only Plugin Architecture")
+- All new addons (event, command, message, middleware, utils, engine) use version `0.0.1` and author `"Jeroen Gerits"` (note: only Engine retains plugin.cfg)
 
 **Impact:**
 - All addons now have consistent versioning
@@ -265,13 +259,39 @@ addons/
 
 **Note (January 2026):** The transport addon was later split into separate addons (event, command, message, middleware, utils). The engine addon now loads these separate addons instead of a single transport addon.
 
+### Engine-Only Plugin Architecture
+
+**Decision:** Made Engine addon the only plugin that needs to be enabled; other addons are libraries (January 2026)
+
+**Rationale:**
+- Simplifies user experience - only one plugin to enable
+- Reduces plugin management complexity
+- Clear separation between plugin (Engine) and libraries (other addons)
+- Other addons don't need plugin functionality - they're just code libraries
+- Engine addon already loads all other addons via preload statements
+
+**Implementation:**
+- Removed `plugin.cfg` files from command, event, message, middleware, utils, and support addons
+- Only Engine addon retains `plugin.cfg` file
+- Updated README.md to clarify that only Engine plugin should be enabled
+- Other addons remain in `addons/` directory but are loaded as libraries by Engine
+
+**Impact:**
+- Simpler installation - users only enable one plugin (Engine)
+- Other addons no longer appear in Godot's Plugins list
+- No breaking changes - Engine still loads all addons automatically
+- Clearer architecture - Engine is the plugin, others are libraries
+- Individual addon imports still work (they're just code, not plugins)
+
+**Key Insight:** Not all code in `addons/` needs to be a plugin. Engine acts as the plugin entry point, while other addons are libraries that Engine loads. This simplifies the user experience while maintaining the modular code structure.
+
 ### Source Directory Reorganization
 
 **Decision:** Moved all source code into `src/` subdirectories within each addon (January 2026)
 
 **Rationale:**
 - Separates source code from configuration and documentation files
-- Cleaner addon root directory (only plugin.cfg, barrel file)
+- Cleaner addon root directory (barrel file, and plugin.cfg only for Engine addon)
 - Follows common project structure patterns
 - Makes it clear which files are source code vs. metadata
 - Easier to exclude source from certain operations if needed
@@ -281,7 +301,7 @@ addons/
 - Created `addons/support/src/` and moved array.gd and string.gd into it
 - Updated all preload paths in source files to include `src/` prefix
 - Updated barrel files (transport.gd, support.gd) to reference new paths
-- Updated plugin.cfg script paths to `./src/transport.gd` and `./src/support.gd`
+- Updated plugin.cfg script paths to `./src/transport.gd` and `./src/support.gd` (note: plugin.cfg files were later removed from all addons except Engine - see "Engine-Only Plugin Architecture")
 - Barrel files remain at addon root for public API access
 
 **Impact:**
@@ -600,7 +620,7 @@ if not source.connect(signal_name, callback):
 
 **Implementation:**
 - Moved all files from `packages/transport/` to `addons/transport/` (note: transport addon was later split)
-- Created `plugin.cfg` configuration file for each addon
+- Created `plugin.cfg` configuration file for each addon (note: plugin.cfg files were later removed from all addons except Engine - see "Engine-Only Plugin Architecture")
 - Updated all preload paths from `res://packages/transport/` to `res://addons/transport/`
 - Updated documentation and examples with new paths
 - Removed obsolete `packages/` directory
@@ -608,10 +628,10 @@ if not source.connect(signal_name, callback):
 **Impact:**
 - Breaking change: All import paths changed from `res://packages/` to `res://addons/`
 - Users must update their code to use new paths
-- Addons can now be enabled/disabled through Godot's plugin interface
+- Addons can now be enabled/disabled through Godot's plugin interface (note: later simplified to only Engine plugin - see "Engine-Only Plugin Architecture")
 - Better alignment with Godot ecosystem standards
 
-**Note (January 2026):** The transport addon was later split into separate addons (event, command, message, middleware, utils). All addons now follow the same `addons/{name}/` structure.
+**Note (January 2026):** The transport addon was later split into separate addons (event, command, message, middleware, utils). All addons now follow the same `addons/{name}/` structure. Only the Engine addon has a plugin.cfg file and needs to be enabled.
 
 ### Middleware Directory Organization
 
