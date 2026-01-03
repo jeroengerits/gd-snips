@@ -346,13 +346,13 @@ The transport system is designed as an alternative to Godot signals, but sometim
 const Transport = preload("res://packages/transport/transport.gd")
 
 var event_bus = Transport.EventBus.new()
-var signal_bridge = Transport.SignalBridge.new(event_bus)
+var event_signal_bridge = Transport.EventSignalBridge.new(event_bus)
 
 # Simple bridge: button press → event
-signal_bridge.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
+event_signal_bridge.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
 
 # Custom data mapping: extract what you need from signal args
-signal_bridge.connect_signal_to_event(
+event_signal_bridge.connect_signal_to_event(
     $Area2D,
     "body_entered",
     AreaEnteredEvent,
@@ -360,7 +360,7 @@ signal_bridge.connect_signal_to_event(
 )
 
 # Clean up when done (automatically happens when bridge is freed)
-signal_bridge.disconnect_all()
+event_signal_bridge.disconnect_all()
 ```
 
 **Command Signal Bridge:**

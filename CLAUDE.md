@@ -143,13 +143,13 @@ Subscriptions and adapters automatically clean up to prevent memory leaks:
 **Usage Guidelines:**
 - Use transport for game logic and domain events
 - Use signals for UI interactions and Godot-specific events
-- Use SignalBridge/CommandSignalBridge when bridging signals to transport
+- Use EventSignalBridge/CommandSignalBridge when bridging signals to transport
 - Keep adapters thin—only convert formats, no business logic
 
 **Pattern:**
 ```gdscript
 # Signal → Event
-var adapter = Transport.SignalBridge.new(event_bus)
+var adapter = Transport.EventSignalBridge.new(event_bus)
 adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
 
 # Signal → Command
