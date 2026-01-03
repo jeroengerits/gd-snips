@@ -21,9 +21,9 @@ addons/
     ├── transport.gd # Public API barrel file
     ├── message/   # Message base class and MessageTypeResolver
     ├── middleware/# Middleware base class and MiddlewareEntry
-    ├── utils/     # Metrics utilities
-    ├── event/     # EventBus, Event, EventSubscribers, Validator, EventSignalBridge, EventSubscriber
-    └── command/   # CommandBus, Command, Validator, CommandSignalBridge
+    ├── utils/     # Array utilities, metrics utilities, signal connection tracker
+    ├── event/     # EventBus, Event, EventSubscribers, EventSubscriber, Validator, EventSignalBridge
+    └── command/   # CommandBus, Command, Validator, CommandSignalBridge, CommandRoutingError
 ```
 
 ## Architectural Decisions
@@ -142,7 +142,8 @@ Base Types (Command, Event in their respective directories)
 - **Domain Rules:** Business logic separated into validation classes (Validator in command/, Validator in event/)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
 - **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
-- **Organized Structure:** Functionality-based organization with clear separation by domain (message/, middleware/, command/, event/)
+- **Organized Structure:** Functionality-based organization with clear separation by domain (message/, middleware/, command/, event/, utils/)
+- **Utilities:** Generic helper functions in `utils/` (ArrayUtils, MetricsUtils, SignalConnectionTracker)
 
 ### Type Resolution and Lifecycle Management
 
@@ -216,12 +217,20 @@ const ArrayUtils = preload("res://addons/transport/utils/array_utils.gd")
 - Exactly one handler per command type
 - Returns result or CommandRoutingError
 - Use for imperative actions
+- Handler registration via `handle()`, removal via `unregister_handler()`
 
 **Event Pattern:**
 - Zero or more listeners
 - Sequential delivery in priority order
 - Async listeners are awaited to prevent memory leaks (may block briefly)
 - Use for notifications
+- Both `emit()` and `emit_and_await()` await async listeners (difference is explicitness)
+
+**Debugging:**
+- `set_verbose(true)` - Enable detailed operation logging
+- `set_trace_enabled(true)` - Enable execution flow tracing
+- `set_log_listener_calls(true)` - Log each listener call (EventBus only)
+- `set_metrics_enabled(true)` - Enable performance metrics tracking
 
 ## Common Issues and Solutions
 

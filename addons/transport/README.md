@@ -175,12 +175,14 @@ event_bus.on(EnemyDiedEvent, _update_ui, owner=self)
 **Emit events:**
 
 ```gdscript
-# Fire and forget
+# Fire and forget (still awaits async listeners to prevent memory leaks)
 event_bus.emit(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
 
-# Or await all async listeners
-await event_bus.emit_and_await(event)
+# Explicitly await all async listeners (same behavior, but more explicit)
+await event_bus.emit_and_await(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
 ```
+
+**Note:** Both `emit()` and `emit_and_await()` await async listeners to prevent memory leaks. The difference is that `emit_and_await()` makes the async behavior explicit in your code.
 
 **Unsubscribe:**
 
@@ -191,6 +193,13 @@ event_bus.unsubscribe(EnemyDiedEvent, _my_listener)
 # By subscription ID (for anonymous functions)
 var sub_id = event_bus.on(EnemyDiedEvent, func(event): print("Event!"))
 event_bus.unsubscribe_by_id(EnemyDiedEvent, sub_id)
+```
+
+**Unregister handler (CommandBus):**
+
+```gdscript
+# Remove handler for a command type
+command_bus.unregister_handler(MovePlayerCommand)
 ```
 
 ### Middleware
@@ -257,6 +266,27 @@ var metrics = command_bus.get_metrics(MovePlayerCommand)
 # Get all metrics
 var all_metrics = command_bus.get_all_metrics()
 ```
+
+### Debugging & Logging
+
+Enable verbose logging and tracing for development:
+
+```gdscript
+# Enable verbose logging (detailed operation logs)
+command_bus.set_verbose(true)
+event_bus.set_verbose(true)
+
+# Enable trace logging (execution flow details)
+command_bus.set_trace_enabled(true)
+event_bus.set_trace_enabled(true)
+
+# Enable listener call logging (EventBus only - logs each listener invocation)
+event_bus.set_log_listener_calls(true)
+```
+
+**Verbose logging** shows detailed information about operations (handler registration, middleware execution, etc.).  
+**Trace logging** shows execution flow (dispatch/emit operations, listener counts, etc.).  
+**Listener call logging** logs each individual listener call, useful for debugging listener execution order and errors.
 
 ## Signal Integration
 
