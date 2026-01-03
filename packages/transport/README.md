@@ -29,7 +29,7 @@ A simple, type-safe messaging framework for Godot 4.5.1+ that helps you build mo
 ✅ **Broadcast events** - Zero or more listeners, no assumptions  
 ✅ **Deterministic execution** - Priority-based, sequential processing  
 ✅ **Lifecycle-aware** - Automatic subscription cleanup  
-✅ **Middleware support** - Pre/post-processing hooks  
+✅ **Middleware support** - Before/after-processing hooks  
 ✅ **Metrics & tracing** - Built-in introspection tools  
 ✅ **Scene-tree independent** - Works with RefCounted objects  
 
