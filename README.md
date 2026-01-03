@@ -4,11 +4,11 @@ Reusable packages for **Godot 4.5.1+** with a focus on modular architecture and 
 
 ## Installation
 
-### Game Project Structure
+### Option 1: Install All Packages (Recommended)
 
-This project uses a game project structure with all packages in the `src/` folder.
+This project uses a hybrid structure with standalone addons and a unified engine entry point.
 
-1. Copy the `src/` folder into your Godot project directory
+1. Copy the `addons/` folder and `src/` folder into your Godot project directory
 2. Import the engine module to access all functionality:
    ```gdscript
    const Engine = preload("res://src/engine.gd")
@@ -16,18 +16,47 @@ This project uses a game project structure with all packages in the `src/` folde
 
 **Requirements:** Godot 4.5.1 or later
 
+### Option 2: Install Individual Addons
+
+You can install only the addons you need from the `addons/` directory:
+
+**Level 0 (Zero Dependencies):**
+- `addons/support/` - Array/String utilities
+- `addons/utils/` - Metrics/Signal utilities
+- `addons/message/` - Message infrastructure (foundation for others)
+
+**Level 1 (Depends on message):**
+- `addons/middleware/` - Middleware infrastructure
+- `addons/subscribers/` - Subscriber management
+
+**Level 2 (Depends on multiple packages):**
+- `addons/command/` - Command bus (one-to-one messaging)
+- `addons/event/` - Event bus (one-to-many messaging)
+
+Then use the engine module or import addons directly:
+```gdscript
+# Via engine (recommended)
+const Engine = preload("res://src/engine.gd")
+
+# Or directly
+const Support = preload("res://addons/support/support.gd")
+const Middleware = preload("res://addons/middleware/middleware.gd")
+```
+
 ### Project Structure
 
 ```
+addons/
+├── support/       # Array/String utilities (standalone addon)
+├── utils/         # Metrics/Signal utilities (standalone addon)
+├── message/       # Base message infrastructure (standalone addon)
+├── middleware/    # Middleware infrastructure (depends on message)
+├── subscribers/   # Subscriber management (depends on message)
+├── command/       # Command bus (depends on message, subscribers, middleware, utils)
+└── event/         # Event bus (depends on message, subscribers, middleware, utils)
+
 src/
-├── command/      # Command bus (one-to-one messaging)
-├── event/        # Event bus (one-to-many messaging)
-├── message/      # Base message infrastructure
-├── middleware/  # Middleware infrastructure
-├── subscribers/ # Subscriber management
-├── support/      # Array/String utilities
-├── utils/        # Metrics/Signal utilities
-└── engine.gd    # Unified entry point
+└── engine.gd      # Unified entry point (barrel file)
 ```
 
 ## Quick Start

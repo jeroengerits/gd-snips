@@ -1,4 +1,4 @@
-const Message = preload("res://src/message/message_class.gd")
+const Message = preload("res://addons/message/message_class.gd")
 
 extends Message
 class_name Command
