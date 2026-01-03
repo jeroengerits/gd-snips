@@ -1,6 +1,6 @@
 const MessageTypeResolver = preload("res://addons/transport/src/message/message_type_resolver.gd")
 const MetricsUtils = preload("res://addons/transport/src/utils/metrics_utils.gd")
-const ArrayUtils = preload("res://addons/support/src/array.gd")
+const Array = preload("res://addons/support/src/array.gd")
 const MiddlewareEntry = preload("res://addons/transport/src/middleware/middleware_entry.gd")
 const EventSubscriber = preload("res://addons/transport/src/event/event_subscriber.gd")
 
@@ -33,7 +33,7 @@ func set_trace_enabled(enabled: bool) -> void:
 func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_before.append(mw)
-	ArrayUtils.sort_by_priority(_middleware_before)
+	Array.sort_by_priority(_middleware_before)
 	if _verbose:
 		print("[EventSubscribers] Added before-middleware (priority=", priority, ")")
 	return mw.id
@@ -46,7 +46,7 @@ func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 func add_middleware_after(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_after.append(mw)
-	ArrayUtils.sort_by_priority(_middleware_after)
+	Array.sort_by_priority(_middleware_after)
 	if _verbose:
 		print("[EventSubscribers] Added after-middleware (priority=", priority, ")")
 	return mw.id
@@ -63,7 +63,7 @@ func remove_middleware(middleware_id: int) -> bool:
 			before_to_remove.append(i)
 	
 	if before_to_remove.size() > 0:
-		ArrayUtils.remove_indices(_middleware_before, before_to_remove)
+		Array.remove_indices(_middleware_before, before_to_remove)
 		removed = true
 		if _verbose:
 			print("[EventSubscribers] Removed before-middleware (id=", middleware_id, ")")
@@ -75,7 +75,7 @@ func remove_middleware(middleware_id: int) -> bool:
 			after_to_remove.append(i)
 	
 	if after_to_remove.size() > 0:
-		ArrayUtils.remove_indices(_middleware_after, after_to_remove)
+		Array.remove_indices(_middleware_after, after_to_remove)
 		removed = true
 		if _verbose:
 			print("[EventSubscribers] Removed after-middleware (id=", middleware_id, ")")
@@ -195,7 +195,7 @@ func unregister_by_id(message_type, registration_id: int) -> bool:
 	var entries: Array = _registrations[key]
 	var index: int = entries.find(func(e): return e.id == registration_id)
 	if index >= 0:
-		ArrayUtils.remove_indices(entries, [index])
+		Array.remove_indices(entries, [index])
 		if entries.is_empty():
 			_registrations.erase(key)
 		if _verbose:
@@ -220,7 +220,7 @@ func unregister(message_type, handler: Callable) -> int:
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		ArrayUtils.remove_indices(entries, to_remove)
+		Array.remove_indices(entries, to_remove)
 		removed = to_remove.size()
 		if entries.is_empty():
 			_registrations.erase(key)
@@ -242,7 +242,7 @@ func _cleanup_invalid_registrations(key: StringName, entries: Array) -> bool:
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		ArrayUtils.remove_indices(entries, to_remove)
+		Array.remove_indices(entries, to_remove)
 		if entries.is_empty():
 			_registrations.erase(key)
 		return true
@@ -295,7 +295,7 @@ func _mark_for_removal(key: StringName, entry: EventSubscriber) -> void:
 	var entries: Array = _registrations.get(key, [])
 	var index: int = entries.find(entry)
 	if index >= 0:
-		ArrayUtils.remove_indices(entries, [index])
+		Array.remove_indices(entries, [index])
 		if entries.is_empty():
 			_registrations.erase(key)
 

@@ -25,12 +25,12 @@ Load all addons with a single import:
 const Core = preload("res://addons/core/src/core.gd")
 
 # Access Transport addon
-var command_bus = Core.Transport.CommandBus.new()
-var event_bus = Core.Transport.EventBus.new()
+var command_bus = Core.CommandBus.new()
+var event_bus = Core.EventBus.new()
 
 # Access Support addon
-Core.Support.ArrayUtils.remove_indices(arr, [1, 3])
-Core.Support.StringUtils.is_blank("   ")
+Core.Support.Array.remove_indices(arr, [1, 3])
+Core.Support.String.is_blank("   ")
 ```
 
 Or import addons individually:
@@ -52,12 +52,12 @@ Unified entry point for all gd-snips addons. Load all addons with a single impor
 const Core = preload("res://addons/core/src/core.gd")
 
 # Access Transport addon
-var command_bus = Core.Transport.CommandBus.new()
-var event_bus = Core.Transport.EventBus.new()
+var command_bus = Core.CommandBus.new()
+var event_bus = Core.EventBus.new()
 
 # Access Support addon
-Core.Support.ArrayUtils.remove_indices(arr, [1, 3])
-Core.Support.StringUtils.is_blank("   ")
+Core.Support.Array.remove_indices(arr, [1, 3])
+Core.Support.String.is_blank("   ")
 ```
 
 ### Available Addons
@@ -465,41 +465,41 @@ You can use the barrel file to load all support utilities at once:
 const Support = preload("res://addons/support/support.gd")
 
 # Access utilities via Support namespace
-Support.ArrayUtils.remove_indices(arr, [1, 3])
-Support.StringUtils.is_blank("   ")
+Support.Array.remove_indices(arr, [1, 3])
+Support.String.is_blank("   ")
 ```
 
 Or preload individual utilities:
 
 ```gdscript
-const ArrayUtils = preload("res://addons/support/src/array.gd")
-const StringUtils = preload("res://addons/support/src/string.gd")
+const Array = preload("res://addons/support/src/array.gd")
+const String = preload("res://addons/support/src/string.gd")
 
 # Array operations
 var arr = [1, 2, 3, 4, 5]
-ArrayUtils.remove_indices(arr, [1, 3])
+Array.remove_indices(arr, [1, 3])
 # arr is now [1, 3, 5]
 
 var entries = [Entry.new(priority=5), Entry.new(priority=10), Entry.new(priority=3)]
-ArrayUtils.sort_by_priority(entries)
+Array.sort_by_priority(entries)
 # entries are now sorted: priority 10, 5, 3
 
 var numbers = [1, 2, 3, 4, 5]
-var evens = ArrayUtils.filter(numbers, func(n): return n % 2 == 0)  # [2, 4]
-var doubled = ArrayUtils.map(numbers, func(n): return n * 2)  # [2, 4, 6, 8, 10]
-var found = ArrayUtils.find(numbers, func(n): return n > 3)  # 4
-var unique = ArrayUtils.unique([1, 2, 2, 3, 1])  # [1, 2, 3]
+var evens = Array.filter(numbers, func(n): return n % 2 == 0)  # [2, 4]
+var doubled = Array.map(numbers, func(n): return n * 2)  # [2, 4, 6, 8, 10]
+var found = Array.find(numbers, func(n): return n > 3)  # 4
+var unique = Array.unique([1, 2, 2, 3, 1])  # [1, 2, 3]
 
 # String operations
-StringUtils.is_blank("   ")  # true
-StringUtils.pad_left("42", 5, "0")  # "00042"
-StringUtils.truncate("Hello World", 8)  # "Hello..."
-StringUtils.to_title_case("hello world")  # "Hello World"
+String.is_blank("   ")  # true
+String.pad_left("42", 5, "0")  # "00042"
+String.truncate("Hello World", 8)  # "Hello..."
+String.to_title_case("hello world")  # "Hello World"
 ```
 
 ### API Reference
 
-#### ArrayUtils
+#### Array
 
 ##### `remove_indices(array: Array, indices: Array) -> void`
 
@@ -594,7 +594,7 @@ Flattens nested arrays into single array. Returns a new flattened array.
 - `array`: Array that may contain nested arrays
 - `depth`: Maximum depth to flatten (default: -1 for unlimited)
 
-#### StringUtils
+#### String
 
 ##### `is_blank(str: String) -> bool`
 
