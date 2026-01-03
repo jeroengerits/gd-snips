@@ -1,4 +1,4 @@
-const SignalConnectionTracker = preload("res://addons/transport/utils/signal_connection_tracker.gd")
+const SignalConnectionTracker = preload("res://addons/transport/src/utils/signal_connection_tracker.gd")
 
 extends RefCounted
 class_name EventSignalBridge

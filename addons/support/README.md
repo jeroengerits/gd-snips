@@ -26,8 +26,8 @@ Support.StringUtils.is_blank("   ")
 Or preload individual utilities:
 
 ```gdscript
-const ArrayUtils = preload("res://addons/support/array.gd")
-const StringUtils = preload("res://addons/support/string.gd")
+const ArrayUtils = preload("res://addons/support/src/array.gd")
+const StringUtils = preload("res://addons/support/src/string.gd")
 
 # Array operations
 var arr = [1, 2, 3, 4, 5]

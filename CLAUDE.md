@@ -19,17 +19,18 @@ addons/
 ├── transport/     # Command/Event transport framework (Godot addon)
 │   ├── plugin.cfg # Addon configuration
 │   ├── transport.gd # Public API barrel file
-│   ├── message/   # Message base class and MessageTypeResolver
-│   ├── middleware/# Middleware base class and MiddlewareEntry
-│   ├── utils/     # Metrics utilities, signal connection tracker
-│   ├── event/     # EventBus, Event, EventSubscribers, EventSubscriber, Validator, EventSignalBridge
-│   └── command/   # CommandBus, Command, Validator, CommandSignalBridge, CommandRoutingError
+│   └── src/       # Source code directory
+│       ├── message/   # Message base class and MessageTypeResolver
+│       ├── middleware/# Middleware base class and MiddlewareEntry
+│       ├── utils/     # Metrics utilities, signal connection tracker
+│       ├── event/     # EventBus, Event, EventSubscribers, EventSubscriber, Validator, EventSignalBridge
+│       └── command/   # CommandBus, Command, Validator, CommandSignalBridge, CommandRoutingError
 └── support/       # Support utility functions (Godot addon)
     ├── plugin.cfg # Addon configuration
     ├── support.gd # Public API barrel file
-    ├── array.gd   # Array utility functions
-    ├── string.gd  # String utility functions
-    └── README.md  # Documentation
+    └── src/       # Source code directory
+        ├── array.gd   # Array utility functions
+        └── string.gd  # String utility functions
 ```
 
 ## Architectural Decisions
@@ -197,6 +198,35 @@ addons/
 - No functional changes - metadata only
 
 **Key Insight:** Consistent metadata across addons improves project professionalism and makes version management easier as the project grows.
+
+### Source Directory Reorganization
+
+**Decision:** Moved all source code into `src/` subdirectories within each addon (January 2026)
+
+**Rationale:**
+- Separates source code from configuration and documentation files
+- Cleaner addon root directory (only plugin.cfg, barrel file, README.md)
+- Follows common project structure patterns
+- Makes it clear which files are source code vs. metadata
+- Easier to exclude source from certain operations if needed
+
+**Implementation:**
+- Created `addons/transport/src/` and moved all source files into it
+- Created `addons/support/src/` and moved array.gd and string.gd into it
+- Updated all preload paths in source files to include `src/` prefix
+- Updated barrel files (transport.gd, support.gd) to reference new paths
+- Updated plugin.cfg script paths to `./src/transport.gd` and `./src/support.gd`
+- Barrel files remain at addon root for public API access
+
+**Impact:**
+- Breaking change: All direct source file imports now require `src/` prefix
+  - Old: `res://addons/transport/command/command_bus.gd`
+  - New: `res://addons/transport/src/command/command_bus.gd`
+- Barrel file imports unchanged: `res://addons/transport/transport.gd` still works
+- Internal preload paths updated throughout codebase
+- Cleaner addon structure with clear separation of concerns
+
+**Key Insight:** Using `src/` directories provides better organization and makes the addon structure more professional. Barrel files at the root maintain backward compatibility for public API access while internal structure is organized.
 
 ### Subscribers Architecture Refactoring
 
