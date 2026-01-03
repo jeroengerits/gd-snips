@@ -34,8 +34,9 @@ func connect_signal_to_event(source: Object, signal_name: StringName, event_type
 		_event_bus.emit(event)
 	
 	# Connect signal to callback
-	if not source.connect(signal_name, callback):
-		push_error("[EventSignalBridge] Failed to connect signal: %s" % signal_name)
+	var err: int = source.connect(signal_name, callback)
+	if err != OK:
+		push_error("[EventSignalBridge] Failed to connect signal: %s (error: %d)" % [signal_name, err])
 		return
 	
 	# Store connection for cleanup
@@ -48,7 +49,7 @@ func connect_signal_to_event(source: Object, signal_name: StringName, event_type
 ## Disconnect all signals.
 func disconnect_all() -> void:
 	for conn in _connections:
-		if is_instance_valid(conn.source):
+		if is_instance_valid(conn.source) and conn.source.is_connected(conn.signal, conn.callback):
 			conn.source.disconnect(conn.signal, conn.callback)
 	_connections.clear()
 

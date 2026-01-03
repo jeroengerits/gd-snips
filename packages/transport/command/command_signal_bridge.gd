@@ -1,5 +1,6 @@
 const CommandBus = preload("res://packages/transport/command/command_bus.gd")
 const CommandRoutingError = preload("res://packages/transport/command/command_routing_error.gd")
+const Command = preload("res://packages/transport/type/command.gd")
 
 extends RefCounted
 class_name CommandSignalBridge
@@ -54,8 +55,9 @@ func connect_signal_to_command(source: Object, signal_name: StringName, command_
 			push_error("[CommandSignalBridge] Command dispatch failed: %s" % result.message)
 	
 	# Connect signal to callback
-	if not source.connect(signal_name, callback):
-		push_error("[CommandSignalBridge] Failed to connect signal: %s" % signal_name)
+	var err: int = source.connect(signal_name, callback)
+	if err != OK:
+		push_error("[CommandSignalBridge] Failed to connect signal: %s (error: %d)" % [signal_name, err])
 		return
 	
 	# Store connection for cleanup

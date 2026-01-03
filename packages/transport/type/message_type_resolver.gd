@@ -26,17 +26,14 @@ static func resolve_type(message_or_type) -> StringName:
 		# Last resort: use get_class() result (will be "Object" for plain objects)
 		return StringName(class_name_str)
 	
-	# Handle GDScript class references - try to get class_name from instance
+	# Handle GDScript class references - get class_name without instantiation
 	elif message_or_type is GDScript:
 		var script: GDScript = message_or_type
 		
-		# Try to instantiate and get class_name (preferred method)
-		var instance = script.new()
-		if instance != null:
-			var class_name_str: String = instance.get_class()
-			if class_name_str != "" and class_name_str != "Object":
-				# Instance will be cleaned up when it goes out of scope
-				return StringName(class_name_str)
+		# Prefer get_global_name() to avoid instantiation (no side effects, faster)
+		var global_name: String = script.get_global_name()
+		if global_name != "":
+			return StringName(global_name)
 		
 		# Fallback: use script filename
 		var path: String = script.resource_path

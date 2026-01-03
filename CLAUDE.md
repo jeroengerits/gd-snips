@@ -261,6 +261,25 @@ class_name MyCommand  # Required for consistent resolution
 call_deferred("_broadcast_event", event_broadcaster, evt)
 ```
 
+### Issue: SignalBridge Connection Handling (Fixed)
+
+**Symptom:** Signal connections not being cleaned up, memory leaks, duplicate callbacks
+
+**Solution:** In Godot 4, `Object.connect()` returns an `Error` code (OK == 0), not a boolean. Always check the return value correctly:
+```gdscript
+# ✅ Correct pattern
+var err: int = source.connect(signal_name, callback)
+if err != OK:
+    push_error("Failed to connect signal: %s (error: %d)" % [signal_name, err])
+    return
+
+# ❌ Incorrect pattern (treats success as failure)
+if not source.connect(signal_name, callback):
+    # This executes on SUCCESS, which is wrong!
+```
+
+**Note:** This was fixed in `CommandSignalBridge` and `EventSignalBridge` (January 2026). Both now properly track connections for cleanup via `disconnect_all()`.
+
 ## Testing Insights
 
 ### Message Bus Testing
@@ -353,6 +372,25 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 3. **Validation Logic:** Simplified Message._init() validation by removing redundant checks after assertions, improving clarity and maintainability.
 
 4. **Middleware Consistency:** Fixed EventBus to ensure after-middleware is executed even when no listeners are registered, matching CommandBus behavior. Both buses now guarantee consistent middleware execution across all execution paths (success, errors, empty handlers/listeners).
+
+5. **SignalBridge Connect/Disconnect Bug Fix:** Fixed critical bug in both `CommandSignalBridge` and `EventSignalBridge` where `Object.connect()` return value was incorrectly handled (January 2026).
+   - **Issue:** `connect()` returns `Error` code (OK == 0), but code checked `if not source.connect(...)` which treated success (0) as failure
+   - **Impact:** Connections were made but not tracked, causing:
+     - Memory leaks (connections couldn't be cleaned up via `disconnect_all()`)
+     - Potential duplicate callbacks if reconnected
+     - Errors logged even on successful connections
+   - **Fix:** Changed to `var err: int = source.connect(...); if err != OK:` pattern
+   - **Additional:** Added `is_connected()` check before disconnecting in `disconnect_all()` for safety
+
+6. **CommandSignalBridge Missing Import:** Added missing `Command` preload in `CommandSignalBridge` to fix type check compilation issue (January 2026).
+
+7. **MessageTypeResolver Performance Optimization:** Refactored to avoid script instantiation when resolving GDScript class references (January 2026).
+   - **Issue:** Previous implementation called `script.new()` to get `class_name`, which:
+     - Could cause side effects (constructor execution)
+     - Allocated unnecessary objects
+     - Was slow in hot paths
+   - **Fix:** Use `script.get_global_name()` instead, which returns `class_name` without instantiation
+   - **Impact:** Faster type resolution, no side effects, no unnecessary allocations
 
 ### Type Safety Improvements
 
