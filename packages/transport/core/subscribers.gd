@@ -2,14 +2,14 @@ const MessageTypeResolver = preload("res://packages/transport/type/message_type_
 const MetricsUtils = preload("res://packages/transport/utils/metrics_utils.gd")
 const ArrayUtils = preload("res://packages/transport/utils/array_utils.gd")
 const MiddlewareEntry = preload("res://packages/transport/middleware/middleware_entry.gd")
-const Subscriber = preload("res://packages/transport/event/subscriber.gd")
+const EventSubscriber = preload("res://packages/transport/event/event_subscriber.gd")
 
 extends RefCounted
 ## Internal subscribers registry. Manages subscriptions, middleware, and metrics.
 ## Shared infrastructure used by both CommandBus and EventBus.
 ## Use CommandBus or EventBus instead.
 
-var _registrations: Dictionary = {}  # StringName -> Array[Subscriber]
+var _registrations: Dictionary = {}  # StringName -> Array[EventSubscriber]
 var _verbose: bool = false
 var _trace_enabled: bool = false
 var _middleware_before: Array[MiddlewareEntry] = []  # Before-execution middleware
@@ -154,7 +154,7 @@ func _record_metrics(key: StringName, elapsed_time: float) -> void:
 func register(message_type, handler: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
 	assert(handler.is_valid(), "Handler callable must be valid")
 	var key: StringName = MessageTypeResolver.resolve_type(message_type)
-	var entry: Subscriber = Subscriber.new(handler, priority, once, owner)
+	var entry: EventSubscriber = EventSubscriber.new(handler, priority, once, owner)
 	
 	if not _registrations.has(key):
 		_registrations[key] = []
@@ -204,7 +204,7 @@ func unregister(message_type, handler: Callable) -> int:
 	var to_remove: Array = []
 	
 	for i in range(entries.size() - 1, -1, -1):
-		var entry: Subscriber = entries[i]
+		var entry: EventSubscriber = entries[i]
 		if entry.callable == handler:
 			to_remove.append(i)
 	
@@ -254,7 +254,7 @@ func get_registration_count(message_type) -> int:
 	return entries.size()
 
 ## Get valid registrations for a message type (internal).
-func _get_valid_registrations(message_type) -> Array[Subscriber]:
+func _get_valid_registrations(message_type) -> Array[EventSubscriber]:
 	var key: StringName = MessageTypeResolver.resolve_type(message_type)
 	if not _registrations.has(key):
 		return []
@@ -264,7 +264,7 @@ func _get_valid_registrations(message_type) -> Array[Subscriber]:
 	return entries.duplicate()
 
 ## Mark registration for removal.
-func _mark_for_removal(key: StringName, entry: Subscriber) -> void:
+func _mark_for_removal(key: StringName, entry: EventSubscriber) -> void:
 	var entries: Array = _registrations.get(key, [])
 	var index: int = entries.find(entry)
 	if index >= 0:

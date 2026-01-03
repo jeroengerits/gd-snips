@@ -20,7 +20,7 @@ packages/
     ├── type/      # Message, Command, Event base classes
     ├── utils/     # Metrics utilities
     ├── core/      # Shared infrastructure (Subscribers)
-    ├── event/     # EventBus, Validator, EventSignalBridge, Subscriber
+    ├── event/     # EventBus, Validator, EventSignalBridge, EventSubscriber
     └── command/   # CommandBus, Validator
 ```
 
@@ -74,7 +74,7 @@ packages/
 - Moved `event/subscribers.gd` → `core/subscribers.gd`
 - Extracted priority sorting logic to `_sort_by_priority()` method in Subscribers class
 - Removed EventValidator dependency from Subscribers (was only used for sorting middleware)
-- Inlined lifecycle validation in Subscriber class (removed EventValidator dependency)
+- Inlined lifecycle validation in EventSubscriber class (removed EventValidator dependency)
 - Updated imports in command_bus.gd and event_bus.gd to use new path
 
 **Impact:**
@@ -344,7 +344,7 @@ if not source.connect(signal_name, callback):
 - `utils/` - Metrics utilities
 - `core/` - Shared infrastructure: Subscribers (subscribers.gd)
 - `middleware/` - Middleware base class (middleware.gd), MiddlewareEntry (middleware_entry.gd)
-- `event/` - EventBus (event_bus.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd), Subscriber (subscriber.gd)
+- `event/` - EventBus (event_bus.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd), EventSubscriber (event_subscriber.gd)
 - `command/` - CommandBus (command_bus.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
 
 **File Naming:**

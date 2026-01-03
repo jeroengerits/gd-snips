@@ -1,7 +1,7 @@
 extends RefCounted
-class_name Subscriber
+class_name EventSubscriber
 
-## Subscriber entry.
+## Event subscriber entry.
 
 var callable: Callable
 var priority: int = 0
