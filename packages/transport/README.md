@@ -436,6 +436,7 @@ Events are emitted to all subscribers in priority order. Each listener completes
 - **Message** - Base class for all messages (commands and events extend this)
 - **Command** - Base class for commands
 - **Event** - Base class for events
+- **Middleware** - Base class for middleware implementations (works with both commands and events)
 - **CommandBridge** - Connects Godot signals to CommandBus commands
 - **Bridge** - Connects Godot signals to EventBus events
 - **SubscriptionRegistry** - Internal implementation (you don't use this directly)
