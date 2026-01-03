@@ -10,3 +10,4 @@ const SubscriptionValidator = preload("res://packages/transport/event/validator.
 const CommandSignalBridge = preload("res://packages/transport/command/command_signal_bridge.gd")
 const EventSignalBridge = preload("res://packages/transport/event/event_signal_bridge.gd")
 const Middleware = preload("res://packages/transport/middleware/middleware.gd")
+const CommandRoutingError = preload("res://packages/transport/command/command_routing_error.gd")

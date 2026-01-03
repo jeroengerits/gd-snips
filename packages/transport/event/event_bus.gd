@@ -54,16 +54,16 @@ func unsubscribe_by_id(event_type, sub_id: int) -> bool:
 func emit(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
-	await _broadcast_internal(evt, false)
+	await _emit_internal(evt, false)
 
 ## Emit event and await all async listeners.
 func emit_and_await(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
-	await _broadcast_internal(evt, true)
+	await _emit_internal(evt, true)
 
-## Internal broadcast implementation.
-func _broadcast_internal(evt: Event, await_async: bool) -> void:
+## Internal emit implementation.
+func _emit_internal(evt: Event, await_async: bool) -> void:
 	var key: StringName = resolve_type_key_from(evt)
 	
 	# Execute pre-middleware (can cancel delivery)

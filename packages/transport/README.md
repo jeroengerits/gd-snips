@@ -167,7 +167,7 @@ var cmd = MovePlayerCommand.new(Vector2(100, 200))
 var result = await command_bus.dispatch(cmd)
 
 # Check for errors
-if result is CommandBus.CommandRoutingError:
+if result is Transport.CommandRoutingError:
     print("Command failed: ", result.message)
 else:
     print("Command succeeded: ", result)
@@ -175,7 +175,7 @@ else:
 
 #### Error Handling
 
-Commands return `CommandBus.CommandRoutingError` when something goes wrong:
+Commands return `Transport.CommandRoutingError` when something goes wrong:
 - `NO_HANDLER` - No handler registered for this command type
 - `MULTIPLE_HANDLERS` - Multiple handlers registered (should never happen, but we check)
 - `HANDLER_FAILED` - Handler execution failed or was cancelled by middleware
