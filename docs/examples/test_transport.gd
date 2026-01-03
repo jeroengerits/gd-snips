@@ -20,7 +20,7 @@ func _ready() -> void:
 	command_bus = Transport.CommandBus.new()
 	event_bus = Transport.EventBus.new()
 	
-	print("=== Running SubscriptionRegistry Tests ===\n")
+	print("=== Running Subscribers Tests ===\n")
 	
 	_test_command_single_handler()
 	_test_command_no_handler()
