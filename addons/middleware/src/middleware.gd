@@ -7,7 +7,7 @@ class_name Middleware
 ##
 ## Middleware intercepts messages (commands/events) before and after they reach
 ## their handlers or listeners. Use this as a base class for reusable middleware
-## implementations, or use callables directly via event_bus.middleware.before()/after().
+## implementations, or use callables directly via event_bus.before()/after().
 
 var priority: int = 0
 

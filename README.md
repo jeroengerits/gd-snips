@@ -104,26 +104,26 @@ var event_bus = Engine.Event.Bus.new()
 var command_bus = Engine.Command.Bus.new()
 
 # Add before-middleware (can cancel delivery by returning false)
-var log_middleware_id = event_bus.middleware.before(func(message, key):
+var log_middleware_id = event_bus.before(func(message, key):
     print("Before processing: ", key)
     return true  # Return false to cancel delivery
 , priority=5)
 
 # Add after-middleware (runs after handler/listener execution)
-event_bus.middleware.after(func(message, key, result):
+event_bus.after(func(message, key, result):
     print("After processing: ", key, " (result: ", result, ")")
 , priority=5)
 
 # Middleware also works with CommandBus
-command_bus.middleware.before(func(message, key):
+command_bus.before(func(message, key):
     print("Logging command: ", key)
     return true
 )
 
 # Remove middleware using the returned ID
-event_bus.middleware.remove(log_middleware_id)
+event_bus.remove_middleware(log_middleware_id)
 
 # Clear all middleware
-event_bus.middleware.clear()
+event_bus.clear_middleware()
 ```
 

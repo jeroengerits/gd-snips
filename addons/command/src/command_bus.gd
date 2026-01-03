@@ -3,23 +3,38 @@ const CommandValidator = preload("res://addons/command/src/command_validator.gd"
 const Command = preload("res://addons/command/src/command.gd")
 const CommandRoutingError = preload("res://addons/command/src/command_routing_error.gd")
 const MessageTypeResolver = preload("res://addons/message/src/message_type_resolver.gd")
-const MiddlewareAPI = preload("res://addons/middleware/src/middleware_api.gd")
 
 extends Subscribers
 class_name CommandBus
 
 ## CommandBus: routes commands to exactly one handler.
 
-var _middleware_api: MiddlewareAPI
+## Add before-execution middleware.
+##
+## @param callback: Callable that accepts (message: Message, key: StringName) and returns bool (false to cancel)
+## @param priority: Higher priority middleware executes first (default: 0)
+## @return: Middleware ID for later removal
+func before(callback: Callable, priority: int = 0) -> int:
+	return super.add_middleware_before(callback, priority)
 
-func _init() -> void:
-	super._init()
-	_middleware_api = MiddlewareAPI.new(self)
+## Add after-execution middleware.
+##
+## @param callback: Callable that accepts (message: Message, key: StringName, result: Variant) and returns void
+## @param priority: Higher priority middleware executes first (default: 0)
+## @return: Middleware ID for later removal
+func after(callback: Callable, priority: int = 0) -> int:
+	return super.add_middleware_after(callback, priority)
 
-## Middleware API for adding and managing middleware.
-var middleware: MiddlewareAPI:
-	get:
-		return _middleware_api
+## Remove middleware by ID.
+##
+## @param middleware_id: Middleware ID returned from before() or after()
+## @return: true if middleware was found and removed, false otherwise
+func remove_middleware(middleware_id: int) -> bool:
+	return super.remove_middleware(middleware_id)
+
+## Clear all middleware.
+func clear_middleware() -> void:
+	super.clear_middleware()
 
 ## Register handler for a command type (replaces existing).
 ##
