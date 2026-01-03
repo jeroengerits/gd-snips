@@ -19,7 +19,7 @@ packages/
 └── transport/     # Command/Event transport framework
     ├── type/      # Message, Command, Event base classes
     ├── utils/     # Metrics utilities
-    ├── event/     # EventBus, SubscriptionRegistry, Validator, SignalBridge
+    ├── event/     # EventBus, SubscriptionRegistry, Validator, EventSignalBridge
     └── command/   # CommandBus, Validator
 ```
 
@@ -303,7 +303,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 - `command/` - CommandBus (command_bus.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
 
 **File Naming:**
-- Files match class names: `command_bus.gd`, `event_bus.gd`, `registry.gd`, `signal_bridge.gd`, `command_signal_bridge.gd`, `validator.gd`
+- Files match class names: `command_bus.gd`, `event_bus.gd`, `registry.gd`, `event_signal_bridge.gd`, `command_signal_bridge.gd`, `validator.gd`
 - Class names match filenames (CommandBus, EventBus, etc.)
 - All files are at most one level deep from package root
 
