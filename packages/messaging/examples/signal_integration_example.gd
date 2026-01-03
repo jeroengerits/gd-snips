@@ -2,7 +2,7 @@ extends Node
 
 ## Example demonstrating signal integration with the messaging system.
 ##
-## This shows how to bridge between Godot signals and messaging events/commands
+## This shows how to bridge between Godot signals and messaging events
 ## using the SignalEventAdapter and EventSignalAdapter utilities.
 
 const Messaging = preload("res://packages/messaging/messaging.gd")
@@ -33,7 +33,6 @@ class EnemyDiedEvent extends Messaging.Event:
 		points = pts
 		super._init("enemy_died", {"enemy_id": id, "points": pts})
 
-var command_bus: Messaging.CommandBus
 var event_bus: Messaging.EventBus
 var signal_adapter: Messaging.SignalEventAdapter
 var event_adapter: Messaging.EventSignalAdapter
@@ -43,12 +42,10 @@ signal enemy_died(enemy_id: int, points: int)
 signal button_pressed(button_name: String)
 
 func _ready() -> void:
-	# Create bus instances
-	command_bus = Messaging.CommandBus.new()
+	# Create bus instance
 	event_bus = Messaging.EventBus.new()
 	
 	# Enable verbose logging
-	command_bus.set_verbose(true)
 	event_bus.set_verbose(true)
 	
 	_setup_signal_to_event_bridge()
