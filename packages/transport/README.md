@@ -232,6 +232,10 @@ event_bus.unsubscribe_by_id(EnemyDiedEvent, sub_id)
 
 Middleware lets you intercept and process messages before and after they reach their handlers or listeners. Perfect for logging, validation, timing, and other cross-cutting concerns.
 
+Middleware works the same way for both commands and events. You can use callables directly or extend the `Middleware` base class for reusable middleware implementations.
+
+#### Using Callables (Simple)
+
 ```gdscript
 # Pre-processing middleware (runs before handlers/listeners)
 # Can cancel delivery by returning false
@@ -246,9 +250,45 @@ command_bus.add_middleware_post(func(cmd: Command, result):
     print("Post-processing result: ", result)
 , priority=0)
 
+# Same for events
+event_bus.add_middleware_pre(func(evt: Event):
+    print("Pre-processing event: ", evt)
+    return true
+, priority=0)
+
+event_bus.add_middleware_post(func(evt: Event, result):
+    print("Post-processing event: ", evt)
+, priority=0)
+
 # Remove middleware when you're done
 var middleware_id = command_bus.add_middleware_pre(my_callback)
 command_bus.remove_middleware(middleware_id)
+```
+
+#### Using Middleware Class (Reusable)
+
+For reusable middleware, extend the `Middleware` base class:
+
+```gdscript
+const Transport = preload("res://packages/transport/transport.gd")
+
+# Create a logging middleware
+class LoggingMiddleware extends Transport.Middleware:
+    func process_pre(message: Transport.Message, message_key: StringName) -> bool:
+        print("[Middleware] Pre: ", message_key, " - ", message)
+        return true  # Continue delivery
+    
+    func process_post(message: Transport.Message, message_key: StringName, result: Variant) -> void:
+        print("[Middleware] Post: ", message_key, " - Result: ", result)
+
+# Use it
+var logging_mw = LoggingMiddleware.new(priority=10)
+command_bus.add_middleware_pre(logging_mw.as_pre_callable(), logging_mw.priority)
+command_bus.add_middleware_post(logging_mw.as_post_callable(), logging_mw.priority)
+
+# Also works with events
+event_bus.add_middleware_pre(logging_mw.as_pre_callable(), logging_mw.priority)
+event_bus.add_middleware_post(logging_mw.as_post_callable(), logging_mw.priority)
 ```
 
 **Use cases:**
@@ -256,6 +296,7 @@ command_bus.remove_middleware(middleware_id)
 - Performance timing
 - Validation and authorization
 - Error handling and recovery
+- Cross-cutting concerns that apply to both commands and events
 
 ### Metrics
 

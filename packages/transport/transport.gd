@@ -9,3 +9,4 @@ const CommandValidator = preload("res://packages/transport/command/validator.gd"
 const SubscriptionValidator = preload("res://packages/transport/event/validator.gd")
 const CommandBridge = preload("res://packages/transport/command/bridge.gd")
 const Bridge = preload("res://packages/transport/event/bridge.gd")
+const Middleware = preload("res://packages/transport/utils/middleware.gd")
