@@ -7,7 +7,7 @@ class_name EventBus
 
 ## Event bus: publishes events to 0..N subscribers.
 
-var _collect_errors: bool = false  # Optionally enable error logging
+var _collect_errors: bool = false
 
 ## Enable error logging.
 func set_collect_errors(enabled: bool) -> void:
@@ -33,7 +33,7 @@ func set_metrics_enabled(enabled: bool) -> void:
 func get_metrics(event_type) -> Dictionary:
 	return super.get_metrics(event_type)
 
-## Get all performance metrics.
+## Get all metrics.
 func get_all_metrics() -> Dictionary:
 	return super.get_all_metrics()
 
@@ -129,7 +129,3 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 	
 	# Execute post-middleware
 	super._execute_middleware_post(evt, key, null)
-
-## Get all listeners for event type.
-func get_listeners(event_type) -> Array:
-	return get_subscriptions(event_type)
