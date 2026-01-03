@@ -1,38 +1,29 @@
 # Godot Snips
 
-A curated collection of packages for **Godot 4.5.1+**, designed for modular game architecture and clean code practices.
+Reusable packages for **Godot 4.5.1+** with a focus on modular architecture and clean code.
 
 ## Packages
 
 ### Messaging
 
-A high-performance, type-safe messaging framework that rigorously separates actions (commands) from notifications (events).
+Type-safe command/event messaging framework.
 
-**[Documentation →](packages/messaging/README.md)**
-
-### Collection
-
-A fluent, object-oriented wrapper for working with arrays, inspired by Laravel's Collection class. Provides method chaining and expressive syntax for common array operations.
-
-**[Documentation →](packages/collection/README.md)**
-
-## Quick Start
-
-**Using Messaging:**
 ```gdscript
 const Messaging = preload("res://packages/messaging/messaging.gd")
 
 var command_bus = Messaging.CommandBus.new()
 var event_bus = Messaging.EventBus.new()
 
-# Dispatch a command
 await command_bus.dispatch(MyCommand.new())
-
-# Publish an event
 event_bus.publish(MyEvent.new())
 ```
 
-**Using Collection:**
+**[Documentation →](packages/messaging/README.md)**
+
+### Collection
+
+Fluent array wrapper with method chaining.
+
 ```gdscript
 const Collection = preload("res://packages/collection/collection.gd")
 
@@ -40,12 +31,8 @@ var numbers = Collection.Collection.new([1, 2, 3, 4, 5])
 var evens = numbers.filter(func(n): return n % 2 == 0).array()
 ```
 
-## Developer Diary
-
-Development insights, architectural decisions, and design rationale documented over time.
-
-**[Developer Diary →](docs/developer-diary/)**
+**[Documentation →](packages/collection/README.md)**
 
 ## Requirements
 
-- **Godot 4.5.1+** - All packages are tested and designed for Godot 4.5.1 and later versions
+Godot 4.5.1+
