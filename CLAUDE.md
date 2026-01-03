@@ -91,7 +91,7 @@ packages/
 - Easier to add new packages following the same pattern
 
 **Examples:**
-- `transport/transport.gd` → `type/message.gd`, `command/commander.gd`
+- `transport/transport.gd` → `type/message.gd`, `command/command_bus.gd`
 
 ### Transport Package Architecture
 
@@ -294,11 +294,11 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 **Current Structure:**
 - `type/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
-- `event/` - EventBus (publisher.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), Bridge (bridge.gd)
-- `command/` - CommandBus (commander.gd), Validator (validator.gd)
+- `event/` - EventBus (event_bus.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), Bridge (bridge.gd)
+- `command/` - CommandBus (command_bus.gd), Validator (validator.gd)
 
 **File Naming:**
-- Files use short, descriptive names: `publisher.gd`, `commander.gd`, `registry.gd`, `bridge.gd`, `validator.gd`
+- Files match class names: `command_bus.gd`, `event_bus.gd`, `registry.gd`, `bridge.gd`, `validator.gd`
 - Class names match filenames (CommandBus, EventBus, etc.)
 - All files are at most one level deep from package root
 
