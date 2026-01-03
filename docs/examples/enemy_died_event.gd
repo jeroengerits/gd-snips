@@ -1,6 +1,6 @@
-const Transport = preload("res://addons/transport/transport.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
-extends Transport.Event
+extends Engine.Event.Event
 class_name EnemyDiedEvent
 
 ## Example event: Enemy died notification.

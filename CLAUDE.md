@@ -16,26 +16,53 @@ All addons live under `addons/`:
 
 ```
 addons/
-├── core/          # Unified entry point for all addons (Godot addon)
+├── engine/        # Unified entry point for all addons (Godot addon)
 │   ├── plugin.cfg # Addon configuration
 │   └── src/       # Source code directory
-│       └── core.gd # Public API barrel file (loads all addons)
-├── transport/     # Command/Event transport framework (Godot addon)
+│       └── engine.gd # Public API barrel file (loads all addons)
+├── event/         # Event bus system (Godot addon)
 │   ├── plugin.cfg # Addon configuration
-│   ├── transport.gd # Public API barrel file
+│   ├── event.gd   # Public API barrel file
 │   └── src/       # Source code directory
-│       ├── message/   # Message base class and MessageTypeResolver
-│       ├── middleware/# Middleware base class and MiddlewareEntry
-│       ├── utils/     # Metrics utilities, signal connection tracker
-│       ├── event/     # EventBus, Event, EventSubscribers, EventSubscriber, Validator, EventSignalBridge
-│       └── command/   # CommandBus, Command, Validator, CommandSignalBridge, CommandRoutingError
+│       ├── event_bus.gd          # EventBus class
+│       ├── event.gd              # Event base class
+│       ├── event_subscribers.gd  # EventSubscribers (shared infrastructure)
+│       ├── event_subscriber.gd   # EventSubscriber class
+│       ├── event_validator.gd    # EventValidator class
+│       └── event_signal_bridge.gd # EventSignalBridge class
+├── command/       # Command bus system (Godot addon)
+│   ├── plugin.cfg # Addon configuration
+│   ├── command.gd # Public API barrel file
+│   └── src/       # Source code directory
+│       ├── command_bus.gd          # CommandBus class
+│       ├── command.gd              # Command base class
+│       ├── command_validator.gd    # CommandValidator class
+│       ├── command_signal_bridge.gd # CommandSignalBridge class
+│       └── command_routing_error.gd # CommandRoutingError class
+├── message/       # Message base types (Godot addon)
+│   ├── plugin.cfg # Addon configuration
+│   ├── message.gd # Public API barrel file
+│   └── src/       # Source code directory
+│       ├── message.gd              # Message base class
+│       └── message_type_resolver.gd # MessageTypeResolver class
+├── middleware/    # Middleware infrastructure (Godot addon)
+│   ├── plugin.cfg # Addon configuration
+│   ├── middleware.gd # Public API barrel file
+│   └── src/       # Source code directory
+│       ├── middleware.gd        # Middleware base class
+│       └── middleware_entry.gd  # MiddlewareEntry class
+├── utils/         # Utility functions (Godot addon)
+│   ├── plugin.cfg # Addon configuration
+│   ├── utils.gd   # Public API barrel file
+│   └── src/       # Source code directory
+│       ├── metrics_utils.gd           # MetricsUtils class
+│       └── signal_connection_tracker.gd # SignalConnectionTracker class
 └── support/       # Support utility functions (Godot addon)
     ├── plugin.cfg # Addon configuration
     ├── support.gd # Public API barrel file
     └── src/       # Source code directory
         ├── array.gd   # Array utility functions
         └── string.gd  # String utility functions
-└── README.md      # Consolidated documentation for all addons
 ```
 
 ## Architectural Decisions
@@ -90,17 +117,19 @@ addons/
 
 **Implementation:**
 - Created new `addons/utils/` directory with `plugin.cfg`
-- Moved `array_utils.gd` from `addons/transport/utils/` to `addons/utils/`
+- Moved `array_utils.gd` from `addons/transport/utils/` to `addons/utils/` (note: transport addon was later split into separate addons)
 - Updated transport addon to preload from new location
 - Created README.md for utils addon
 
 **Impact:**
 - Breaking change: ArrayUtils import path changed from `res://addons/transport/utils/array_utils.gd` to `res://addons/utils/array_utils.gd`
-- Transport addon now depends on utils addon (must be installed together)
+- Transport addon now depends on utils addon (must be installed together) (note: transport addon no longer exists, replaced by separate addons)
 - Array utilities can be used independently in other projects
 - Better separation of concerns
 
 **Key Insight:** Generic utilities should be in separate addons when they're reusable across projects, not just within a single addon.
+
+**Note (January 2026):** The transport addon was later split into separate addons (event, command, message, middleware, utils). The utils addon now contains metrics utilities and signal connection tracker, while array/string utilities were moved to the support addon.
 
 ### Utils Addon Expansion
 
@@ -193,8 +222,9 @@ addons/
 - Author field provides clear ownership information
 
 **Implementation:**
-- Updated `addons/transport/plugin.cfg`: version `1.0.0` → `0.0.1`, author `""` → `"Jeroen Gerits"`
+- Updated `addons/transport/plugin.cfg`: version `1.0.0` → `0.0.1`, author `""` → `"Jeroen Gerits"` (note: transport addon was later split)
 - Updated `addons/support/plugin.cfg`: version `1.0.0` → `0.0.1`, author `""` → `"Jeroen Gerits"`
+- All new addons (event, command, message, middleware, utils, engine) use version `0.0.1` and author `"Jeroen Gerits"`
 
 **Impact:**
 - All addons now have consistent versioning
@@ -204,32 +234,36 @@ addons/
 
 **Key Insight:** Consistent metadata across addons improves project professionalism and makes version management easier as the project grows.
 
-### Core Addon Creation
+**Note (January 2026):** The transport addon was later split into separate addons (event, command, message, middleware, utils). All addons follow the same versioning and author conventions.
 
-**Decision:** Created `core` addon as unified entry point for all gd-snips addons (January 2026)
+### Engine Addon Creation
+
+**Decision:** Created `engine` addon as unified entry point for all gd-snips addons (January 2026)
 
 **Rationale:**
 - Provides single import point to access all addons
-- Simplifies usage: `const Core = preload("res://addons/core/core.gd")` loads everything
+- Simplifies usage: `const Engine = preload("res://addons/engine/src/engine.gd")` loads everything
 - Better developer experience - one import instead of multiple
 - Maintains flexibility - individual addons can still be imported separately
 - Follows common pattern of meta-packages in package ecosystems
 
 **Implementation:**
-- Created `addons/core/` directory with `plugin.cfg`
-- Created `core.gd` barrel file that preloads Transport and Support
+- Created `addons/engine/` directory with `plugin.cfg` (renamed from `core/` addon)
+- Created `engine.gd` barrel file that preloads all addons (Event, Command, Message, Middleware, Utils, Support)
 - Created README.md with usage examples
-- Updated main README.md to list Core addon first
+- Updated main README.md to list Engine addon first
 - Updated CLAUDE.md project structure diagram
 
 **Impact:**
-- New feature: Users can now use `const Core = preload("res://addons/core/core.gd")` to access all addons
-- Access pattern: `Core.Transport.CommandBus`, `Core.Support.ArrayUtils`
+- New feature: Users can now use `const Engine = preload("res://addons/engine/src/engine.gd")` to access all addons
+- Access pattern: `Engine.Command.Bus`, `Engine.Event.Bus`, `Engine.Support.Array`, etc.
 - Backward compatible: Individual addon imports still work
-- No breaking changes - all existing code continues to work
-- Core addon depends on Transport and Support (must be installed together)
+- No breaking changes - all existing code continues to work (after migration from transport addon)
+- Engine addon depends on all other addons (must be installed together)
 
-**Key Insight:** A meta-addon provides convenience without forcing a specific usage pattern. Users can choose between the unified Core import or individual addon imports based on their needs.
+**Key Insight:** A meta-addon provides convenience without forcing a specific usage pattern. Users can choose between the unified Engine import or individual addon imports based on their needs.
+
+**Note (January 2026):** The transport addon was later split into separate addons (event, command, message, middleware, utils). The engine addon now loads these separate addons instead of a single transport addon.
 
 ### Source Directory Reorganization
 
@@ -243,7 +277,7 @@ addons/
 - Easier to exclude source from certain operations if needed
 
 **Implementation:**
-- Created `addons/transport/src/` and moved all source files into it
+- Created `addons/transport/src/` and moved all source files into it (note: transport addon was later split)
 - Created `addons/support/src/` and moved array.gd and string.gd into it
 - Updated all preload paths in source files to include `src/` prefix
 - Updated barrel files (transport.gd, support.gd) to reference new paths
@@ -253,12 +287,14 @@ addons/
 **Impact:**
 - Breaking change: All direct source file imports now require `src/` prefix
   - Old: `res://addons/transport/command/command_bus.gd`
-  - New: `res://addons/transport/src/command/command_bus.gd`
-- Barrel file imports unchanged: `res://addons/transport/transport.gd` still works
+  - New: `res://addons/transport/src/command/command_bus.gd` (note: transport addon no longer exists)
+- Barrel file imports unchanged: `res://addons/transport/transport.gd` still works (at the time)
 - Internal preload paths updated throughout codebase
 - Cleaner addon structure with clear separation of concerns
 
 **Key Insight:** Using `src/` directories provides better organization and makes the addon structure more professional. Barrel files at the root maintain backward compatibility for public API access while internal structure is organized.
+
+**Note (January 2026):** The transport addon was later split into separate addons (event, command, message, middleware, utils), each with their own `src/` directory structure.
 
 ### Subscribers Architecture Refactoring
 
@@ -315,31 +351,36 @@ addons/
 - Easier to add new packages following the same pattern
 
 **Examples:**
-- `transport/transport.gd` → `message/message.gd`, `command/command_bus.gd`
+- `engine/engine.gd` → `event/event.gd`, `command/command.gd`, `message/message.gd`, `middleware/middleware.gd`, `utils/utils.gd`, `support/support.gd`
+- `event/event.gd` → `event_bus.gd`, `event.gd`, `event_signal_bridge.gd`
+- `command/command.gd` → `command_bus.gd`, `command.gd`, `command_signal_bridge.gd`
 - `support/support.gd` → `array.gd`, `string.gd`
 
-### Transport Package Architecture
+### Addon Architecture
 
 **Layered Design:**
 ```
-Public API (CommandBus/EventBus)
+Public API (CommandBus/EventBus via Engine addon)
     ↓
-Shared Infrastructure (EventSubscribers, Message/MessageTypeResolver, Middleware)
+Shared Infrastructure (EventSubscribers in event/, Message/MessageTypeResolver in message/, Middleware in middleware/)
     ↓
 Domain Rules (Validator classes in command/ and event/)
     ↓
-Base Types (Command, Event in their respective directories)
+Base Types (Command, Event in their respective addons)
 ```
 
 **Key Patterns:**
-- **Barrel Files:** Each addon has a main entry point (e.g., `transport.gd`, `support.gd`)
-- **Shared Infrastructure:** Message infrastructure in `message/`, middleware in `middleware/`, and EventSubscribers in `event/` (used by both CommandBus and EventBus)
+- **Barrel Files:** Each addon has a main entry point (e.g., `engine.gd`, `event.gd`, `command.gd`, `support.gd`)
+- **Unified Entry Point:** Engine addon provides single import for all addons (`Engine.Command.Bus`, `Engine.Event.Bus`)
+- **Shared Infrastructure:** EventSubscribers in event addon (used by both CommandBus and EventBus), Message infrastructure in message addon, middleware in middleware addon
 - **Domain Rules:** Business logic separated into validation classes (Validator in command/, Validator in event/)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
-- **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
-- **Organized Structure:** Functionality-based organization with clear separation by domain (message/, middleware/, command/, event/, utils/)
-- **Utilities:** Generic helper functions in `utils/` (MetricsUtils, SignalConnectionTracker)
-- **Utils:** Extracted to separate `utils` addon for reusability (January 2026)
+- **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`) via MessageTypeResolver in message addon
+- **Organized Structure:** Each addon is a separate module with clear separation by domain (event/, command/, message/, middleware/, utils/, support/)
+- **Utilities:** Generic helper functions in `utils/` addon (MetricsUtils, SignalConnectionTracker) and `support/` addon (Array, String)
+- **Modular Design:** Addons can be used independently or through the unified Engine entry point
+
+**Note (January 2026):** The transport addon was split into separate addons (event, command, message, middleware, utils) for better modularity and separation of concerns.
 
 ### Type Resolution and Lifecycle Management
 
@@ -391,25 +432,27 @@ command_adapter.connect_signal_to_command($SaveButton, "pressed", SaveGameComman
 
 **Addon Import (Barrel Files):**
 ```gdscript
-# Transport addon
-const Transport = preload("res://addons/transport/transport.gd")
-var command_bus = Transport.CommandBus.new()
-var event_bus = Transport.EventBus.new()
+# Engine addon (unified entry point)
+const Engine = preload("res://addons/engine/src/engine.gd")
+var command_bus = Engine.Command.Bus.new()
+var event_bus = Engine.Event.Bus.new()
 
 # Support addon
 const Support = preload("res://addons/support/support.gd")
-Support.ArrayUtils.remove_indices(arr, [1, 3])
-Support.StringUtils.is_blank("   ")
+Support.Array.remove_indices(arr, [1, 3])
+Support.String.is_blank("   ")
 ```
 
 **Direct Import (for internal files):**
 ```gdscript
-const Subscribers = preload("res://addons/transport/event/event_subscribers.gd")
-const MessageTypeResolver = preload("res://addons/transport/message/message_type_resolver.gd")
-const ArrayUtils = preload("res://addons/support/array.gd")
+const EventSubscribers = preload("res://addons/event/src/event_subscribers.gd")
+const MessageTypeResolver = preload("res://addons/message/src/message_type_resolver.gd")
+const Array = preload("res://addons/support/src/array.gd")
 ```
 
-**Note:** Collection package was removed (January 2026). Array utilities were extracted to separate `support` addon (January 2026, renamed from `utils`). The support addon includes both `ArrayUtils` (12 methods) and `StringUtils` (10 methods) for common operations. Use direct GDScript array/dictionary operations or utilities from the support addon.
+**Note:** Collection package was removed (January 2026). Array utilities were extracted to separate `support` addon (January 2026, renamed from `utils`). The support addon includes both `Array` (12 methods) and `String` (10 methods) for common operations. Use direct GDScript array/dictionary operations or utilities from the support addon.
+
+**Note (January 2026):** The transport addon was split into separate addons. EventSubscribers is now in the event addon, MessageTypeResolver is in the message addon.
 
 ### Transport Patterns
 
@@ -440,9 +483,12 @@ const ArrayUtils = preload("res://addons/support/array.gd")
 **Symptom:** `preload()` fails with "Resource not found"
 
 **Solution:** Ensure all paths use `res://addons/` prefix:
-- ✅ `res://addons/transport/transport.gd`
-- ❌ `res://transport/transport.gd`
+- ✅ `res://addons/engine/src/engine.gd` (unified entry point)
+- ✅ `res://addons/event/event.gd` (individual addon)
+- ✅ `res://addons/command/command.gd` (individual addon)
+- ❌ `res://transport/transport.gd` (missing addons/ prefix)
 - ❌ `res://packages/transport/transport.gd` (old path, no longer valid)
+- ❌ `res://addons/transport/transport.gd` (transport addon no longer exists, split into separate addons)
 
 ### Issue: Multiple Command Handlers
 
@@ -553,7 +599,7 @@ if not source.connect(signal_name, callback):
 - Better integration with Godot's plugin management
 
 **Implementation:**
-- Moved all files from `packages/transport/` to `addons/transport/`
+- Moved all files from `packages/transport/` to `addons/transport/` (note: transport addon was later split)
 - Created `plugin.cfg` configuration file for each addon
 - Updated all preload paths from `res://packages/transport/` to `res://addons/transport/`
 - Updated documentation and examples with new paths
@@ -564,6 +610,8 @@ if not source.connect(signal_name, callback):
 - Users must update their code to use new paths
 - Addons can now be enabled/disabled through Godot's plugin interface
 - Better alignment with Godot ecosystem standards
+
+**Note (January 2026):** The transport addon was later split into separate addons (event, command, message, middleware, utils). All addons now follow the same `addons/{name}/` structure.
 
 ### Middleware Directory Organization
 
@@ -605,12 +653,12 @@ if not source.connect(signal_name, callback):
 5. Reorganized: Removed `type/` directory, moved files to domain-specific directories (January 2026)
 6. Further refined: Removed `core/` directory, organized by functional domain (January 2026)
 
-**Current Structure:**
-- `message/` - Message base class (message.gd), MessageTypeResolver (message_type_resolver.gd)
-- `middleware/` - Middleware base class (middleware.gd), MiddlewareEntry (middleware_entry.gd)
-- `utils/` - Metrics utilities
-- `event/` - EventBus (event_bus.gd), Event (event.gd), EventSubscribers (event_subscribers.gd), EventSubscriber (event_subscriber.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd)
-- `command/` - CommandBus (command_bus.gd), Command (command.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
+**Current Structure (as separate addons):**
+- `addons/event/` - EventBus, Event, EventSubscribers, EventSubscriber, Validator, EventSignalBridge
+- `addons/command/` - CommandBus, Command, Validator, CommandSignalBridge, CommandRoutingError
+- `addons/message/` - Message base class, MessageTypeResolver
+- `addons/middleware/` - Middleware base class, MiddlewareEntry
+- `addons/utils/` - Metrics utilities, SignalConnectionTracker
 
 **File Naming:**
 - Files match class names: `command_bus.gd`, `event_bus.gd`, `subscribers.gd`, `event_signal_bridge.gd`, `command_signal_bridge.gd`, `validator.gd`

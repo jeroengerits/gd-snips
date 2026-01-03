@@ -11,9 +11,9 @@ To install all gd-snips addons at once:
 1. Copy the entire `addons/` directory from this repository into your Godot project's `addons/` folder
 2. Open your project in Godot
 3. Go to **Project → Project Settings → Plugins**
-4. Enable the "Core" plugin
+4. Enable the "Engine" plugin
 
-When you install the Core addon, all addons (Transport, Support) are automatically available. The Core addon provides a unified entry point to access all functionality.
+When you install the Engine addon, all addons (Message, Middleware, Utils, Event, Command, Support) are automatically available. The Engine addon provides a unified entry point to access all functionality.
 
 **Requirements:** Godot 4.5.1 or later
 
@@ -22,150 +22,97 @@ When you install the Core addon, all addons (Transport, Support) are automatical
 Load all addons with a single import:
 
 ```gdscript
-const Core = preload("res://addons/core/src/core.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
-# Access Transport addon
-var command_bus = Core.CommandBus.new()
-var event_bus = Core.EventBus.new()
+# Access Command addon
+var command_bus = Engine.Command.Bus.new()
+
+# Access Event addon
+var event_bus = Engine.Event.Bus.new()
 
 # Access Support addon
-Core.Support.Array.remove_indices(arr, [1, 3])
-Core.Support.String.is_blank("   ")
-```
-
-Or import addons individually:
-
-```gdscript
-const Transport = preload("res://addons/transport/transport.gd")
-const Support = preload("res://addons/support/support.gd")
+Engine.Support.Array.remove_indices(arr, [1, 3])
+Engine.Support.String.is_blank("   ")
 ```
 
 ---
 
-## Core Addon
+## Engine Addon
 
 Unified entry point for all gd-snips addons. Load all addons with a single import.
 
 ### Usage
 
 ```gdscript
-const Core = preload("res://addons/core/src/core.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
-# Access Transport addon
-var command_bus = Core.CommandBus.new()
-var event_bus = Core.EventBus.new()
+# Access Command addon
+var command_bus = Engine.Command.Bus.new()
+
+# Access Event addon
+var event_bus = Engine.Event.Bus.new()
 
 # Access Support addon
-Core.Support.Array.remove_indices(arr, [1, 3])
-Core.Support.String.is_blank("   ")
+Engine.Support.Array.remove_indices(arr, [1, 3])
+Engine.Support.String.is_blank("   ")
 ```
 
 ### Available Addons
 
-- **Transport** - Type-safe command/event transport framework
+- **Message** - Base message types for command/event systems
+- **Middleware** - Middleware infrastructure for message processing
+- **Utils** - Utility functions for transport systems
+- **Event** - Event bus and event message types
+- **Command** - Command bus and command message types
 - **Support** - Utility functions for array and string operations
 
 ---
 
-## Transport Addon
+## Event Addon
 
-A message transport framework for Godot 4.5.1+ that helps you build clean, decoupled game architectures.
+Event bus system for Godot 4.5.1+ that helps you build clean, decoupled game architectures through event-driven communication.
 
 ### Overview
 
-Transport provides a centralized messaging system for communication between different parts of your game. Instead of tightly coupling systems together, you send **commands** (actions to perform) and **events** (notifications of things that occurred) through centralized buses.
+The Event addon provides a centralized event broadcasting system for communication between different parts of your game. Instead of tightly coupling systems together, you emit **events** (notifications of things that occurred) through a centralized bus, and multiple listeners can subscribe to react to those events.
 
 This approach decouples systems by removing direct dependencies while preserving compile-time type safety, predictable execution order, and easier debugging through built-in metrics and tracing.
 
 ### Features
 
-- ✅ **Type-safe** - Compile-time type checking for commands and events
-- ✅ **Commands** - Exactly one handler per command (no ambiguity)
-- ✅ **Events** - Zero or more listeners (flexible broadcasting)
+- ✅ **Type-safe** - Compile-time type checking for events
+- ✅ **Zero or more listeners** - Flexible broadcasting
 - ✅ **Priority-based** - Control execution order with priorities
 - ✅ **Lifecycle-aware** - Automatic cleanup when objects are freed
-- ✅ **Middleware** - Intercept and process messages before/after execution
+- ✅ **Middleware** - Intercept and process events before/after execution
 - ✅ **Metrics** - Built-in performance tracking and introspection
 - ✅ **Scene-tree independent** - Works with any `RefCounted` objects
 
 ### Quick Start
 
-Here's a minimal example to get you started:
-
 ```gdscript
-const Transport = preload("res://addons/transport/transport.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
-# Create bus instances
-var command_bus = Transport.CommandBus.new()
-var event_bus = Transport.EventBus.new()
-
-# Register a command handler
-command_bus.handle(MovePlayerCommand, func(command):
-    player.move_to(command.target_position)
-    return true
-)
+# Create event bus instance
+var event_bus = Engine.Event.Bus.new()
 
 # Subscribe to an event
 event_bus.on(EnemyDiedEvent, func(event):
     print("Enemy ", event.enemy_id, " died!")
 )
 
-# Use them
-await command_bus.dispatch(MovePlayerCommand.new(Vector2(100, 200)))
+# Emit events
 event_bus.emit(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
 ```
 
-### Core Concepts
+### Creating Events
 
-#### Commands
-
-Commands represent actions that need to happen. Think: **"Do this."**
-
-- **One handler only** - Each command type has exactly one handler
-- **Returns a result** - Handlers can return data or errors
-- **Clear ownership** - No ambiguity about who handles what
-
-**Good for:** Moving the player, saving the game, applying damage, etc.
-
-#### Events
-
-Events announce that something happened. Think: **"This happened."**
-
-- **Zero or more listeners** - No listeners? Fine. Many listeners? Also fine.
-- **Priority-based** - Higher priority listeners run first
-- **Sequential execution** - Each listener completes before the next starts
-
-**Good for:** Enemy died, player health changed, level completed, etc.
-
-### Usage Guide
-
-#### Creating Commands
-
-Commands must extend `Transport.Command`:
+Events must extend `Engine.Event.Event`:
 
 ```gdscript
-const Transport = preload("res://addons/transport/transport.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
-extends Transport.Command
-class_name MovePlayerCommand
-
-var target_position: Vector2
-var player_id: int = 0
-
-func _init(pos: Vector2, player: int = 0) -> void:
-    target_position = pos
-    player_id = player
-    super._init("move_player", {"target_position": pos, "player_id": player}, "Move player to position")
-```
-
-#### Creating Events
-
-Events must extend `Transport.Event`:
-
-```gdscript
-const Transport = preload("res://addons/transport/transport.gd")
-
-extends Transport.Event
+extends Engine.Event.Event
 class_name EnemyDiedEvent
 
 var enemy_id: int
@@ -179,49 +126,9 @@ func _init(e_id: int, pts: int, pos: Vector2 = Vector2.ZERO) -> void:
     super._init("enemy_died", {"enemy_id": e_id, "points": pts, "position": pos}, "Enemy %d died" % e_id)
 ```
 
-#### CommandBus
+### EventBus API
 
-The `CommandBus` ensures exactly one handler processes each command.
-
-**Register a handler:**
-
-```gdscript
-command_bus.handle(MovePlayerCommand, func(command):
-    player.move_to(command.target_position)
-    return true
-)
-```
-
-**Dispatch a command:**
-
-```gdscript
-var result = await command_bus.dispatch(MovePlayerCommand.new(Vector2(100, 200)))
-
-# Check for errors
-if result is Transport.CommandRoutingError:
-    print("Command failed: ", result.message)
-else:
-    print("Command succeeded: ", result)
-```
-
-**Error types:**
-
-- `NO_HANDLER` - No handler registered for this command
-- `MULTIPLE_HANDLERS` - Multiple handlers registered (shouldn't happen)
-- `HANDLER_FAILED` - Handler execution failed or was cancelled
-
-**Unregister handler:**
-
-```gdscript
-# Remove handler for a command type
-command_bus.unregister_handler(MovePlayerCommand)
-```
-
-#### EventBus
-
-The `EventBus` broadcasts events to all subscribers.
-
-**Subscribe to events:**
+#### Subscribe to events
 
 ```gdscript
 # Basic subscription
@@ -239,7 +146,7 @@ event_bus.on(EnemyDiedEvent, _on_first_enemy_death, once=true)
 event_bus.on(EnemyDiedEvent, _update_ui, owner=self)
 ```
 
-**Emit events:**
+#### Emit events
 
 ```gdscript
 # Fire and forget (still awaits async listeners to prevent memory leaks)
@@ -251,7 +158,7 @@ await event_bus.emit_and_await(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
 
 **Note:** Both `emit()` and `emit_and_await()` await async listeners to prevent memory leaks. The difference is that `emit_and_await()` makes the async behavior explicit in your code.
 
-**Unsubscribe:**
+#### Unsubscribe
 
 ```gdscript
 # By callable
@@ -264,44 +171,189 @@ event_bus.unsubscribe_by_id(EnemyDiedEvent, sub_id)
 
 #### Middleware
 
-Middleware lets you intercept messages before and after they're processed. Useful for logging, validation, timing, and other cross-cutting concerns.
-
-**Using callables:**
+Middleware lets you intercept events before and after they're processed:
 
 ```gdscript
 # Before-execution middleware (can cancel by returning false)
-command_bus.add_middleware_before(func(cmd: Command):
+event_bus.add_middleware_before(func(evt: Engine.Event.Event):
+    print("Before: ", evt)
+    return true  # Return false to cancel
+, priority=0)
+
+# After-execution middleware
+event_bus.add_middleware_after(func(evt: Engine.Event.Event, result):
+    print("After: ", result)
+, priority=0)
+
+# Remove middleware
+var mw_id = event_bus.add_middleware_before(my_callback)
+event_bus.remove_middleware(mw_id)
+```
+
+#### Metrics
+
+Track performance and usage patterns:
+
+```gdscript
+# Enable metrics
+event_bus.set_metrics_enabled(true)
+
+# Get metrics for a specific type
+var metrics = event_bus.get_metrics(EnemyDiedEvent)
+# Returns: {
+#   "count": 42,
+#   "total_time": 123.4,
+#   "min_time": 0.5,
+#   "max_time": 5.2,
+#   "avg_time": 2.94
+# }
+
+# Get all metrics
+var all_metrics = event_bus.get_all_metrics()
+```
+
+#### Debugging & Logging
+
+```gdscript
+# Enable verbose logging (detailed operation logs)
+event_bus.set_verbose(true)
+
+# Enable trace logging (execution flow details)
+event_bus.set_trace_enabled(true)
+
+# Enable listener call logging (logs each listener invocation)
+event_bus.set_log_listener_calls(true)
+```
+
+#### Signal Integration
+
+Bridge Godot signals to events:
+
+```gdscript
+const Engine = preload("res://addons/engine/src/engine.gd")
+
+var event_bus = Engine.Event.Bus.new()
+var bridge = Engine.Event.SignalBridge.new(event_bus)
+bridge.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
+
+# Clean up (happens automatically when bridge is freed)
+bridge.disconnect_all()
+```
+
+---
+
+## Command Addon
+
+Command bus system for Godot 4.5.1+ that helps you build clean, decoupled game architectures through command-driven communication.
+
+### Overview
+
+The Command addon provides a centralized command dispatching system for communication between different parts of your game. Instead of tightly coupling systems together, you dispatch **commands** (actions to perform) through a centralized bus, and exactly one handler processes each command.
+
+This approach decouples systems by removing direct dependencies while preserving compile-time type safety, predictable execution order, and easier debugging through built-in metrics and tracing.
+
+### Features
+
+- ✅ **Type-safe** - Compile-time type checking for commands
+- ✅ **Exactly one handler** - No ambiguity about who handles what
+- ✅ **Returns results** - Handlers can return data or errors
+- ✅ **Lifecycle-aware** - Automatic cleanup when objects are freed
+- ✅ **Middleware** - Intercept and process commands before/after execution
+- ✅ **Metrics** - Built-in performance tracking and introspection
+- ✅ **Scene-tree independent** - Works with any `RefCounted` objects
+
+### Quick Start
+
+```gdscript
+const Engine = preload("res://addons/engine/src/engine.gd")
+
+# Create command bus instance
+var command_bus = Engine.Command.Bus.new()
+
+# Register a command handler
+command_bus.handle(MovePlayerCommand, func(command):
+    player.move_to(command.target_position)
+    return true
+)
+
+# Dispatch commands
+await command_bus.dispatch(MovePlayerCommand.new(Vector2(100, 200)))
+```
+
+### Creating Commands
+
+Commands must extend `Engine.Command.Command`:
+
+```gdscript
+const Engine = preload("res://addons/engine/src/engine.gd")
+
+extends Engine.Command.Command
+class_name MovePlayerCommand
+
+var target_position: Vector2
+var player_id: int = 0
+
+func _init(pos: Vector2, player: int = 0) -> void:
+    target_position = pos
+    player_id = player
+    super._init("move_player", {"target_position": pos, "player_id": player}, "Move player to position")
+```
+
+### CommandBus API
+
+#### Register a handler
+
+```gdscript
+command_bus.handle(MovePlayerCommand, func(command):
+    player.move_to(command.target_position)
+    return true
+)
+```
+
+#### Dispatch a command
+
+```gdscript
+var result = await command_bus.dispatch(MovePlayerCommand.new(Vector2(100, 200)))
+
+# Check for errors
+if result is Engine.Command.RoutingError:
+    print("Command failed: ", result.message)
+else:
+    print("Command succeeded: ", result)
+```
+
+**Error types:**
+
+- `NO_HANDLER` - No handler registered for this command
+- `MULTIPLE_HANDLERS` - Multiple handlers registered (shouldn't happen)
+- `HANDLER_FAILED` - Handler execution failed or was cancelled
+
+#### Unregister handler
+
+```gdscript
+# Remove handler for a command type
+command_bus.unregister_handler(MovePlayerCommand)
+```
+
+#### Middleware
+
+Middleware lets you intercept commands before and after they're processed:
+
+```gdscript
+# Before-execution middleware (can cancel by returning false)
+command_bus.add_middleware_before(func(cmd: Engine.Command.Command):
     print("Before: ", cmd)
     return true  # Return false to cancel
 , priority=0)
 
 # After-execution middleware
-command_bus.add_middleware_after(func(cmd: Command, result):
+command_bus.add_middleware_after(func(cmd: Engine.Command.Command, result):
     print("After: ", result)
 , priority=0)
 
 # Remove middleware
 var mw_id = command_bus.add_middleware_before(my_callback)
 command_bus.remove_middleware(mw_id)
-```
-
-**Using the Middleware class:**
-
-```gdscript
-const Transport = preload("res://addons/transport/transport.gd")
-
-class LoggingMiddleware extends Transport.Middleware:
-    func process_before(message: Transport.Message, message_key: StringName) -> bool:
-        print("[Middleware] Before: ", message_key, " - ", message)
-        return true
-    
-    func process_after(message: Transport.Message, message_key: StringName, result: Variant) -> void:
-        print("[Middleware] After: ", message_key, " - Result: ", result)
-
-# Use it
-var logging_mw = LoggingMiddleware.new(priority=10)
-command_bus.add_middleware_before(logging_mw.as_before_callable(), logging_mw.priority)
-command_bus.add_middleware_after(logging_mw.as_after_callable(), logging_mw.priority)
 ```
 
 #### Metrics
@@ -311,7 +363,6 @@ Track performance and usage patterns:
 ```gdscript
 # Enable metrics
 command_bus.set_metrics_enabled(true)
-event_bus.set_metrics_enabled(true)
 
 # Get metrics for a specific type
 var metrics = command_bus.get_metrics(MovePlayerCommand)
@@ -329,60 +380,26 @@ var all_metrics = command_bus.get_all_metrics()
 
 #### Debugging & Logging
 
-Enable verbose logging and tracing for development:
-
 ```gdscript
 # Enable verbose logging (detailed operation logs)
 command_bus.set_verbose(true)
-event_bus.set_verbose(true)
 
 # Enable trace logging (execution flow details)
 command_bus.set_trace_enabled(true)
-event_bus.set_trace_enabled(true)
-
-# Enable listener call logging (EventBus only - logs each listener invocation)
-event_bus.set_log_listener_calls(true)
 
 # Enable type resolution verbose warnings (for debugging type resolution issues)
-Transport.MessageTypeResolver.set_verbose(true)
+Engine.Message.TypeResolver.set_verbose(true)
 ```
-
-**Verbose logging** shows detailed information about operations (handler registration, middleware execution, etc.).  
-**Trace logging** shows execution flow (dispatch/emit operations, listener counts, etc.).  
-**Listener call logging** logs each individual listener call, useful for debugging listener execution order and errors.  
-**Type resolution verbose mode** shows warnings when types are resolved from script paths instead of `class_name`, helping identify missing `class_name` declarations.
 
 #### Signal Integration
 
-Transport is designed as an alternative to Godot signals, but you can bridge between them when needed.
-
-**When to use Transport:**
-
-- Business logic and domain events
-- Cross-system communication
-- Commands that need exactly one handler
-- Situations requiring priority ordering or middleware
-
-**When to use signals:**
-
-- UI interactions (button clicks, input)
-- Scene tree lifecycle events
-- Godot's built-in events (`area_entered`, `body_entered`, etc.)
-- Third-party plugin integrations
-
-**Bridging signals to Transport:**
+Bridge Godot signals to commands:
 
 ```gdscript
-const Transport = preload("res://addons/transport/transport.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
-# Event bridge
-var event_bus = Transport.EventBus.new()
-var bridge = Transport.EventSignalBridge.new(event_bus)
-bridge.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
-
-# Command bridge
-var command_bus = Transport.CommandBus.new()
-var cmd_bridge = Transport.CommandSignalBridge.new(command_bus)
+var command_bus = Engine.Command.Bus.new()
+var cmd_bridge = Engine.Command.SignalBridge.new(command_bus)
 cmd_bridge.connect_signal_to_command(
     $SaveButton,
     "pressed",
@@ -391,7 +408,7 @@ cmd_bridge.connect_signal_to_command(
 )
 
 # Clean up (happens automatically when bridge is freed)
-bridge.disconnect_all()
+cmd_bridge.disconnect_all()
 ```
 
 ### Best Practices
@@ -412,7 +429,7 @@ bridge.disconnect_all()
 
 #### Subscription Management
 
-- Use `owner=self` for automatic cleanup
+- Use `owner=self` for automatic cleanup (EventBus)
 - Explicitly unsubscribe for long-lived objects
 - Watch for memory leaks if not using lifecycle binding
 
@@ -441,8 +458,8 @@ Emit → EventBus → Middleware → Listeners (priority order) → Done
 
 - `CommandBus` - Dispatches commands with single-handler guarantee
 - `EventBus` - Broadcasts events to zero or more subscribers
-- `Middleware` - Intercepts messages before/after processing
-- `CommandSignalBridge` / `EventSignalBridge` - Bridge Godot signals to Transport
+- `Middleware` - Intercepts messages before/after processing (via Middleware addon)
+- `CommandSignalBridge` / `EventSignalBridge` - Bridge Godot signals to buses
 
 ### Design Principles
 
@@ -481,20 +498,20 @@ Array.remove_indices(arr, [1, 3])
 # arr is now [1, 3, 5]
 
 var entries = [Entry.new(priority=5), Entry.new(priority=10), Entry.new(priority=3)]
-Array.sort_by_priority(entries)
+Engine.Support.Array.sort_by_priority(entries)
 # entries are now sorted: priority 10, 5, 3
 
 var numbers = [1, 2, 3, 4, 5]
-var evens = Array.filter(numbers, func(n): return n % 2 == 0)  # [2, 4]
-var doubled = Array.map(numbers, func(n): return n * 2)  # [2, 4, 6, 8, 10]
-var found = Array.find(numbers, func(n): return n > 3)  # 4
-var unique = Array.unique([1, 2, 2, 3, 1])  # [1, 2, 3]
+var evens = Engine.Support.Array.filter(numbers, func(n): return n % 2 == 0)  # [2, 4]
+var doubled = Engine.Support.Array.map(numbers, func(n): return n * 2)  # [2, 4, 6, 8, 10]
+var found = Engine.Support.Array.find(numbers, func(n): return n > 3)  # 4
+var unique = Engine.Support.Array.unique([1, 2, 2, 3, 1])  # [1, 2, 3]
 
 # String operations
-String.is_blank("   ")  # true
-String.pad_left("42", 5, "0")  # "00042"
-String.truncate("Hello World", 8)  # "Hello..."
-String.to_title_case("hello world")  # "Hello World"
+Engine.Support.String.is_blank("   ")  # true
+Engine.Support.String.pad_left("42", 5, "0")  # "00042"
+Engine.Support.String.truncate("Hello World", 8)  # "Hello..."
+Engine.Support.String.to_title_case("hello world")  # "Hello World"
 ```
 
 ### API Reference
@@ -654,10 +671,3 @@ When contributing:
 - Update documentation as needed
 - Be respectful and constructive in discussions
 
-## License
-
-[Add license information here]
-
----
-
-**Need help?** Check the [developer documentation](CLAUDE.md) for architectural decisions and patterns.

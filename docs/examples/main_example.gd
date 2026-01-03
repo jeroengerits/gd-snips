@@ -8,15 +8,15 @@ extends Node
 ## - Dispatching commands and emitting events
 ## - Using priorities, one-shot subscriptions, and lifecycle binding
 
-const Transport = preload("res://addons/transport/transport.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
-var command_bus: Transport.CommandBus
-var event_bus: Transport.EventBus
+var command_bus: Engine.Command.Bus
+var event_bus: Engine.Event.Bus
 
 func _ready() -> void:
 	# Create bus instances
-	command_bus = Transport.CommandBus.new()
-	event_bus = Transport.EventBus.new()
+	command_bus = Engine.Command.Bus.new()
+	event_bus = Engine.Event.Bus.new()
 	
 	# Enable verbose logging for this example
 	command_bus.set_verbose(true)

@@ -1,6 +1,6 @@
-const Transport = preload("res://addons/transport/transport.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
-extends Transport.Command
+extends Engine.Command.Command
 class_name MovePlayerCommand
 
 ## Example command: Move player to a target position.

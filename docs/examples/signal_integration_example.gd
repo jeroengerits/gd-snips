@@ -5,17 +5,17 @@ extends Node
 ## This shows how to bridge Godot signals to transport events
 ## using the Bridge utility.
 
-const Transport = preload("res://addons/transport/transport.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
 # Example event types
-class ButtonPressedEvent extends Transport.Event:
+class ButtonPressedEvent extends Engine.Event.Event:
 	var button_name: String
 	
 	func _init(name: String) -> void:
 		button_name = name
 		super._init("button_pressed", {"button_name": name})
 
-class AreaEnteredEvent extends Transport.Event:
+class AreaEnteredEvent extends Engine.Event.Event:
 	var body_name: String
 	var body_type: String
 	
@@ -24,7 +24,7 @@ class AreaEnteredEvent extends Transport.Event:
 		body_type = body.get_class()
 		super._init("area_entered", {"body_name": body_name, "body_type": body_type})
 
-class EnemyDiedEvent extends Transport.Event:
+class EnemyDiedEvent extends Engine.Event.Event:
 	var enemy_id: int
 	var points: int
 	
@@ -33,12 +33,12 @@ class EnemyDiedEvent extends Transport.Event:
 		points = pts
 		super._init("enemy_died", {"enemy_id": id, "points": pts})
 
-var event_bus: Transport.EventBus
-var signal_adapter: Transport.EventSignalBridge
+var event_bus: Engine.Event.Bus
+var signal_adapter: Engine.Event.SignalBridge
 
 func _ready() -> void:
 	# Create event bus instance
-	event_bus = Transport.EventBus.new()
+	event_bus = Engine.Event.Bus.new()
 	
 	# Enable verbose logging
 	event_bus.set_verbose(true)
@@ -51,7 +51,7 @@ func _ready() -> void:
 
 ## Example 1: Bridge signals to events
 func _setup_signal_to_event_bridge() -> void:
-	signal_adapter = Transport.EventSignalBridge.new(event_bus)
+	signal_adapter = Engine.Event.SignalBridge.new(event_bus)
 	
 	# Simple signal → event bridge
 	# When button is pressed, ButtonPressedEvent is published

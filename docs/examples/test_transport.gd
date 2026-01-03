@@ -10,15 +10,15 @@ extends Node
 ## - One-shot listener
 ## - Error isolation
 
-const Transport = preload("res://addons/transport/transport.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
-var command_bus: Transport.CommandBus
-var event_bus: Transport.EventBus
+var command_bus: Engine.Command.Bus
+var event_bus: Engine.Event.Bus
 var test_results: Dictionary = {}
 
 func _ready() -> void:
-	command_bus = Transport.CommandBus.new()
-	event_bus = Transport.EventBus.new()
+	command_bus = Engine.Command.Bus.new()
+	event_bus = Engine.Event.Bus.new()
 	
 	print("=== Running Transport Tests ===\n")
 	
@@ -56,7 +56,7 @@ func _test_command_no_handler() -> void:
 	var result = await command_bus.dispatch(cmd)
 	
 	# Should return a CommandRoutingError
-	test_results[test_name] = result is Transport.CommandRoutingError
+	test_results[test_name] = result is Engine.Command.RoutingError
 	print("✓ " if test_results[test_name] else "✗ ", test_name)
 
 func _test_command_multiple_handlers() -> void:
@@ -196,4 +196,3 @@ func _print_test_results() -> void:
 		print("✓ All tests passed!")
 	else:
 		print("✗ Some tests failed")
-
