@@ -1,50 +1,12 @@
 const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
 const Validator = preload("res://packages/transport/event/validator.gd")
 const MetricsUtils = preload("res://packages/transport/utils/metrics_utils.gd")
+const MiddlewareEntry = preload("res://packages/transport/event/middleware_entry.gd")
+const SubscriptionEntry = preload("res://packages/transport/event/subscription_entry.gd")
 
 extends RefCounted
 ## Internal subscription registry. Manages subscriptions, middleware, and metrics.
 ## Use CommandBus or EventBus instead.
-
-## Middleware registry entry.
-class MiddlewareEntry:
-	var callback: Callable
-	var priority: int = 0
-	var id: int
-	
-	static var _next_id: int = 0
-	
-	func _init(callback: Callable, priority: int = 0):
-		self.callback = callback
-		self.priority = priority
-		self.id = _next_id
-		_next_id += 1
-
-## Subscription registry entry.
-class SubscriptionEntry:
-	var callable: Callable
-	var priority: int = 0
-	var once: bool = false
-	var owner: Object = null  # For lifecycle safety
-	var id: int
-	
-	static var _next_id: int = 0
-	
-	func _init(callable: Callable, priority: int = 0, once: bool = false, owner: Object = null):
-		self.callable = callable
-		self.priority = priority
-		self.once = once
-		self.owner = owner
-		self.id = _next_id
-		_next_id += 1
-	
-	func is_valid() -> bool:
-		if not Validator.is_valid_for_lifecycle(owner):
-			return false
-		return callable.is_valid()
-	
-	func hash() -> int:
-		return id
 
 var _registrations: Dictionary = {}  # StringName -> Array[SubscriptionEntry]
 var _verbose: bool = false

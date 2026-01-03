@@ -1,31 +1,12 @@
 const SubscriptionRegistry = preload("res://packages/transport/event/registry.gd")
 const Validator = preload("res://packages/transport/command/validator.gd")
 const Command = preload("res://packages/transport/type/command.gd")
+const CommandRoutingError = preload("res://packages/transport/command/command_routing_error.gd")
 
 extends SubscriptionRegistry
 class_name CommandBus
 
 ## CommandBus: routes commands to exactly one handler.
-
-## Error raised during command routing/execution.
-class CommandRoutingError extends RefCounted:
-	var message: String
-	var code: int
-	
-	enum Code {
-		NO_HANDLER,
-		MULTIPLE_HANDLERS,
-		HANDLER_FAILED
-	}
-	
-	func _init(msg: String, err_code: int) -> void:
-		assert(not msg.is_empty(), "CommandRoutingError message cannot be empty")
-		assert(err_code >= 0, "CommandRoutingError code must be non-negative")
-		message = msg
-		code = err_code
-	
-	func to_string() -> String:
-		return "[CommandRoutingError: %s (code=%d)]" % [message, code]
 
 ## Register handler for a command type (replaces existing).
 func handle(command_type, handler: Callable) -> void:
