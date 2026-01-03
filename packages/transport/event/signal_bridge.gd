@@ -1,5 +1,5 @@
 extends RefCounted
-class_name Bridge
+class_name SignalBridge
 
 ## Bridges Godot signals to EventBus events.
 
@@ -35,7 +35,7 @@ func connect_signal_to_event(source: Object, signal_name: StringName, event_type
 	
 	# Connect signal to callback
 	if not source.connect(signal_name, callback):
-		push_error("[Bridge] Failed to connect signal: %s" % signal_name)
+		push_error("[SignalBridge] Failed to connect signal: %s" % signal_name)
 		return
 	
 	# Store connection for cleanup

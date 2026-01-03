@@ -149,8 +149,12 @@ Subscriptions and adapters automatically clean up to prevent memory leaks:
 **Pattern:**
 ```gdscript
 # Signal → Event
-var adapter = Transport.Bridge.new(event_broadcaster)
+var adapter = Transport.SignalBridge.new(event_bus)
 adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
+
+# Signal → Command
+var command_adapter = Transport.CommandSignalBridge.new(command_bus)
+command_adapter.connect_signal_to_command($SaveButton, "pressed", SaveGameCommand, func(): return SaveGameCommand.new())
 ```
 
 ## Development Patterns
@@ -294,7 +298,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 **Current Structure:**
 - `type/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
-- `event/` - EventBus (event_bus.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), Bridge (bridge.gd)
+- `event/` - EventBus (event_bus.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), SignalBridge (signal_bridge.gd)
 - `command/` - CommandBus (command_bus.gd), Validator (validator.gd)
 
 **File Naming:**

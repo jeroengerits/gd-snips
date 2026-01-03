@@ -2,7 +2,7 @@ const CommandBus = preload("res://packages/transport/command/command_bus.gd")
 const CommandRoutingError = preload("res://packages/transport/command/command_routing_error.gd")
 
 extends RefCounted
-class_name CommandBridge
+class_name CommandSignalBridge
 
 ## Bridges Godot signals to CommandBus commands.
 
@@ -31,7 +31,7 @@ func connect_signal_to_command(source: Object, signal_name: StringName, command_
 			if mapped_result is Command:
 				command = mapped_result
 			else:
-				push_error("[CommandBridge] Mapper must return a Command instance, got: %s" % mapped_result)
+				push_error("[CommandSignalBridge] Mapper must return a Command instance, got: %s" % mapped_result)
 				return
 		else:
 			# Default: create command using command_type constructor with signal name and data
@@ -44,18 +44,18 @@ func connect_signal_to_command(source: Object, signal_name: StringName, command_
 			command = command_type.new(signal_name, command_data)
 		
 		if command == null:
-			push_error("[CommandBridge] Failed to create command instance")
+			push_error("[CommandSignalBridge] Failed to create command instance")
 			return
 		
 		var result = await _command_bus.dispatch(command)
 		
 		# Log errors if command dispatch failed
 		if result is CommandRoutingError:
-			push_error("[CommandBridge] Command dispatch failed: %s" % result.message)
+			push_error("[CommandSignalBridge] Command dispatch failed: %s" % result.message)
 	
 	# Connect signal to callback
 	if not source.connect(signal_name, callback):
-		push_error("[CommandBridge] Failed to connect signal: %s" % signal_name)
+		push_error("[CommandSignalBridge] Failed to connect signal: %s" % signal_name)
 		return
 	
 	# Store connection for cleanup

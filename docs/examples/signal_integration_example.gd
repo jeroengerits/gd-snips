@@ -34,7 +34,7 @@ class EnemyDiedEvent extends Transport.Event:
 		super._init("enemy_died", {"enemy_id": id, "points": pts})
 
 var event_bus: Transport.EventBus
-var signal_adapter: Transport.Bridge
+var signal_adapter: Transport.SignalBridge
 
 func _ready() -> void:
 	# Create event bus instance
@@ -51,7 +51,7 @@ func _ready() -> void:
 
 ## Example 1: Bridge signals to events
 func _setup_signal_to_event_bridge() -> void:
-	signal_adapter = Transport.Bridge.new(event_bus)
+	signal_adapter = Transport.SignalBridge.new(event_bus)
 	
 	# Simple signal → event bridge
 	# When button is pressed, ButtonPressedEvent is published

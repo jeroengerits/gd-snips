@@ -341,18 +341,18 @@ The transport system is designed as an alternative to Godot signals, but sometim
 
 ### Using the Bridge
 
-**Event Bridge:**
+**Event Signal Bridge:**
 ```gdscript
 const Transport = preload("res://packages/transport/transport.gd")
 
 var event_bus = Transport.EventBus.new()
-var bridge = Transport.Bridge.new(event_bus)
+var signal_bridge = Transport.SignalBridge.new(event_bus)
 
 # Simple bridge: button press → event
-bridge.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
+signal_bridge.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
 
 # Custom data mapping: extract what you need from signal args
-bridge.connect_signal_to_event(
+signal_bridge.connect_signal_to_event(
     $Area2D,
     "body_entered",
     AreaEnteredEvent,
@@ -360,18 +360,18 @@ bridge.connect_signal_to_event(
 )
 
 # Clean up when done (automatically happens when bridge is freed)
-bridge.disconnect_all()
+signal_bridge.disconnect_all()
 ```
 
-**Command Bridge:**
+**Command Signal Bridge:**
 ```gdscript
 const Transport = preload("res://packages/transport/transport.gd")
 
 var command_bus = Transport.CommandBus.new()
-var command_bridge = Transport.CommandBridge.new(command_bus)
+var command_signal_bridge = Transport.CommandSignalBridge.new(command_bus)
 
 # Bridge button click → command (use mapper to construct command properly)
-command_bridge.connect_signal_to_command(
+command_signal_bridge.connect_signal_to_command(
     $SaveButton,
     "pressed",
     SaveGameCommand,
@@ -379,7 +379,7 @@ command_bridge.connect_signal_to_command(
 )
 
 # Bridge with signal arguments
-command_bridge.connect_signal_to_command(
+command_signal_bridge.connect_signal_to_command(
     $MenuItem,
     "selected",
     OpenMenuCommand,
@@ -387,7 +387,7 @@ command_bridge.connect_signal_to_command(
 )
 
 # Clean up when done (automatically happens when bridge is freed)
-command_bridge.disconnect_all()
+command_signal_bridge.disconnect_all()
 ```
 
 The bridges automatically clean up connections when they're freed, so you don't need to worry about memory leaks.
@@ -406,7 +406,7 @@ The bridges automatically clean up connections when they're freed, so you don't 
 - Godot's built-in events (`area_entered`, `body_entered`, etc.)
 - Third-party plugin integrations
 
-**Use Bridge when:**
+**Use SignalBridge/CommandSignalBridge when:**
 - Migrating gradually from signals to transport
 - Integrating legacy signal-based code
 - Connecting UI signals to your game logic
@@ -437,8 +437,8 @@ Events are emitted to all subscribers in priority order. Each listener completes
 - **Command** - Base class for commands
 - **Event** - Base class for events
 - **Middleware** - Base class for middleware implementations (works with both commands and events)
-- **CommandBridge** - Connects Godot signals to CommandBus commands
-- **Bridge** - Connects Godot signals to EventBus events
+- **CommandSignalBridge** - Connects Godot signals to CommandBus commands
+- **SignalBridge** - Connects Godot signals to EventBus events
 - **SubscriptionRegistry** - Internal implementation (you don't use this directly)
 
 ## Best Practices
