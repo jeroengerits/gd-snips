@@ -18,7 +18,8 @@ All addons live under `addons/`:
 addons/
 ├── core/          # Unified entry point for all addons (Godot addon)
 │   ├── plugin.cfg # Addon configuration
-│   ├── core.gd    # Public API barrel file (loads all addons)
+│   ├── src/       # Source code directory
+│   │   └── core.gd # Public API barrel file (loads all addons)
 │   └── README.md  # Documentation
 ├── transport/     # Command/Event transport framework (Godot addon)
 │   ├── plugin.cfg # Addon configuration

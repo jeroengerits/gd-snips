@@ -2,15 +2,6 @@
 
 Support functions for Godot 4.5.1+.
 
-## Installation
-
-1. Copy the `addons/support` directory into your Godot project's `addons/` folder
-2. Open your project in Godot
-3. Go to **Project → Project Settings → Plugins**
-4. Enable the "Support" plugin
-
-**Requirements:** Godot 4.5.1 or later
-
 ## Usage
 
 You can use the barrel file to load all support utilities at once:

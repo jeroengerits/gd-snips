@@ -18,7 +18,7 @@ Unified entry point for all gd-snips addons. Load all addons with a single impor
 Load all addons with a single import:
 
 ```gdscript
-const Core = preload("res://addons/core/core.gd")
+const Core = preload("res://addons/core/src/core.gd")
 
 # Access Transport addon
 var command_bus = Core.Transport.CommandBus.new()

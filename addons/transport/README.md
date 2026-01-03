@@ -19,15 +19,6 @@ This approach decouples systems by removing direct dependencies while preserving
 - ✅ **Metrics** - Built-in performance tracking and introspection
 - ✅ **Scene-tree independent** - Works with any `RefCounted` objects
 
-## Installation
-
-1. Copy the `addons/transport` directory into your Godot project's `addons/` folder
-2. Open your project in Godot
-3. Go to **Project → Project Settings → Plugins**
-4. Enable the "Transport" plugin
-
-**Requirements:** Godot 4.5.1 or later
-
 ## Quick Start
 
 Here's a minimal example to get you started:
