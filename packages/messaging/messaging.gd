@@ -1,15 +1,41 @@
 ## Public API entry point for the messaging system.
 ##
-## Barrel file that exports all public types and classes.
-## Use this to import the messaging system:
+## Barrel file that exports all public types and classes used in the messaging
+## package. This provides a convenient single import point for all messaging
+## functionality including command and event buses, message types, and utilities.
 ##
+## The messaging system implements the Command and Event patterns, providing
+## decoupled communication between game systems. Commands represent imperative
+## actions with exactly one handler, while Events represent notifications that
+## can have zero or more subscribers.
+##
+## @example Import via barrel file:
 ##   const Messaging = preload("res://packages/messaging/messaging.gd")
 ##   var command_bus = Messaging.CommandBus.new()
 ##   var event_bus = Messaging.EventBus.new()
 ##
-## Or import specific types:
+## @example Import specific types directly:
 ##   const CommandBus = preload("res://packages/messaging/messaging.gd").CommandBus
 ##   const Message = preload("res://packages/messaging/messaging.gd").Message
+##
+## @example Complete usage example:
+##   const Messaging = preload("res://packages/messaging/messaging.gd")
+##   
+##   # Create buses
+##   var command_bus = Messaging.CommandBus.new()
+##   var event_bus = Messaging.EventBus.new()
+##   
+##   # Register command handler
+##   command_bus.handle(MovePlayerCommand, func(cmd): return move_player(cmd.target_position))
+##   
+##   # Subscribe to events
+##   event_bus.subscribe(EnemyDiedEvent, func(evt): update_score(evt.points))
+##   
+##   # Dispatch commands
+##   await command_bus.dispatch(MovePlayerCommand.new(Vector2(10, 20)))
+##   
+##   # Publish events
+##   event_bus.publish(EnemyDiedEvent.new(42, 100))
 
 ## Public API: Command bus for dispatching commands with exactly one handler
 const CommandBus = preload("res://packages/messaging/buses/command_bus.gd")

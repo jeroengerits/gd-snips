@@ -3,10 +3,20 @@ class_name SubscriptionRules
 
 ## Domain service defining business rules for subscription behavior.
 ##
-## Encapsulates domain concepts about subscription semantics:
-## - Priority ordering (higher priority subscribers are called first)
-## - One-shot subscriptions (fire-once semantics)
-## - Lifecycle binding (subscriptions tied to object lifecycle)
+## Encapsulates domain concepts about subscription semantics, separating domain
+## rules from infrastructure implementation. This follows Domain-Driven Design
+## (DDD) principles and clean architecture.
+##
+## **Domain Rules:**
+## - Priority ordering: Higher priority subscribers are processed before lower priority ones
+## - One-shot subscriptions: Fire-once semantics - subscription is removed after first delivery
+## - Lifecycle binding: Subscriptions tied to object lifecycle are invalidated when objects are freed
+##
+## **Separation of Concerns:** This class contains domain knowledge (subscription
+## semantics), while [MessageBus] handles infrastructure concerns (subscription
+## storage, iteration, cleanup).
+##
+## @note This class extends [RefCounted] and is automatically memory-managed.
 
 ## Compare two subscription priorities.
 ## Domain rule: Higher priority subscribers are processed first.

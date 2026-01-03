@@ -16,15 +16,12 @@ All packages live under `packages/`:
 
 ```
 packages/
-├── messaging/     # Command/Event messaging framework
-│   ├── buses/     # CommandBus, EventBus
-│   ├── types/     # Message, Command, Event base classes
-│   ├── rules/     # Domain rules (CommandRules, SubscriptionRules)
-│   ├── internal/   # MessageBus foundation class
-│   └── utilities/  # Package-specific utilities
-└── collection/     # Fluent array wrapper
-    ├── types/      # Collection class
-    └── collection.gd  # Barrel file
+└── messaging/     # Command/Event messaging framework
+    ├── buses/     # CommandBus, EventBus
+    ├── types/     # Message, Command, Event base classes
+    ├── rules/     # Domain rules (CommandRules, SubscriptionRules)
+    ├── internal/   # MessageBus foundation class
+    └── utilities/  # Package-specific utilities
 ```
 
 ## Architectural Decisions
@@ -43,24 +40,27 @@ packages/
 - Documentation links updated accordingly
 - No breaking changes to API, only path changes
 
-### Collection Package Evolution
+### Collection Package Removal
 
-**Timeline:**
-1. Initially in `utilities/collection_utils.gd` as static functions
-2. Refactored to `utilities/collection.gd` as a class
-3. Moved to `packages/collection/` as standalone package
-4. Method names shortened (e.g., `is_empty()` → `empty()`)
-5. Restructured to match messaging package (January 2026)
+**Decision:** Removed Collection package and replaced with direct array/dictionary operations (January 2026)
 
 **Rationale:**
-- Collection is substantial enough to be its own package
-- Better discoverability and documentation
-- Consistent structure across all packages improves maintainability
+- Collection was only used internally in the messaging package
+- Direct GDScript array/dictionary operations are simpler and more idiomatic
+- Reduces package dependencies and complexity
+- No external API impact (Collection was never part of public messaging API)
 
-**Current Structure:**
-- `collection.gd` - Barrel file (public API entry point)
-- `types/collection.gd` - Main Collection class
-- Matches messaging package structure for consistency
+**Implementation:**
+- Replaced `Collection.remove_at()` with `_remove_indices_from_array()` helper function
+- Replaced `Collection.cleanup()` with direct dictionary `erase()` checks
+- Replaced `Collection.each()` with simple `for` loops
+- All functionality preserved using native GDScript operations
+
+**Impact:**
+- Messaging package no longer depends on Collection package
+- Code is more straightforward and easier to understand
+- No breaking changes to messaging API
+
 
 ### Method Naming Convention
 
@@ -93,7 +93,6 @@ packages/
 
 **Examples:**
 - `messaging/messaging.gd` → `types/message.gd`, `buses/command_bus.gd`
-- `collection/collection.gd` → `types/collection.gd`
 
 ### Messaging Package Architecture
 
@@ -168,17 +167,10 @@ adapter.connect_event_to_signal(EnemyDiedEvent, "enemy_died")
 **Package Import (Barrel Files):**
 ```gdscript
 const Messaging = preload("res://packages/messaging/messaging.gd")
-const Collection = preload("res://packages/collection/collection.gd")
 
 # Use via barrel file
 var bus = Messaging.CommandBus.new()
-var coll = Collection.Collection.new([1, 2, 3])
-```
-
-**Direct Class Import:**
-```gdscript
-const Collection = preload("res://packages/collection/types/collection.gd")
-var coll = Collection.new([1, 2, 3])
+var event_bus = Messaging.EventBus.new()
 ```
 
 **Direct Import (for internal files):**
@@ -186,25 +178,7 @@ var coll = Collection.new([1, 2, 3])
 const MessageBus = preload("res://packages/messaging/internal/message_bus.gd")
 ```
 
-### Collection Usage Patterns
-
-**Working with References:**
-```gdscript
-const Collection = preload("res://packages/collection/types/collection.gd")
-
-var my_array: Array = [1, 2, 3]
-var collection = Collection.new(my_array, false)  # false = use reference
-collection.push(4)  # Modifies my_array directly
-```
-
-**Dictionary Cleanup Pattern:**
-```gdscript
-var subscriptions: Dictionary = {}
-var listeners: Array = []
-
-# Remove and cleanup if empty
-Collection.new(listeners, false).remove_at([0, 2]).cleanup(subscriptions, "key")
-```
+**Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations instead.
 
 ### Messaging Patterns
 
@@ -228,15 +202,6 @@ Collection.new(listeners, false).remove_at([0, 2]).cleanup(subscriptions, "key")
 **Solution:** Ensure all paths use `res://packages/` prefix:
 - ✅ `res://packages/messaging/messaging.gd`
 - ❌ `res://messaging/messaging.gd`
-
-### Issue: Collection Not Modifying Array
-
-**Symptom:** Collection operations don't affect original array
-
-**Solution:** Pass `false` for `copy` parameter when you need reference:
-```gdscript
-Collection.new(my_array, false)  # Uses reference
-```
 
 ### Issue: Multiple Command Handlers
 
@@ -285,18 +250,12 @@ call_deferred("_publish_event", event_bus, evt)
 - Test one-shot subscriptions auto-remove
 - Validate middleware cancellation
 
-### Collection Testing
-
-- Test reference vs copy behavior
-- Verify dictionary cleanup pattern
-- Test safe multi-item removal (`remove_at()`)
-- Validate method chaining
 
 ## Code Style Guidelines
 
 ### Naming Conventions
 
-- **Classes:** PascalCase (`CommandBus`, `Collection`)
+- **Classes:** PascalCase (`CommandBus`, `EventBus`, `Message`)
 - **Methods:** snake_case (`get_key()`, `remove_at()`)
 - **Variables:** snake_case (`command_bus`, `subscriptions`)
 - **Constants:** UPPER_SNAKE_CASE (not used in this project)
@@ -340,9 +299,15 @@ call_deferred("_publish_event", event_bus, evt)
 
 ### Type Safety Improvements
 
-1. **Type Annotations:** Added explicit `Variant` type annotations to all Collection methods for better type safety and IDE support (`first()`, `last()`, `get()`, `pop()`, `shift()`, `find()`, `reduce()`, etc.).
+1. **Documentation:** Enhanced all code files with comprehensive GDScript documentation following best practices. Added `@param`, `@return`, and `@example` tags throughout the codebase.
 
-2. **Documentation:** Clarified async behavior in EventBus.publish() - removed misleading "fire-and-forget" terminology, documented that async listeners are awaited to prevent memory leaks.
+2. **Documentation:** Clarified async behavior in EventBus.publish() - documented that async listeners are awaited to prevent memory leaks, even though the method doesn't return a value.
+
+### Code Simplification
+
+1. **Collection Package Removal:** Removed Collection package dependency from messaging system. Replaced with direct array/dictionary operations using helper functions (`_remove_indices_from_array()`). Simplifies codebase and reduces dependencies.
+
+2. **Obsolete Code Cleanup:** Removed unused `listener_start_time` variable from EventBus that was never used (leftover from planned per-listener metrics).
 
 ## Future Considerations
 
@@ -363,7 +328,7 @@ call_deferred("_publish_event", event_bus, evt)
 ## References
 
 - [Messaging Package README](packages/messaging/README.md)
-- [Collection Package README](packages/collection/README.md)
 - [Developer Diary](docs/developer-diary/)
+- [Tech Stack Documentation](docs/TECH_STACK.md)
 - [Godot Documentation](https://docs.godotengine.org/)
 

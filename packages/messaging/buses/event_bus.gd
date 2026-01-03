@@ -1,30 +1,60 @@
 const MessageBus = preload("res://packages/messaging/internal/message_bus.gd")
 const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
 const Event = preload("res://packages/messaging/types/event.gd")
-const Collection = preload("res://packages/collection/types/collection.gd")
 
 extends MessageBus
 class_name EventBus
 
 ## Event bus for publishing events with 0..N subscribers.
 ##
-## Events represent notifications that something happened. Multiple subscribers
-## can listen to the same event type. 
+## Implements the Event/Notification pattern, where events represent notifications
+## that something has happened. Multiple subscribers can listen to the same event
+## type, and events are delivered to all subscribers in priority order.
 ##
-## Note on publish() behavior: This method publishes events sequentially to all
-## listeners in priority order. Async listeners are awaited to prevent
-## GDScriptFunctionState memory leaks, which means publish() may block briefly
-## if listeners are async. For truly non-blocking behavior from a Node context,
-## use call_deferred() to defer publication. If you need to wait for async listeners
-## to complete, use publish_async() instead.
+## **Key Characteristics:**
+## - Events can have zero or more subscribers
+## - Subscribers are called in priority order (higher priority first)
+## - Supports one-shot subscriptions (auto-unsubscribe after first delivery)
+## - Supports lifecycle binding (auto-unsubscribe when bound object is freed)
+## - Supports middleware for pre/post-processing
+## - Supports performance metrics tracking
 ##
-## Usage:
+## **Async Behavior:** Both [method publish] and [method publish_async] await
+## async listeners to prevent [GDScriptFunctionState] memory leaks. This means
+## [method publish] may block briefly if listeners are async. For truly non-blocking
+## behavior from a Node context, use [code]call_deferred()[/code] to defer publication.
+##
+## **Thread Safety:** This implementation is not thread-safe. All operations
+## should be performed from the main thread.
+##
+## @example Basic usage:
 ##   const Messaging = preload("res://packages/messaging/messaging.gd")
 ##   var bus = Messaging.EventBus.new()
+##   
+##   # Subscribe to events
 ##   bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 ##       update_score(evt.points)
 ##   )
+##   
+##   # Publish event (fires all subscribers)
 ##   bus.publish(EnemyDiedEvent.new(enemy_id, 100))
+##
+## @example Multiple subscribers with priorities:
+##   # High priority: Update score first
+##   bus.subscribe(EnemyDiedEvent, update_score, priority=10)
+##   # Medium priority: Play sound
+##   bus.subscribe(EnemyDiedEvent, play_death_sound, priority=5)
+##   # Low priority: Cleanup
+##   bus.subscribe(EnemyDiedEvent, cleanup_enemy, priority=0)
+##
+## @example One-shot subscription:
+##   bus.subscribe(GameStartEvent, func(evt):
+##       print("Game started!")
+##   , one_shot=true)  # Auto-unsubscribes after first delivery
+##
+## @example Lifecycle binding:
+##   # Auto-unsubscribes when 'self' is freed
+##   bus.subscribe(PlayerDiedEvent, _on_player_died, bound_object=self)
 
 var _collect_errors: bool = false  # Optionally enable error logging
 
@@ -71,12 +101,47 @@ func get_all_metrics() -> Dictionary:
 	return super.get_all_metrics()
 
 ## Subscribe to an event type.
-## [code]event_type[/code]: Event class or StringName
-## [code]listener[/code]: Callable that receives the event
-## [code]priority[/code]: Higher priority listeners are called first (default: 0)
-## [code]one_shot[/code]: Auto-unsubscribe after first delivery (default: false)
-## [code]bound_object[/code]: Auto-unsubscribe when this object is freed (default: null)
-## Returns: Subscription ID for manual unsubscription
+##
+## Registers a listener function that will be called when events of the specified
+## type are published. Multiple listeners can subscribe to the same event type,
+## and they will be called in priority order (higher priority first).
+##
+## **Listener Signature:** The listener should accept one parameter (the event
+## instance). Return values are ignored. The listener can be async, but you
+## should use [method publish_async] if you need to wait for async listeners
+## to complete.
+##
+## **Priority:** Listeners with higher priority values are called first. Default
+## priority is [code]0[/code]. Negative priorities are allowed.
+##
+## **One-Shot Subscriptions:** If [code]one_shot[/code] is [code]true[/code],
+## the listener will automatically unsubscribe after receiving its first event.
+## Useful for "fire once" scenarios.
+##
+## **Lifecycle Binding:** If [code]bound_object[/code] is provided, the subscription
+## will automatically unsubscribe when the bound object is freed (using [method is_instance_valid]).
+## This prevents memory leaks when subscribing from objects that may be freed.
+##
+## @param event_type The event class (preferred) or [StringName] type identifier.
+##   For best type resolution, use classes with [code]class_name[/code] defined.
+## @param listener A [Callable] that receives the event instance.
+##   Signature: [code]func(evt: EventType) -> void[/code]
+## @param priority Priority for this listener. Higher values are called first. Default: [code]0[/code]
+## @param one_shot If [code]true[/code], automatically unsubscribe after first delivery. Default: [code]false[/code]
+## @param bound_object Object to bind subscription lifecycle to. If freed, subscription is removed. Default: [code]null[/code]
+##
+## @return Subscription ID as [int] that can be used with [method unsubscribe_by_id]
+##   to manually unsubscribe later.
+##
+## @example Subscribe with priority:
+##   bus.subscribe(EnemyDiedEvent, high_priority_handler, priority=10)
+##   bus.subscribe(EnemyDiedEvent, low_priority_handler, priority=0)
+##
+## @example One-shot subscription:
+##   bus.subscribe(GameStartEvent, func(evt): print("Game started!"), one_shot=true)
+##
+## @example Lifecycle binding:
+##   bus.subscribe(PlayerEvent, _on_player_event, bound_object=self)
 func subscribe(event_type, listener: Callable, priority: int = 0, one_shot: bool = false, bound_object: Object = null) -> int:
 	assert(listener.is_valid(), "Listener callable must be valid")
 	return super.subscribe(event_type, listener, priority, one_shot, bound_object)
@@ -91,15 +156,40 @@ func unsubscribe_by_id(event_type, sub_id: int) -> bool:
 
 ## Publish an event to all subscribers.
 ##
-## This method publishes the event to all listeners sequentially in priority order
-## (higher priority first). Async listeners are awaited to prevent GDScriptFunctionState
-## memory leaks, which means this method may block briefly if listeners are async.
+## Publishes the event to all registered listeners sequentially in priority order
+## (higher priority listeners are called first). All listeners are called, even
+## if some throw errors (GDScript has no try/catch, so errors will propagate).
 ##
-## This method does not return a result. If you need to wait for async listeners
-## to complete, use [method publish_async] instead.
+## **Async Behavior:** Async listeners are automatically awaited to prevent
+## [GDScriptFunctionState] memory leaks. This means this method may block briefly
+## if listeners are async, even though it doesn't return a value. If you need
+## to wait for async listeners to complete and handle their results, use
+## [method publish_async] instead.
 ##
-## For truly non-blocking behavior from a Node context:
-##   call_deferred("_publish_event", event_bus, evt)
+## **Non-Blocking:** For truly non-blocking behavior from a Node context, you
+## can defer the publication:
+##   [code]call_deferred("_publish_deferred", event_bus, evt)[/code]
+##
+## **One-Shot Subscriptions:** One-shot subscriptions are automatically removed
+## after delivery, but removal happens after all listeners have been called.
+##
+## @param evt The [Event] instance to publish. Must not be [code]null[/code] and
+##   must be an instance of an [Event] subclass.
+##
+## @note This method is async-safe and will await async listeners. Always use
+##   [code]await[/code] when calling this method, even if all listeners are sync.
+##
+## @example Publish event:
+##   var evt = EnemyDiedEvent.new(42, 100)
+##   await bus.publish(evt)
+##
+## @example Non-blocking from Node:
+##   func _on_button_pressed():
+##       var evt = ButtonPressedEvent.new(button_id)
+##       call_deferred("_publish_deferred", event_bus, evt)
+##
+##   func _publish_deferred(bus: EventBus, evt: Event):
+##       await bus.publish(evt)
 func publish(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
@@ -145,7 +235,6 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 			continue
 		
 		var result: Variant = null
-		var listener_start_time: int = Time.get_ticks_msec()
 		
 		# Call listener - errors will propagate (GDScript has no try/catch)
 		# Error logging provides context before errors crash (if enabled)
@@ -170,11 +259,9 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 		if SubscriptionRules.should_remove_after_delivery(sub.one_shot):
 			one_shots_to_remove.append({"key": key, "sub": sub})
 	
-	# Remove one-shot subscriptions after iteration using Collection
-	var one_shots_collection = Collection.new(one_shots_to_remove)
-	one_shots_collection.each(func(item: Dictionary):
+	# Remove one-shot subscriptions after iteration
+	for item in one_shots_to_remove:
 		super._mark_for_removal(item.key, item.sub)
-	)
 	
 	# Record overall metrics for the entire publish operation
 	var elapsed: float = (Time.get_ticks_msec() - start_time) / 1000.0

@@ -1,23 +1,32 @@
 const MessageTypeResolver = preload("res://packages/messaging/internal/message_type_resolver.gd")
 const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
-const Collection = preload("res://packages/collection/types/collection.gd")
 const MetricsUtils = preload("res://packages/messaging/utilities/metrics_utils.gd")
 
 extends RefCounted
 ## Generic message bus core supporting different delivery semantics.
 ##
-## Internal implementation - do not use directly. Use CommandBus or EventBus from messaging/messaging.gd.
+## **Internal Implementation** - Do not use directly. Use [CommandBus] or [EventBus]
+## from the public API ([code]messaging/messaging.gd[/code]).
 ##
-## This is a foundation class that CommandBus and EventBus extend to provide
-## specific messaging patterns. The core provides:
-## - Type-safe message routing using StringName keys
-## - Subscription management with priorities
-## - Lifecycle-aware subscriptions (auto-cleanup)
-## - One-shot subscriptions
-## - Safe iteration during dispatch
-## - Debugging and tracing support
-## - Middleware/interception support
-## - Performance metrics
+## This is a foundation class that [CommandBus] and [EventBus] extend to provide
+## specific messaging patterns. The core provides shared functionality for:
+##
+## **Core Features:**
+## - Type-safe message routing using [StringName] keys
+## - Subscription management with priorities (sorted insertion, O(n))
+## - Lifecycle-aware subscriptions (auto-cleanup when bound objects are freed)
+## - One-shot subscriptions (auto-unsubscribe after first delivery)
+## - Safe iteration during dispatch (handles concurrent modifications)
+## - Debugging and tracing support (verbose logging, trace mode)
+## - Middleware/interception support (pre/post-processing)
+## - Performance metrics tracking (optional)
+##
+## **Architecture:** This class handles infrastructure concerns (routing, subscriptions,
+## middleware, metrics) while domain concerns (validation rules, delivery semantics)
+## are handled by subclasses.
+##
+## @note This class extends [RefCounted] and is automatically memory-managed.
+## @note For public API, always use [CommandBus] or [EventBus] instead of this class.
 
 ## Middleware entry for intercepting messages
 class Middleware:
@@ -104,28 +113,26 @@ func remove_middleware(middleware_id: int) -> bool:
 	assert(middleware_id >= 0, "Middleware ID must be non-negative")
 	var removed: bool = false
 	
-	# Use Collection to find and remove from pre-middleware
-	var pre_collection = Collection.new(_middleware_pre, false)
+	# Find and remove from pre-middleware
 	var pre_to_remove: Array = []
 	for i in range(_middleware_pre.size()):
 		if _middleware_pre[i].id == middleware_id:
 			pre_to_remove.append(i)
 	
 	if pre_to_remove.size() > 0:
-		pre_collection.remove_at(pre_to_remove)
+		_remove_indices_from_array(_middleware_pre, pre_to_remove)
 		removed = true
 		if _verbose:
 			print("[MessageBus] Removed pre-middleware (id=", middleware_id, ")")
 	
-	# Use Collection to find and remove from post-middleware
-	var post_collection = Collection.new(_middleware_post, false)
+	# Find and remove from post-middleware
 	var post_to_remove: Array = []
 	for i in range(_middleware_post.size()):
 		if _middleware_post[i].id == middleware_id:
 			post_to_remove.append(i)
 	
 	if post_to_remove.size() > 0:
-		post_collection.remove_at(post_to_remove)
+		_remove_indices_from_array(_middleware_post, post_to_remove)
 		removed = true
 		if _verbose:
 			print("[MessageBus] Removed post-middleware (id=", middleware_id, ")")
@@ -258,7 +265,9 @@ func unsubscribe_by_id(message_type, sub_id: int) -> bool:
 	var subs: Array = _subscriptions[key]
 	var index: int = subs.find(func(s): return s.id == sub_id)
 	if index >= 0:
-		Collection.new(subs, false).remove_at([index]).cleanup(_subscriptions, key)
+		_remove_indices_from_array(subs, [index])
+		if subs.is_empty():
+			_subscriptions.erase(key)
 		if _verbose:
 			print("[MessageBus] Unsubscribed from ", key, " (id=", sub_id, ")")
 		return true
@@ -280,8 +289,11 @@ func unsubscribe(message_type, handler: Callable) -> int:
 		if sub.callable == handler:
 			to_remove.append(i)
 	
-	Collection.new(subs, false).remove_at(to_remove).cleanup(_subscriptions, key)
-	removed = to_remove.size()
+	if to_remove.size() > 0:
+		_remove_indices_from_array(subs, to_remove)
+		removed = to_remove.size()
+		if subs.is_empty():
+			_subscriptions.erase(key)
 	
 	if _verbose and removed > 0:
 		print("[MessageBus] Unsubscribed ", removed, " subscription(s) from ", key)
@@ -306,7 +318,9 @@ func _cleanup_invalid_subscriptions(key: StringName, subs: Array) -> void:
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		Collection.new(subs, false).remove_at(to_remove).cleanup(_subscriptions, key)
+		_remove_indices_from_array(subs, to_remove)
+		if subs.is_empty():
+			_subscriptions.erase(key)
 
 ## Clear all subscriptions for a message type.
 func clear_type(message_type) -> void:
@@ -355,4 +369,27 @@ func _mark_for_removal(key: StringName, sub: Subscription) -> void:
 	var subs: Array = _subscriptions.get(key, [])
 	var index: int = subs.find(sub)
 	if index >= 0:
-		Collection.new(subs, false).remove_at([index]).cleanup(_subscriptions, key)
+		_remove_indices_from_array(subs, [index])
+		if subs.is_empty():
+			_subscriptions.erase(key)
+
+## Internal: Remove items at given indices from an array (safe removal in descending order).
+##
+## Removes items at the specified indices from the array. Indices are sorted
+## in descending order before removal to handle index shifting correctly.
+##
+## @param array The array to remove items from (modified in place)
+## @param indices Array of indices to remove (will be sorted internally)
+func _remove_indices_from_array(array: Array, indices: Array) -> void:
+	if indices.is_empty() or array.is_empty():
+		return
+	
+	# Sort indices in descending order for safe removal
+	var sorted_indices: Array = indices.duplicate()
+	sorted_indices.sort()
+	sorted_indices.reverse()
+	
+	# Remove items (from highest index to lowest to avoid index shifting issues)
+	for i in sorted_indices:
+		if i >= 0 and i < array.size():
+			array.remove_at(i)

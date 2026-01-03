@@ -47,7 +47,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
 2. **Use Variant for truly dynamic types:**
    - When a parameter can accept multiple types
    - When return type depends on runtime behavior
-   - Our Collection methods correctly use `Variant` for flexible item types
+   - Our messaging system uses `Variant` for flexible return types
 
 3. **Type checking with `is_instance_of()`:**
    ```gdscript
@@ -58,7 +58,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
        # Handle Node
    ```
 
-**Our Implementation:** ✅ All Collection methods now have explicit `Variant` type annotations.
+**Our Implementation:** ✅ All messaging methods use explicit type annotations throughout.
 
 ---
 
@@ -74,7 +74,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
    - Classes that don't need scene tree integration
    - Utility classes and services
    - Data containers and value objects
-   - **Our use case:** MessageBus, Collection, Message types
+   - **Our use case:** MessageBus, Message types, utilities
 
 2. **Node for scene tree integration:**
    - Classes that need signals, groups, or scene tree access
@@ -171,7 +171,7 @@ result = sub.callable.call(evt)
 **Our Implementation:**
 - ✅ Use Dictionary for subscriptions (StringName → Array[Subscription])
 - ✅ Use Array for ordered lists (subscriptions, middleware)
-- ✅ Use Collection for array operations with method chaining
+- ✅ Direct array operations with helper functions for safe removal
 
 ### Subscription Sorting Optimization
 
@@ -275,7 +275,7 @@ if weak_ref.get_ref() != null:
 
 **Optimizations Applied:**
 - ✅ Insertion sort instead of full sort (O(n) vs O(n log n))
-- ✅ Safe removal using Collection.remove_at() (handles index shifting)
+- ✅ Safe removal using helper function that removes indices in descending order (handles index shifting)
 
 ---
 

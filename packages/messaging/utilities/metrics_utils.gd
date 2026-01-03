@@ -1,11 +1,23 @@
 extends RefCounted
 ## Messaging-specific utility functions for metrics calculations and operations.
 ##
-## These utilities work with the messaging package's specific metrics dictionary
-## structure: {count: int, total_time: float, min_time: float, max_time: float}
+## Provides helper functions for working with the messaging package's performance
+## metrics structure. These utilities abstract common metric calculations and
+## data structure creation.
 ##
-## Note: These are messaging-specific because they work with messaging's metrics
-## structure. Other packages would have different metrics structures.
+## **Metrics Structure:** The messaging package uses a dictionary structure:
+## [code]{
+##   "count": int,           # Number of executions
+##   "total_time": float,    # Sum of all execution times (seconds)
+##   "min_time": float,      # Minimum execution time (seconds)
+##   "max_time": float       # Maximum execution time (seconds)
+## }[/code]
+##
+## **Note:** These utilities are messaging-specific because they work with the
+## messaging package's metrics structure. Other packages may use different
+## metrics structures and would need their own utility functions.
+##
+## @note This class extends [RefCounted] and is automatically memory-managed.
 
 ## Calculate average time from metrics dictionary.
 ##

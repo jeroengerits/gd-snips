@@ -10,12 +10,6 @@ Type-safe command/event messaging framework.
 
 **[Documentation →](packages/messaging/README.md)**
 
-### Collection
-
-Fluent array wrapper with method chaining.
-
-**[Documentation →](packages/collection/README.md)**
-
 ## Requirements
 
 Godot 4.5.1+

@@ -3,9 +3,38 @@ class_name SignalEventAdapter
 
 ## Utility for bridging Godot signals to messaging events.
 ##
-## Connects Node signals to EventBus, automatically converting signal emissions
-## into event publications. Useful for integrating UI interactions, scene tree
-## events, and third-party plugins with the messaging system.
+## Connects Node signals to [EventBus], automatically converting signal emissions
+## into event publications. This adapter is useful for integrating UI interactions,
+## scene tree events, and third-party plugins with the messaging system.
+##
+## **Use Cases:**
+## - Converting UI button clicks to events
+## - Integrating scene tree signals (body_entered, area_entered, etc.) with messaging
+## - Connecting third-party plugin signals to the messaging system
+## - Creating event-driven APIs from signal-based code
+##
+## **Architecture:** This adapter acts as a bridge between Godot's signal system
+## (signal-driven) and the messaging system (event-driven), allowing both patterns
+## to coexist in the same codebase.
+##
+## **Memory Management:** This extends [RefCounted] and implements [method _notification]
+## to automatically cleanup signal connections when the adapter is freed, preventing
+## memory leaks.
+##
+## @example Basic usage:
+##   var adapter = SignalEventAdapter.new(event_bus)
+##   adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
+##
+## @example Custom data mapping:
+##   adapter.connect_signal_to_event(
+##       $Area2D,
+##       "body_entered",
+##       AreaEnteredEvent,
+##       func(body): return {"body_name": body.name, "position": body.position}
+##   )
+##
+## @note This extends [RefCounted] and automatically cleans up connections in
+##   [method _notification] when freed to prevent memory leaks.
 ##
 ## Usage:
 ##   const Messaging = preload("res://packages/messaging/messaging.gd")

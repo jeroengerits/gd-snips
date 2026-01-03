@@ -4,7 +4,17 @@ class_name CommandRules
 ## Domain service defining business rules for command routing.
 ##
 ## Encapsulates the domain invariant that commands must have exactly one handler.
-## This is a domain rule, not an infrastructure or application concern.
+## This separation of domain rules from infrastructure concerns follows Domain-Driven
+## Design (DDD) principles and clean architecture.
+##
+## **Domain Rule:** Commands represent imperative actions that must be handled by
+## exactly one handler. This ensures deterministic behavior and makes it clear
+## which handler is responsible for processing each command type.
+##
+## **Separation of Concerns:** This class contains domain knowledge (business rules),
+## while [CommandBus] handles infrastructure concerns (routing, subscription management).
+##
+## @note This class extends [RefCounted] and is automatically memory-managed.
 
 enum ValidationResult {
 	VALID,

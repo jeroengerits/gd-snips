@@ -1,21 +1,44 @@
 extends RefCounted
 class_name Message
 
-## Concrete value object for messages sent through messaging systems.
+## Base class for all messages in the messaging system.
 ##
-## Can be instantiated directly or extended for specialized types.
-## Messages are immutable data carriers configured via constructor.
+## Messages are immutable value objects that carry data between systems. They
+## represent both commands (imperative actions) and events (notifications).
+## Messages are configured via their constructor and cannot be modified after
+## creation, ensuring thread-safety and predictable behavior.
+##
+## **Key Features:**
+## - Immutable data carrier
+## - Content-based identity (value object pattern)
+## - Unique ID generated from type and data
+## - Type-safe routing support
+## - Dictionary-based payload storage
+##
+## **Identity:** Messages use content-based identity - two messages with the
+## same type and data will have the same identity (ID). This makes them suitable
+## for value object patterns and allows for deduplication if needed.
+##
+## **Extensibility:** You can extend this class directly for generic messages,
+## or extend [Command] or [Event] for domain-specific message types.
 ##
 ## @example Direct instantiation:
 ##   var msg = Message.new("damage", {"amount": 10, "target": player})
-##   var msg2 = Message.create("heal", {"amount": 5}, "Heal")
+##   var msg2 = Message.create("heal", {"amount": 5}, "Heal message")
 ##
-## @example Subclassing:
+## @example Subclassing for type safety:
 ##   extends Message
 ##   class_name DamageMessage
 ##
-##   func _init(amount: int, target: Node) -> void:
+##   var amount: int
+##   var target: Node
+##
+##   func _init(damage_amount: int, target_node: Node) -> void:
+##       amount = damage_amount
+##       target = target_node
 ##       super._init("damage", {"amount": amount, "target": target})
+##
+## @note All messages extend [RefCounted] and are automatically memory-managed.
 
 var _id: String
 var _type: String
@@ -41,7 +64,15 @@ func _generate_domain_id(type: String, data: Dictionary) -> String:
 	var data_hash: int = hash(data)
 	return "%s_%d" % [type, data_hash]
 
-## Unique identifier for this message instance.
+## Get the unique identifier for this message instance.
+##
+## The ID is generated from the message type and data hash, ensuring that
+## messages with identical type and data will have the same ID (content-based
+## identity for value objects).
+##
+## @return The unique identifier as a [String]. Format: [code]"type_hash"[/code]
+##
+## @note This ID is generated at construction time and cannot be changed.
 func id() -> String:
 	return _id
 
@@ -70,8 +101,22 @@ func to_dict() -> Dictionary:
 		"data": _data.duplicate(true)
 	}
 
-## Check if this message equals another (content-based equality for value objects).
-## Two messages are equal if they have the same type and data.
+## Check if this message equals another message (content-based equality).
+##
+## Implements value object equality - two messages are considered equal if they
+## have the same type and data, regardless of their instance identity.
+##
+## @param other The [Message] to compare against. Can be [code]null[/code].
+##
+## @return [code]true[/code] if messages have the same type and data, [code]false[/code] otherwise.
+##
+## @example:
+##   var msg1 = Message.new("test", {"value": 10})
+##   var msg2 = Message.new("test", {"value": 10})
+##   print(msg1.equals(msg2))  # Prints: true (same type and data)
+##
+## @note This is different from reference equality ([code]==[/code] in GDScript).
+##   Two different Message instances with the same content will be equal.
 func equals(other: Message) -> bool:
 	if other == null or not other is Message:
 		return false

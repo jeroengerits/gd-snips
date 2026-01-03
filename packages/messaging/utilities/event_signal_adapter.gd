@@ -3,8 +3,37 @@ class_name EventSignalAdapter
 
 ## Utility for bridging messaging events to Godot signals.
 ##
-## Subscribes to EventBus events and emits signals when events are published.
-## Useful for exposing messaging events to signal-based systems (UI, plugins).
+## Subscribes to [EventBus] events and automatically emits signals when events
+## are published. This adapter is useful for exposing messaging events to
+## signal-based systems (UI, plugins, Node-based code) that expect Godot's
+## native signal system.
+##
+## **Use Cases:**
+## - Integrating messaging system with UI that uses signals
+## - Exposing events to plugins that expect signals
+## - Connecting messaging events to existing signal-based code
+## - Creating signal-based APIs on top of messaging events
+##
+## **Architecture:** This adapter acts as a bridge between the messaging system
+## (event-driven) and Godot's signal system (signal-driven), allowing both
+## patterns to coexist in the same codebase.
+##
+## **Lifecycle:** This extends [Node], so it should be added to the scene tree
+## or kept as a child of a Node to ensure proper lifecycle management.
+##
+## @example Basic usage:
+##   extends Node
+##   
+##   signal enemy_died(enemy_id: int, points: int)
+##   
+##   func _ready():
+##       var adapter = EventSignalAdapter.new()
+##       adapter.set_event_bus(event_bus)
+##       adapter.connect_event_to_signal(EnemyDiedEvent, "enemy_died")
+##       add_child(adapter)
+##
+## @note This extends [Node] (not [RefCounted]) because it needs to emit signals
+##   and manage signal connections.
 ##
 ## Usage:
 ##   extends Node
