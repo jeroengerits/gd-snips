@@ -8,21 +8,11 @@ A curated collection of packages for **Godot 4.5.1+**, designed for modular game
 
 A high-performance, type-safe messaging framework that rigorously separates actions (commands) from notifications (events).
 
-**Import:**
-```gdscript
-const Messaging = preload("res://packages/messaging/messaging.gd")
-```
-
 **[Documentation →](packages/messaging/README.md)**
 
 ### Collection
 
 A fluent, object-oriented wrapper for working with arrays, inspired by Laravel's Collection class. Provides method chaining and expressive syntax for common array operations.
-
-**Import:**
-```gdscript
-const Collection = preload("res://packages/collection/collection.gd")
-```
 
 **[Documentation →](packages/collection/README.md)**
 
