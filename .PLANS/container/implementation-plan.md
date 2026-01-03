@@ -8,7 +8,7 @@
 
 ## Overview
 
-Implement a dependency injection (DI) container addon for Godot 4.5.1+ that follows the design principles established in the gd-snips codebase. The container will provide explicit, type-safe dependency management that integrates seamlessly with the Transport system (CommandBus/EventBus) and other gd-snips addons.
+Implement a dependency injection (DI) container addon for Godot 4.5.1+ that follows the design principles established in the gd-snips codebase. The container will provide explicit, type-safe dependency management that integrates seamlessly with the Command/Event bus system and other gd-snips addons.
 
 ### Goals
 
@@ -16,14 +16,14 @@ Implement a dependency injection (DI) container addon for Godot 4.5.1+ that foll
 - **Type Safety** - Leverage Godot's type system for compile-time safety
 - **Debuggability** - Clear error messages, validation, and introspection capabilities
 - **Godot-Native** - Works with RefCounted objects, Node lifecycle, and Godot conventions
-- **Integration** - Seamless integration with Transport (CommandBus/EventBus) and other addons
+- **Integration** - Seamless integration with Command/Event bus system and other addons
 - **Lightweight** - Minimal overhead, focused feature set (YAGNI principle)
 
 ---
 
 ## Design Principles
 
-The container addon will follow the same design principles established in the Transport addon:
+The container addon will follow the same design principles established in the Command/Event addons:
 
 1. **Explicitness over "magic"** - Explicit service registration, no automatic discovery
 2. **Type safety** - Leverage Godot's type system and class_name declarations
@@ -61,7 +61,7 @@ The central service container that manages service registrations and resolutions
 - Service resolution with dependency injection
 - Service lifecycle management
 - Validation and error handling
-- Integration with Transport system (optional)
+- Integration with Command/Event bus system (optional)
 
 **Base Class:** `RefCounted` (scene-tree independent, like CommandBus/EventBus)
 
@@ -170,9 +170,9 @@ Container automatically resolves constructor parameters from registered services
 
 ## Integration Points
 
-### Transport System Integration
+### Command/Event Bus Integration
 
-The container can integrate with the Transport addon:
+The container can integrate with the Command/Event bus system:
 
 ```gdscript
 # Register buses as singletons
@@ -314,7 +314,7 @@ var service_type: Variant
 3. Service collections (resolve_all)
 4. Performance optimizations (caching, lazy loading)
 5. Enhanced debugging (introspection, dependency graph)
-6. Integration examples with Transport system
+6. Integration examples with Command/Event bus system
 
 ### Phase 3: Advanced Patterns
 
@@ -375,7 +375,7 @@ Consider Option 2 for Phase 2 if type introspection becomes feasible.
 
 ### Type Resolution
 
-Reuse patterns from Transport addon:
+Reuse patterns from Command/Event addons:
 - Use `class_name` when available (most deterministic)
 - Fall back to script path for instances
 - Consider creating `TypeResolver` utility (similar to `MessageTypeResolver`)
@@ -389,7 +389,7 @@ Track resolution stack during service construction:
 
 ### Error Handling
 
-Follow Transport addon patterns:
+Follow Command/Event addon patterns:
 - Use `ContainerError` class for structured errors
 - Clear, descriptive error messages
 - Include service type information in errors
@@ -431,7 +431,7 @@ Follow Transport addon patterns:
 
 ### Integration Tests
 
-1. Integration with Transport system (CommandBus/EventBus)
+1. Integration with Command/Event bus system
 2. Real-world service composition scenarios
 3. Performance testing (resolution speed, memory usage)
 
@@ -465,13 +465,15 @@ var player_service = container.resolve_required(PlayerService)
 var command_bus = container.resolve_required(CommandBus)
 ```
 
-### Integration with Transport
+### Integration with Command/Event Buses
 
 ```gdscript
-# Setup container with Transport
+const Engine = preload("res://addons/engine/src/engine.gd")
+
+# Setup container with Command/Event buses
 var container = Container.new()
-container.register_singleton(CommandBus, Transport.CommandBus.new())
-container.register_singleton(EventBus, Transport.EventBus.new())
+container.register_singleton(CommandBus, Engine.Command.Bus.new())
+container.register_singleton(EventBus, Engine.Event.Bus.new())
 
 # Register command handlers as services
 container.register_transient(MoveCommandHandler, MoveCommandHandler)
@@ -510,7 +512,7 @@ container.register_singleton(GameService, func():
 
 ### README Structure
 
-Following the pattern established in Transport addon:
+Following the pattern established in Command/Event addons:
 
 1. **Overview** - What is the container addon
 2. **Quick Start** - Minimal working example
@@ -518,7 +520,7 @@ Following the pattern established in Transport addon:
 4. **Usage Guide** - Detailed examples and patterns
 5. **API Reference** - Complete API documentation
 6. **Best Practices** - Service design, lifecycle management
-7. **Integration** - Transport system integration
+7. **Integration** - Command/Event bus system integration
 8. **Architecture** - Internal design and patterns
 
 ### Developer Documentation
@@ -545,7 +547,7 @@ Following the pattern established in Transport addon:
 1. ✅ Core DI container functionality working
 2. ✅ Type-safe service registration and resolution
 3. ✅ Clear, explicit API (no "magic")
-4. ✅ Integration with Transport system
+4. ✅ Integration with Command/Event bus system
 5. ✅ Comprehensive documentation and examples
 6. ✅ Follows gd-snips design principles
 7. ✅ Error handling and debugging support

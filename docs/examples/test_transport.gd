@@ -20,7 +20,7 @@ func _ready() -> void:
 	command_bus = Engine.Command.Bus.new()
 	event_bus = Engine.Event.Bus.new()
 	
-	print("=== Running Transport Tests ===\n")
+	print("=== Running Command/Event Bus Tests ===\n")
 	
 	_test_command_single_handler()
 	_test_command_no_handler()
