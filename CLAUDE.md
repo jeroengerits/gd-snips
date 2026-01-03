@@ -298,8 +298,9 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 **Current Structure:**
 - `type/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
-- `event/` - EventBus (event_bus.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), SignalBridge (signal_bridge.gd)
-- `command/` - CommandBus (command_bus.gd), Validator (validator.gd)
+- `middleware/` - Middleware base class (middleware.gd), MiddlewareEntry (middleware_entry.gd)
+- `event/` - EventBus (event_bus.gd), SubscriptionRegistry (registry.gd), Validator (event_validator.gd), SignalBridge (signal_bridge.gd)
+- `command/` - CommandBus (command_bus.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
 
 **File Naming:**
 - Files match class names: `command_bus.gd`, `event_bus.gd`, `registry.gd`, `signal_bridge.gd`, `command_signal_bridge.gd`, `validator.gd`
