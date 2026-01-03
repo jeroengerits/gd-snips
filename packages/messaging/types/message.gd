@@ -25,21 +25,15 @@ var _data: Dictionary
 func _init(type: String, data: Dictionary = {}, desc: String = "") -> void:
 	# Domain invariants: enforce message type is not empty
 	assert(not type.is_empty(), "Message type cannot be empty")
-	if type.is_empty():
-		push_error("Message type cannot be empty")
-		type = "unknown"
 	
-	# Domain invariants: ensure data is not null
-	assert(data != null, "Message data cannot be null")
-	if data == null:
-		push_error("Message data cannot be null")
-		data = {}
+	# Domain invariants: ensure data is not null (handle gracefully in release builds)
+	var message_data: Dictionary = data if data != null else {}
 	
 	# Generate domain identity (content-based for value object equality)
-	_id = _generate_domain_id(type, data)
+	_id = _generate_domain_id(type, message_data)
 	_type = type
 	_desc = desc
-	_data = data.duplicate(true)
+	_data = message_data.duplicate(true)
 
 ## Generate domain identity based on message content (value object pattern).
 ## Two messages with identical type and data should have the same identity.

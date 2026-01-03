@@ -112,7 +112,22 @@ Infrastructure (MessageTypeResolver)
 - **Barrel Files:** Each package has a main entry point (e.g., `messaging.gd`)
 - **Domain Rules:** Business logic separated into Rules classes
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
-- **Type Resolution:** Handles Godot's type system complexity transparently
+- **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
+
+### Type Resolution and Lifecycle Management
+
+**Type Resolution:**
+The `MessageTypeResolver` handles Godot's type system complexity:
+- Prioritizes `class_name` when available (most deterministic across machines)
+- Falls back to script path for instances without `class_name`
+- Handles GDScript class references by instantiating to extract `class_name`
+- **Best Practice:** Always use `class_name` for message types to ensure consistent routing
+
+**Lifecycle Management:**
+Subscriptions and adapters automatically clean up to prevent memory leaks:
+- Subscriptions bound to objects auto-unsubscribe when object is freed (uses `is_instance_valid()`)
+- `SignalEventAdapter` automatically disconnects signal connections when freed (uses `_notification(NOTIFICATION_PREDELETE)`)
+- No manual cleanup needed for scene-bound subscriptions and adapters
 
 ### Signal Integration
 
@@ -200,7 +215,8 @@ Collection.new(listeners, false).remove_at([0, 2]).cleanup(subscriptions, "key")
 
 **Event Pattern:**
 - Zero or more listeners
-- Fire-and-forget (but still awaits async listeners)
+- Sequential delivery in priority order
+- Async listeners are awaited to prevent memory leaks (may block briefly)
 - Use for notifications
 
 ## Common Issues and Solutions
@@ -230,6 +246,34 @@ Collection.new(my_array, false)  # Uses reference
 ```gdscript
 command_bus.clear_type(MyCommand)
 command_bus.handle(MyCommand, my_handler)
+```
+
+### Issue: SignalEventAdapter Connection Leaks
+
+**Symptom:** Signal connections remain after adapter is freed, causing errors
+
+**Solution:** Adapter automatically cleans up connections on free (uses `_notification`). If manually managing, call `disconnect_all()`:
+```gdscript
+adapter.disconnect_all()  # Manual cleanup (auto-cleanup on free)
+```
+
+### Issue: Type Resolution Inconsistency
+
+**Symptom:** Same message type resolves to different keys when passing class vs instance
+
+**Solution:** Use `class_name` for all message types. The resolver prioritizes `class_name` over script paths for consistency:
+```gdscript
+extends Message
+class_name MyCommand  # Required for consistent resolution
+```
+
+### Issue: EventBus.publish() Blocks
+
+**Symptom:** `publish()` appears to block even though it's "fire-and-forget"
+
+**Solution:** `publish()` awaits async listeners to prevent memory leaks. This is intentional. For non-blocking behavior from Node context, use `call_deferred()`:
+```gdscript
+call_deferred("_publish_event", event_bus, evt)
 ```
 
 ## Testing Insights
@@ -278,14 +322,36 @@ command_bus.handle(MyCommand, my_handler)
 - Domain rules in `rules/` folders
 - Package-specific utilities in `utilities/` folders
 
+## Recent Improvements (January 2026)
+
+### Performance Optimizations
+
+1. **Subscription Sorting:** Changed from O(n log n) full sort to O(n) insertion sort when subscribing. Subscriptions are now inserted in priority order directly, improving performance for frequent subscription/unsubscription patterns.
+
+2. **Type Resolution:** Improved consistency by prioritizing `class_name` across all resolution paths (instances, class references, GDScript scripts). Instantiates GDScript classes only when needed to extract `class_name`, improving determinism.
+
+### Bug Fixes
+
+1. **Metrics Recording:** Fixed double-recording bug in EventBus where metrics were recorded per-listener and again for overall operation. Now correctly records overall operation time once.
+
+2. **Resource Cleanup:** Added automatic cleanup for `SignalEventAdapter` connections via `_notification()` to prevent memory leaks when adapters are freed.
+
+3. **Validation Logic:** Simplified Message._init() validation by removing redundant checks after assertions, improving clarity and maintainability.
+
+### Type Safety Improvements
+
+1. **Type Annotations:** Added explicit `Variant` type annotations to all Collection methods for better type safety and IDE support (`first()`, `last()`, `get()`, `pop()`, `shift()`, `find()`, `reduce()`, etc.).
+
+2. **Documentation:** Clarified async behavior in EventBus.publish() - removed misleading "fire-and-forget" terminology, documented that async listeners are awaited to prevent memory leaks.
+
 ## Future Considerations
 
 ### Potential Improvements
 
-1. **True Fire-and-Forget Events:** Current `publish()` still awaits async listeners
-2. **Batch Operations:** For high-frequency event publishing
-3. **Type Safety:** More compile-time checks for message types
-4. **Performance Metrics:** Built-in profiling for message delivery
+1. **Batch Operations:** For high-frequency event publishing (multiple events in one operation)
+2. **Type Safety:** More compile-time checks for message types (require class_name validation)
+3. **Performance Metrics:** Enhanced profiling options (per-listener breakdown, slow handler warnings)
+4. **Thread Safety:** Document thread-safety assumptions (currently single-threaded)
 
 ### Breaking Changes Policy
 

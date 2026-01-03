@@ -78,6 +78,7 @@ func connect_signal_to_event(source: Object, signal_name: StringName, event_type
 ## Disconnect all signal bridges.
 ##
 ## Call this when the adapter is no longer needed to prevent memory leaks.
+## This is automatically called when the adapter is freed.
 func disconnect_all() -> void:
 	for conn in _connections:
 		if is_instance_valid(conn.source):
@@ -87,4 +88,9 @@ func disconnect_all() -> void:
 ## Get the number of active signal connections.
 func get_connection_count() -> int:
 	return _connections.size()
+
+## Internal: Cleanup connections when adapter is freed.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		disconnect_all()
 

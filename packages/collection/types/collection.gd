@@ -42,20 +42,20 @@ func not_empty() -> bool:
 ## Get the first item in the collection.
 ##
 ## [code]default[/code]: Value to return if collection is empty (optional)
-func first(default = null):
+func first(default: Variant = null) -> Variant:
 	return _items[0] if not _items.is_empty() else default
 
 ## Get the last item in the collection.
 ##
 ## [code]default[/code]: Value to return if collection is empty (optional)
-func last(default = null):
+func last(default: Variant = null) -> Variant:
 	return _items[_items.size() - 1] if not _items.is_empty() else default
 
 ## Get an item at a specific index.
 ##
 ## [code]index[/code]: Index to retrieve
 ## [code]default[/code]: Value to return if index is out of bounds (optional)
-func get(index: int, default = null):
+func get(index: int, default: Variant = null) -> Variant:
 	if index >= 0 and index < _items.size():
 		return _items[index]
 	return default
@@ -63,7 +63,7 @@ func get(index: int, default = null):
 ## Check if the collection contains a value.
 ##
 ## [code]value[/code]: Value to search for
-func contains(value) -> bool:
+func contains(value: Variant) -> bool:
 	return _items.has(value)
 
 ## Check if the collection contains any of the given values.
@@ -110,8 +110,8 @@ func map(callback: Callable) -> Collection:
 ## [code]callback[/code]: Callable(accumulator, item) -> Variant
 ## [code]initial[/code]: Initial value for accumulator (optional)
 ## Returns: The reduced value
-func reduce(callback: Callable, initial = null):
-	var accumulator = initial
+func reduce(callback: Callable, initial: Variant = null) -> Variant:
+	var accumulator: Variant = initial
 	for item in _items:
 		accumulator = callback.call(accumulator, item)
 	return accumulator
@@ -129,7 +129,7 @@ func each(callback: Callable) -> Collection:
 ##
 ## [code]callback[/code]: Callable(item) -> bool
 ## [code]default[/code]: Value to return if no match found (optional)
-func find(callback: Callable, default = null):
+func find(callback: Callable, default: Variant = null) -> Variant:
 	for item in _items:
 		if callback.call(item):
 			return item
@@ -150,31 +150,31 @@ func reject(callback: Callable) -> Collection:
 ##
 ## [code]item[/code]: Item to add
 ## Returns: Self for method chaining
-func push(item) -> Collection:
+func push(item: Variant) -> Collection:
 	_items.append(item)
 	return self
 
 ## Remove and return the last item.
-func pop():
+func pop() -> Variant:
 	return _items.pop_back() if not _items.is_empty() else null
 
 ## Add an item to the beginning of the collection.
 ##
 ## [code]item[/code]: Item to add
 ## Returns: Self for method chaining
-func unshift(item) -> Collection:
+func unshift(item: Variant) -> Collection:
 	_items.insert(0, item)
 	return self
 
 ## Remove and return the first item.
-func shift():
+func shift() -> Variant:
 	return _items.pop_front() if not _items.is_empty() else null
 
 ## Remove an item by value.
 ##
 ## [code]value[/code]: Value to remove
 ## Returns: Self for method chaining
-func remove(value) -> Collection:
+func remove(value: Variant) -> Collection:
 	var index: int = _items.find(value)
 	if index >= 0:
 		_items.remove_at(index)
@@ -210,7 +210,7 @@ func clear() -> Collection:
 ##
 ## [code]other[/code]: Collection or Array to merge
 ## Returns: New Collection instance with merged items
-func merge(other) -> Collection:
+func merge(other: Variant) -> Collection:
 	var merged: Array = _items.duplicate()
 	if other is Collection:
 		merged.append_array(other.array())
@@ -289,7 +289,7 @@ func chunk(size: int) -> Collection:
 ## [code]dict[/code]: Dictionary that may need key erased
 ## [code]key[/code]: Key to erase from dict if collection is empty
 ## Returns: Self for method chaining
-func cleanup(dict: Dictionary, key) -> Collection:
+func cleanup(dict: Dictionary, key: Variant) -> Collection:
 	if _items.is_empty():
 		dict.erase(key)
 	return self
@@ -300,7 +300,7 @@ func cleanup(dict: Dictionary, key) -> Collection:
 ## [code]dict[/code]: Dictionary that may need key erased
 ## [code]key[/code]: Key to erase from dict if collection becomes empty
 ## Returns: Self for method chaining
-func remove_cleanup(indices: Array, dict: Dictionary, key) -> Collection:
+func remove_cleanup(indices: Array, dict: Dictionary, key: Variant) -> Collection:
 	remove_at(indices)
 	cleanup(dict, key)
 	return self

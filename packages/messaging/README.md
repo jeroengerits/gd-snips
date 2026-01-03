@@ -47,7 +47,7 @@ Events signal that something has already occurred in the game domain.
 
 - Any number of listeners (including zero)
 - Ordered by priority, processed sequentially
-- “Fire-and-forget” by default—no return value
+- No return value (listeners are executed sequentially, async listeners are awaited)
 
 **Examples:**
 - `EnemyDiedEvent`

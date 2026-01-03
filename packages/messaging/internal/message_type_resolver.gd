@@ -10,41 +10,60 @@ extends RefCounted
 ## Resolve message type identifier from a message instance or type.
 ## 
 ## Accepts:
-## - Script resources (GDScript class references)
+## - Script resources (GDScript class references) - prefers class_name if available
 ## - StringName/String literals
-## - Object instances (extracts from script path or class name)
+## - Object instances (extracts class_name or script path)
+##
+## Note: For consistent type resolution, use class_name for all message types.
+## Passing a class reference vs an instance may resolve differently if class_name
+## is not used.
 ##
 ## [code]message_or_type[/code]: Message instance, class, or type identifier
 ## Returns: StringName type identifier for routing
 static func resolve_type(message_or_type) -> StringName:
 	assert(message_or_type != null, "Message or type cannot be null")
 	
+	# Handle StringName/String directly
 	if message_or_type is StringName:
 		return message_or_type
 	elif message_or_type is String:
 		return StringName(message_or_type)
-	elif message_or_type is GDScript:
-		# Handle Script resource (e.g., when passing MovePlayerCommand class directly)
-		var path: String = message_or_type.resource_path
-		if path != "":
-			return StringName(path.get_file().get_basename())
-		return StringName("UnknownScript")
+	
+	# Handle Object instances - prefer class_name (most deterministic)
 	elif message_or_type is Object:
-		# Prefer class_name if it exists (deterministic across machines)
-		if message_or_type.has_method("get_class"):
-			var class_name_str: String = message_or_type.get_class()
+		var obj: Object = message_or_type
+		var class_name_str: String = obj.get_class()
+		
+		# If class_name exists and is not "Object", use it
+		if class_name_str != "" and class_name_str != "Object":
+			return StringName(class_name_str)
+		
+		# Fallback: extract from script path
+		var script: Script = obj.get_script()
+		if script != null and script.resource_path != "":
+			return StringName(script.resource_path.get_file().get_basename())
+		
+		# Last resort: use get_class() result (will be "Object" for plain objects)
+		return StringName(class_name_str)
+	
+	# Handle GDScript class references - try to get class_name from instance
+	elif message_or_type is GDScript:
+		var script: GDScript = message_or_type
+		
+		# Try to instantiate and get class_name (preferred method)
+		var instance = script.new()
+		if instance != null:
+			var class_name_str: String = instance.get_class()
 			if class_name_str != "" and class_name_str != "Object":
+				# Instance will be cleaned up when it goes out of scope
 				return StringName(class_name_str)
 		
-		# Extract from script path (GDScript/Godot specific)
-		var script: Script = message_or_type.get_script()
-		if script != null:
-			var path: String = script.resource_path
-			if path != "":
-				return StringName(path.get_file().get_basename())
+		# Fallback: use script filename
+		var path: String = script.resource_path
+		if path != "":
+			return StringName(path.get_file().get_basename())
 		
-		# Fallback to GDScript class name
-		return StringName(message_or_type.get_class())
+		return StringName("UnknownScript")
 	
 	# Last resort: convert to string
 	return StringName(str(message_or_type))

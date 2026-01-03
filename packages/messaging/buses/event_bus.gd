@@ -11,11 +11,12 @@ class_name EventBus
 ## Events represent notifications that something happened. Multiple subscribers
 ## can listen to the same event type. 
 ##
-## Note on publish() behavior: While publish() is described as "fire-and-forget",
-## it will still await async listeners to prevent memory leaks. This means
-## publish() may block briefly if listeners are async. For truly non-blocking
-## behavior from a Node context, use call_deferred() or publish_async() when
-## you need to wait for completion.
+## Note on publish() behavior: This method publishes events sequentially to all
+## listeners in priority order. Async listeners are awaited to prevent
+## GDScriptFunctionState memory leaks, which means publish() may block briefly
+## if listeners are async. For truly non-blocking behavior from a Node context,
+## use call_deferred() to defer publication. If you need to wait for async listeners
+## to complete, use publish_async() instead.
 ##
 ## Usage:
 ##   const Messaging = preload("res://packages/messaging/messaging.gd")
@@ -90,17 +91,15 @@ func unsubscribe_by_id(event_type, sub_id: int) -> bool:
 
 ## Publish an event to all subscribers.
 ##
-## This method is "fire-and-forget" in the sense that it doesn't return a result
-## and doesn't wait for listeners to complete (unlike publish_async()). However,
-## async listeners are still awaited sequentially to prevent GDScriptFunctionState
-## memory leaks. This means publish() may block briefly if listeners are async.
+## This method publishes the event to all listeners sequentially in priority order
+## (higher priority first). Async listeners are awaited to prevent GDScriptFunctionState
+## memory leaks, which means this method may block briefly if listeners are async.
 ##
-## Listeners are called in priority order (higher priority first).
+## This method does not return a result. If you need to wait for async listeners
+## to complete, use [method publish_async] instead.
 ##
 ## For truly non-blocking behavior from a Node context:
 ##   call_deferred("_publish_event", event_bus, evt)
-##
-## If you need to wait for async listeners to complete, use publish_async() instead.
 func publish(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
@@ -167,10 +166,6 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 				# This is why publish() may block even though it's "fire-and-forget".
 				result = await result
 		
-		# Record metrics for this listener (if enabled)
-		var listener_elapsed: float = (Time.get_ticks_msec() - listener_start_time) / 1000.0
-		super._record_metrics(key, listener_elapsed)
-		
 		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)
 		if SubscriptionRules.should_remove_after_delivery(sub.one_shot):
 			one_shots_to_remove.append({"key": key, "sub": sub})
@@ -181,7 +176,7 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 		super._mark_for_removal(item.key, item.sub)
 	)
 	
-	# Record overall metrics (if enabled, already recorded per-listener above)
+	# Record overall metrics for the entire publish operation
 	var elapsed: float = (Time.get_ticks_msec() - start_time) / 1000.0
 	super._record_metrics(key, elapsed)
 	

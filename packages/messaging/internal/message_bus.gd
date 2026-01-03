@@ -233,8 +233,15 @@ func subscribe(message_type, handler: Callable, priority: int = 0, one_shot: boo
 	if not _subscriptions.has(key):
 		_subscriptions[key] = []
 	
-	_subscriptions[key].append(sub)
-	SubscriptionRules.sort_by_priority(_subscriptions[key])
+	var subs: Array = _subscriptions[key]
+	# Insert in sorted position (higher priority first) - O(n) insertion
+	# Find insertion point: subscriptions are sorted descending by priority
+	var insert_pos: int = subs.size()
+	for i in range(subs.size() - 1, -1, -1):
+		if subs[i].priority >= priority:
+			insert_pos = i + 1
+			break
+	subs.insert(insert_pos, sub)
 	
 	if _verbose:
 		print("[MessageBus] Subscribed to ", key, " (priority=", priority, ", one_shot=", one_shot, ")")
