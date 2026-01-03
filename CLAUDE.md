@@ -16,14 +16,18 @@ All addons live under `addons/`:
 
 ```
 addons/
-└── transport/     # Command/Event transport framework (Godot addon)
+├── transport/     # Command/Event transport framework (Godot addon)
+│   ├── plugin.cfg # Addon configuration
+│   ├── transport.gd # Public API barrel file
+│   ├── message/   # Message base class and MessageTypeResolver
+│   ├── middleware/# Middleware base class and MiddlewareEntry
+│   ├── utils/     # Metrics utilities, signal connection tracker
+│   ├── event/     # EventBus, Event, EventSubscribers, EventSubscriber, Validator, EventSignalBridge
+│   └── command/   # CommandBus, Command, Validator, CommandSignalBridge, CommandRoutingError
+└── array-utils/   # Array utility functions (Godot addon)
     ├── plugin.cfg # Addon configuration
-    ├── transport.gd # Public API barrel file
-    ├── message/   # Message base class and MessageTypeResolver
-    ├── middleware/# Middleware base class and MiddlewareEntry
-    ├── utils/     # Array utilities, metrics utilities, signal connection tracker
-    ├── event/     # EventBus, Event, EventSubscribers, EventSubscriber, Validator, EventSignalBridge
-    └── command/   # CommandBus, Command, Validator, CommandSignalBridge, CommandRoutingError
+    ├── array_utils.gd # Array utility functions
+    └── README.md  # Documentation
 ```
 
 ## Architectural Decisions
@@ -77,7 +81,7 @@ addons/
 
 **Implementation:**
 - Moved `event/subscribers.gd` → `core/subscribers.gd` (later moved to `event/event_subscribers.gd`)
-- Extracted priority sorting logic to `_sort_by_priority()` method in Subscribers class (later moved to ArrayUtils)
+- Extracted priority sorting logic to `_sort_by_priority()` method in Subscribers class (later moved to ArrayUtils, then extracted to separate array-utils addon)
 - Removed EventValidator dependency from Subscribers (was only used for sorting middleware)
 - Inlined lifecycle validation in EventSubscriber class (removed EventValidator dependency)
 - Updated imports in command_bus.gd and event_bus.gd to use new path
@@ -143,7 +147,8 @@ Base Types (Command, Event in their respective directories)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
 - **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
 - **Organized Structure:** Functionality-based organization with clear separation by domain (message/, middleware/, command/, event/, utils/)
-- **Utilities:** Generic helper functions in `utils/` (ArrayUtils, MetricsUtils, SignalConnectionTracker)
+- **Utilities:** Generic helper functions in `utils/` (MetricsUtils, SignalConnectionTracker)
+- **Array Utils:** Extracted to separate `array-utils` addon for reusability (January 2026)
 
 ### Type Resolution and Lifecycle Management
 
@@ -206,10 +211,10 @@ var event_bus = Transport.EventBus.new()
 ```gdscript
 const Subscribers = preload("res://addons/transport/event/event_subscribers.gd")
 const MessageTypeResolver = preload("res://addons/transport/message/message_type_resolver.gd")
-const ArrayUtils = preload("res://addons/transport/utils/array_utils.gd")
+const ArrayUtils = preload("res://addons/array-utils/array_utils.gd")
 ```
 
-**Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations or `ArrayUtils` for common array operations.
+**Note:** Collection package was removed (January 2026). Array utilities were extracted to separate `array-utils` addon (January 2026). Use direct GDScript array/dictionary operations or `ArrayUtils` from the array-utils addon for common array operations.
 
 ### Transport Patterns
 
@@ -506,11 +511,12 @@ if not source.connect(signal_name, callback):
    - Reduced indirection and improved code clarity
    - Updated `CommandBus`, `EventBus`, and `Subscribers` to use direct resolver calls
 
-4. **Utility Function Organization:** Moved generic array utilities to `utils/array_utils.gd` (January 2026).
+4. **Utility Function Organization:** Moved generic array utilities to `utils/array_utils.gd` (January 2026), later extracted to separate addon (January 2026).
    - `_remove_indices_from_array()` and `_sort_by_priority()` extracted to reusable utility
    - Better organization - utilities belong in utils/ not domain classes
    - Reusable across codebase without coupling to Subscribers
    - Improved Single Responsibility Principle adherence
+   - **Later:** Extracted to separate `array-utils` addon for better modularity and reusability
 
 ### API Naming Improvements
 
@@ -572,7 +578,7 @@ A comprehensive code review was performed analyzing the transport package agains
 **Refactoring Results:** High-priority improvements have been implemented:
 - SignalBridge connection management extracted to reusable utility
 - Type resolution API cleaned up (removed wrapper methods)
-- Array utilities moved to utils/ for better organization
+- Array utilities moved to utils/ for better organization, later extracted to separate array-utils addon
 
 The codebase demonstrates solid architectural thinking with good separation of concerns. Remaining recommendations focus on incremental refactoring for better maintainability rather than correctness issues.
 

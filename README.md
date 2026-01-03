@@ -10,6 +10,12 @@ Type-safe command/event transport framework.
 
 **[Documentation →](addons/transport/README.md)**
 
+### Array Utils
+
+Utility functions for array operations.
+
+**[Documentation →](addons/array-utils/README.md)**
+
 ## Installation
 
 Each addon can be installed by copying its directory from `addons/` into your Godot project's `addons/` folder, then enabling it in **Project → Project Settings → Plugins**.
