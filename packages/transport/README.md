@@ -234,34 +234,43 @@ Middleware lets you intercept and process messages before and after they reach t
 
 Middleware works the same way for both commands and events. You can use callables directly or extend the `Middleware` base class for reusable middleware implementations.
 
+**Execution guarantees:**
+- Before-middleware runs before any handler/listener execution (can cancel delivery by returning `false`)
+- After-middleware runs after execution completes, even when:
+  - No handlers/listeners are registered
+  - Errors occur during execution
+  - Before-middleware cancels delivery (after-middleware is not called in this case)
+- Both CommandBus and EventBus guarantee consistent middleware execution behavior
+
 #### Using Callables (Simple)
 
 ```gdscript
-# Pre-processing middleware (runs before handlers/listeners)
+# Before-execution middleware (runs before handlers/listeners)
 # Can cancel delivery by returning false
-command_bus.add_middleware_pre(func(cmd: Command):
-    print("Pre-processing: ", cmd)
+command_bus.add_middleware_before(func(cmd: Command):
+    print("Before-execution: ", cmd)
     return true  # Return false to cancel delivery
 , priority=0)
 
-# Post-processing middleware (runs after handlers/listeners)
+# After-execution middleware (runs after handlers/listeners)
 # Receives the message and the result
-command_bus.add_middleware_post(func(cmd: Command, result):
-    print("Post-processing result: ", result)
+command_bus.add_middleware_after(func(cmd: Command, result):
+    print("After-execution result: ", result)
 , priority=0)
 
 # Same for events
-event_bus.add_middleware_pre(func(evt: Event):
-    print("Pre-processing event: ", evt)
+event_bus.add_middleware_before(func(evt: Event):
+    print("Before-execution event: ", evt)
     return true
 , priority=0)
 
-event_bus.add_middleware_post(func(evt: Event, result):
-    print("Post-processing event: ", evt)
+event_bus.add_middleware_after(func(evt: Event, result):
+    # Note: result is always null for events (events broadcast to multiple listeners)
+    print("After-execution event: ", evt)
 , priority=0)
 
 # Remove middleware when you're done
-var middleware_id = command_bus.add_middleware_pre(my_callback)
+var middleware_id = command_bus.add_middleware_before(my_callback)
 command_bus.remove_middleware(middleware_id)
 ```
 
@@ -274,21 +283,21 @@ const Transport = preload("res://packages/transport/transport.gd")
 
 # Create a logging middleware
 class LoggingMiddleware extends Transport.Middleware:
-    func process_pre(message: Transport.Message, message_key: StringName) -> bool:
-        print("[Middleware] Pre: ", message_key, " - ", message)
+    func process_before(message: Transport.Message, message_key: StringName) -> bool:
+        print("[Middleware] Before: ", message_key, " - ", message)
         return true  # Continue delivery
     
-    func process_post(message: Transport.Message, message_key: StringName, result: Variant) -> void:
-        print("[Middleware] Post: ", message_key, " - Result: ", result)
+    func process_after(message: Transport.Message, message_key: StringName, result: Variant) -> void:
+        print("[Middleware] After: ", message_key, " - Result: ", result)
 
 # Use it
 var logging_mw = LoggingMiddleware.new(priority=10)
-command_bus.add_middleware_pre(logging_mw.as_pre_callable(), logging_mw.priority)
-command_bus.add_middleware_post(logging_mw.as_post_callable(), logging_mw.priority)
+command_bus.add_middleware_before(logging_mw.as_before_callable(), logging_mw.priority)
+command_bus.add_middleware_after(logging_mw.as_after_callable(), logging_mw.priority)
 
 # Also works with events
-event_bus.add_middleware_pre(logging_mw.as_pre_callable(), logging_mw.priority)
-event_bus.add_middleware_post(logging_mw.as_post_callable(), logging_mw.priority)
+event_bus.add_middleware_before(logging_mw.as_before_callable(), logging_mw.priority)
+event_bus.add_middleware_after(logging_mw.as_after_callable(), logging_mw.priority)
 ```
 
 **Use cases:**

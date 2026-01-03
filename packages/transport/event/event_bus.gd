@@ -1,5 +1,5 @@
 const Subscribers = preload("res://packages/transport/event/subscribers.gd")
-const Validator = preload("res://packages/transport/event/validator.gd")
+const EventValidator = preload("res://packages/transport/event/event_validator.gd")
 const Event = preload("res://packages/transport/type/event.gd")
 
 extends Subscribers
@@ -13,13 +13,13 @@ var _log_listener_calls: bool = false
 func set_log_listener_calls(enabled: bool) -> void:
 	_log_listener_calls = enabled
 
-## Add pre-processing middleware.
-func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
-	return super.add_middleware_pre(callback, priority)
+## Add before-execution middleware.
+func add_middleware_before(callback: Callable, priority: int = 0) -> int:
+	return super.add_middleware_before(callback, priority)
 
-## Add post-processing middleware.
-func add_middleware_post(callback: Callable, priority: int = 0) -> int:
-	return super.add_middleware_post(callback, priority)
+## Add after-execution middleware.
+func add_middleware_after(callback: Callable, priority: int = 0) -> int:
+	return super.add_middleware_after(callback, priority)
 
 ## Remove middleware.
 func remove_middleware(middleware_id: int) -> bool:
@@ -66,8 +66,8 @@ func emit_and_await(evt: Event) -> void:
 func _emit_internal(evt: Event, await_async: bool) -> void:
 	var key: StringName = resolve_type_key_from(evt)
 	
-	# Execute pre-middleware (can cancel delivery)
-	if not _execute_middleware_pre(evt, key):
+	# Execute before-middleware (can cancel delivery)
+	if not _execute_middleware_before(evt, key):
 		if _trace_enabled:
 			print("[EventBus] Emitting ", key, " cancelled by middleware")
 		return
@@ -78,6 +78,8 @@ func _emit_internal(evt: Event, await_async: bool) -> void:
 		print("[EventBus] Emitting ", key, " -> ", entries.size(), " listener(s)")
 	
 	if entries.is_empty():
+		# Execute after-middleware even when no listeners (consistent with CommandBus)
+		_execute_middleware_after(evt, key, null)
 		return
 	
 	var ones_to_remove: Array = []
@@ -116,7 +118,7 @@ func _emit_internal(evt: Event, await_async: bool) -> void:
 				result = await result
 		
 		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)
-		if Validator.should_remove_after_delivery(entry.once):
+		if EventValidator.should_remove_after_delivery(entry.once):
 			ones_to_remove.append({"key": key, "entry": entry})
 	
 	# Remove one-shot subscriptions after iteration
@@ -127,6 +129,6 @@ func _emit_internal(evt: Event, await_async: bool) -> void:
 	var elapsed: float = (Time.get_ticks_msec() - start_time) / 1000.0
 	_record_metrics(key, elapsed)
 	
-	# Execute post-middleware
-	_execute_middleware_post(evt, key, null)
+	# Execute after-middleware
+	_execute_middleware_after(evt, key, null)
 

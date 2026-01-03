@@ -1,5 +1,5 @@
 const Subscribers = preload("res://packages/transport/event/subscribers.gd")
-const Validator = preload("res://packages/transport/command/validator.gd")
+const CommandValidator = preload("res://packages/transport/command/command_validator.gd")
 const Command = preload("res://packages/transport/type/command.gd")
 const CommandRoutingError = preload("res://packages/transport/command/command_routing_error.gd")
 
@@ -25,6 +25,13 @@ func handle(command_type, handler: Callable) -> void:
 func unregister_handler(command_type) -> void:
 	clear_registrations(command_type)
 
+## Handle routing error: create error, log it, execute after-middleware, and return it.
+func _handle_routing_error(cmd: Command, key: StringName, error_code: CommandRoutingError.Code, message: String) -> CommandRoutingError:
+	var err: CommandRoutingError = CommandRoutingError.new(message, error_code)
+	push_error(err.to_string())
+	_execute_middleware_after(cmd, key, err)
+	return err
+
 ## Dispatch command. Returns handler result or CommandRoutingError.
 func dispatch(cmd: Command) -> Variant:
 	assert(cmd != null, "Command cannot be null")
@@ -32,8 +39,8 @@ func dispatch(cmd: Command) -> Variant:
 	var key: StringName = resolve_type_key_from(cmd)
 	var start_time: int = Time.get_ticks_msec()
 	
-	# Execute pre-middleware (can cancel delivery)
-	if not _execute_middleware_pre(cmd, key):
+	# Execute before-middleware (can cancel delivery)
+	if not _execute_middleware_before(cmd, key):
 		if _trace_enabled:
 			print("[CommandBus] Dispatching ", key, " cancelled by middleware")
 		return CommandRoutingError.new("Command execution cancelled by middleware", CommandRoutingError.Code.HANDLER_FAILED)
@@ -41,20 +48,14 @@ func dispatch(cmd: Command) -> Variant:
 	var entries: Array = _get_valid_registrations(key)
 	
 	# Validate routing rules
-	var validation: Validator.Result = Validator.validate_count(entries.size())
+	var validation: CommandValidator.Result = CommandValidator.validate_count(entries.size())
 	
 	match validation:
-		Validator.Result.NO_HANDLER:
-			var err: CommandRoutingError = CommandRoutingError.new("No handler registered for command type: %s" % key, CommandRoutingError.Code.NO_HANDLER)
-			push_error(err.to_string())
-			_execute_middleware_post(cmd, key, err)
-			return err
+		CommandValidator.Result.NO_HANDLER:
+			return _handle_routing_error(cmd, key, CommandRoutingError.Code.NO_HANDLER, "No handler registered for command type: %s" % key)
 		
-		Validator.Result.MULTIPLE_HANDLERS:
-			var err: CommandRoutingError = CommandRoutingError.new("Multiple handlers registered for command type: %s (expected exactly one)" % key, CommandRoutingError.Code.MULTIPLE_HANDLERS)
-			push_error(err.to_string())
-			_execute_middleware_post(cmd, key, err)
-			return err
+		CommandValidator.Result.MULTIPLE_HANDLERS:
+			return _handle_routing_error(cmd, key, CommandRoutingError.Code.MULTIPLE_HANDLERS, "Multiple handlers registered for command type: %s (expected exactly one)" % key)
 		
 		_:
 			# VALID - continue with execution
@@ -66,10 +67,7 @@ func dispatch(cmd: Command) -> Variant:
 		print("[CommandBus] Dispatching ", key, " -> handler (priority=", entry.priority, ")")
 	
 	if not entry.is_valid():
-		var err: CommandRoutingError = CommandRoutingError.new("Handler is invalid (freed object) for command type: %s" % key, CommandRoutingError.Code.HANDLER_FAILED)
-		push_error(err.to_string())
-		_execute_middleware_post(cmd, key, err)
-		return err
+		return _handle_routing_error(cmd, key, CommandRoutingError.Code.HANDLER_FAILED, "Handler is invalid (freed object) for command type: %s" % key)
 	
 	var result: Variant = entry.callable.call(cmd)
 	
@@ -81,8 +79,8 @@ func dispatch(cmd: Command) -> Variant:
 	var elapsed: float = (Time.get_ticks_msec() - start_time) / 1000.0
 	_record_metrics(key, elapsed)
 	
-	# Execute post-middleware
-	_execute_middleware_post(cmd, key, result)
+	# Execute after-middleware
+	_execute_middleware_after(cmd, key, result)
 	
 	return result
 

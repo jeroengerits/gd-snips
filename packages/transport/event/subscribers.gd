@@ -1,5 +1,5 @@
 const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
-const Validator = preload("res://packages/transport/event/validator.gd")
+const EventValidator = preload("res://packages/transport/event/event_validator.gd")
 const MetricsUtils = preload("res://packages/transport/utils/metrics_utils.gd")
 const MiddlewareEntry = preload("res://packages/transport/middleware/middleware_entry.gd")
 const Subscriber = preload("res://packages/transport/event/subscriber.gd")
@@ -11,8 +11,8 @@ extends RefCounted
 var _registrations: Dictionary = {}  # StringName -> Array[Subscriber]
 var _verbose: bool = false
 var _trace_enabled: bool = false
-var _middleware_pre: Array[MiddlewareEntry] = []  # Pre-processing middleware
-var _middleware_post: Array[MiddlewareEntry] = []  # Post-processing middleware
+var _middleware_before: Array[MiddlewareEntry] = []  # Before-execution middleware
+var _middleware_after: Array[MiddlewareEntry] = []  # After-execution middleware
 var _metrics_enabled: bool = false
 var _metrics: Dictionary = {}  # StringName -> {count: int, total_time: float, min_time: float, max_time: float}
 
@@ -20,22 +20,22 @@ var _metrics: Dictionary = {}  # StringName -> {count: int, total_time: float, m
 func set_verbose(enabled: bool) -> void:
 	_verbose = enabled
 
-## Add pre-processing middleware.
-func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
+## Add before-execution middleware.
+func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
-	_middleware_pre.append(mw)
-	Validator.sort_by_priority(_middleware_pre)
+	_middleware_before.append(mw)
+	EventValidator.sort_by_priority(_middleware_before)
 	if _verbose:
-		print("[Subscribers] Added pre-middleware (priority=", priority, ")")
+		print("[Subscribers] Added before-middleware (priority=", priority, ")")
 	return mw.id
 
-## Add post-processing middleware.
-func add_middleware_post(callback: Callable, priority: int = 0) -> int:
+## Add after-execution middleware.
+func add_middleware_after(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
-	_middleware_post.append(mw)
-	Validator.sort_by_priority(_middleware_post)
+	_middleware_after.append(mw)
+	EventValidator.sort_by_priority(_middleware_after)
 	if _verbose:
-		print("[Subscribers] Added post-middleware (priority=", priority, ")")
+		print("[Subscribers] Added after-middleware (priority=", priority, ")")
 	return mw.id
 
 ## Remove middleware.
@@ -43,36 +43,36 @@ func remove_middleware(middleware_id: int) -> bool:
 	assert(middleware_id >= 0, "Middleware ID must be non-negative")
 	var removed: bool = false
 	
-	# Find and remove from pre-middleware
-	var pre_to_remove: Array = []
-	for i in range(_middleware_pre.size()):
-		if _middleware_pre[i].id == middleware_id:
-			pre_to_remove.append(i)
+	# Find and remove from before-middleware
+	var before_to_remove: Array = []
+	for i in range(_middleware_before.size()):
+		if _middleware_before[i].id == middleware_id:
+			before_to_remove.append(i)
 	
-	if pre_to_remove.size() > 0:
-		_remove_indices_from_array(_middleware_pre, pre_to_remove)
+	if before_to_remove.size() > 0:
+		_remove_indices_from_array(_middleware_before, before_to_remove)
 		removed = true
 		if _verbose:
-			print("[Subscribers] Removed pre-middleware (id=", middleware_id, ")")
+			print("[Subscribers] Removed before-middleware (id=", middleware_id, ")")
 	
-	# Find and remove from post-middleware
-	var post_to_remove: Array = []
-	for i in range(_middleware_post.size()):
-		if _middleware_post[i].id == middleware_id:
-			post_to_remove.append(i)
+	# Find and remove from after-middleware
+	var after_to_remove: Array = []
+	for i in range(_middleware_after.size()):
+		if _middleware_after[i].id == middleware_id:
+			after_to_remove.append(i)
 	
-	if post_to_remove.size() > 0:
-		_remove_indices_from_array(_middleware_post, post_to_remove)
+	if after_to_remove.size() > 0:
+		_remove_indices_from_array(_middleware_after, after_to_remove)
 		removed = true
 		if _verbose:
-			print("[Subscribers] Removed post-middleware (id=", middleware_id, ")")
+			print("[Subscribers] Removed after-middleware (id=", middleware_id, ")")
 	
 	return removed
 
 ## Clear all middleware.
 func clear_middleware() -> void:
-	_middleware_pre.clear()
-	_middleware_post.clear()
+	_middleware_before.clear()
+	_middleware_after.clear()
 	if _verbose:
 		print("[Subscribers] Cleared all middleware")
 
@@ -113,9 +113,9 @@ func get_all_metrics() -> Dictionary:
 func clear_metrics() -> void:
 	_metrics.clear()
 
-## Execute pre-middleware.
-func _execute_middleware_pre(message: Object, key: StringName) -> bool:
-	for mw in _middleware_pre:
+## Execute before-middleware.
+func _execute_middleware_before(message: Object, key: StringName) -> bool:
+	for mw in _middleware_before:
 		if not mw.callback.is_valid():
 			continue
 		var result: Variant = mw.callback.call(message, key)
@@ -123,9 +123,9 @@ func _execute_middleware_pre(message: Object, key: StringName) -> bool:
 			return false
 	return true
 
-## Execute post-middleware.
-func _execute_middleware_post(message: Object, key: StringName, delivery_result) -> void:
-	for mw in _middleware_post:
+## Execute after-middleware.
+func _execute_middleware_after(message: Object, key: StringName, delivery_result) -> void:
+	for mw in _middleware_after:
 		if not mw.callback.is_valid():
 			continue
 		mw.callback.call(message, key, delivery_result)

@@ -328,6 +328,8 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 3. **Validation Logic:** Simplified Message._init() validation by removing redundant checks after assertions, improving clarity and maintainability.
 
+4. **Middleware Consistency:** Fixed EventBus to ensure after-middleware is executed even when no listeners are registered, matching CommandBus behavior. Both buses now guarantee consistent middleware execution across all execution paths (success, errors, empty handlers/listeners).
+
 ### Type Safety Improvements
 
 1. **Documentation:** Enhanced all code files with comprehensive GDScript documentation following best practices. Added `@param`, `@return`, and `@example` tags throughout the codebase.
@@ -339,6 +341,29 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 1. **Collection Package Removal:** Removed Collection package dependency from transport system. Replaced with direct array/dictionary operations using helper functions (`_remove_indices_from_array()`). Simplifies codebase and reduces dependencies.
 
 2. **Obsolete Code Cleanup:** Removed unused `listener_start_time` variable from EventBus that was never used (leftover from planned per-listener metrics).
+
+### API Naming Improvements
+
+1. **Middleware Terminology:** Renamed all middleware methods from "pre/post" to "before/after" for better clarity (January 2026).
+
+   **Changed methods:**
+   - `add_middleware_pre()` → `add_middleware_before()`
+   - `add_middleware_post()` → `add_middleware_after()`
+   - `process_pre()` → `process_before()` (Middleware base class)
+   - `process_post()` → `process_after()` (Middleware base class)
+   - `as_pre_callable()` → `as_before_callable()` (Middleware base class)
+   - `as_post_callable()` → `as_after_callable()` (Middleware base class)
+   
+   **Rationale:**
+   - "Before/after" is more descriptive and self-documenting
+   - Reduces confusion with "pre" potentially meaning "prefix" or other contexts
+   - Better aligns with common middleware terminology in other frameworks
+   - More consistent with "before-execution" and "after-execution" phrasing
+   
+   **Impact:**
+   - Breaking change: All middleware code must be updated
+   - Internal variables and methods also renamed (`_middleware_pre` → `_middleware_before`, etc.)
+   - Documentation and examples updated accordingly
 
 ## Future Considerations
 

@@ -28,3 +28,7 @@ export_presets.cfg
 *.log
 *.tmp
 
+# AI
+
+.cursor/
+CLAUDE.md

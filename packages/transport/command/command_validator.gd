@@ -1,5 +1,5 @@
 extends RefCounted
-class_name Validator
+class_name CommandValidator
 
 ## Validation logic for command routing: exactly one handler required.
 

@@ -1,5 +1,5 @@
 extends RefCounted
-class_name Validator
+class_name EventValidator
 
 ## Validation logic for subscription behavior.
 
