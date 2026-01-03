@@ -6,10 +6,7 @@ A type-safe command and event messaging framework for Godot 4.5.1+ that helps yo
 
 Transport provides a structured way to handle communication between different parts of your game. Instead of tightly coupling systems together, you send commands (things to do) and events (things that happened) through centralized buses.
 
-**Who is this for?**
-- Developers building medium to large Godot projects
-- Teams who want clear communication patterns
-- Anyone who finds Godot signals limiting for complex game logic
+**Who is this for?** Transport is ideal for developers building medium to large Godot projects, teams who want clear communication patterns, and anyone who finds Godot signals limiting for complex game logic.
 
 **What problem does it solve?**
 - Decouples systems so they don't need direct references to each other
