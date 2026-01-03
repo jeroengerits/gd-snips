@@ -450,10 +450,25 @@ if not source.connect(signal_name, callback):
 - Method renames maintain backward compatibility where possible
 - API changes follow semantic versioning principles
 
+## Code Quality & Architecture
+
+### Code Review
+
+A comprehensive code review analyzing the transport package against CLEAN Code and SOLID principles is available in [CODE_REVIEW.md](../CODE_REVIEW.md). The review identifies:
+
+- Single Responsibility Principle violations and refactoring recommendations
+- Duplication issues (DRY violations)
+- API consistency improvements
+- Utility function organization
+- Error handling strategies
+
+Key findings: The codebase demonstrates solid architectural thinking with good separation of concerns. Recommended improvements focus on incremental refactoring for better maintainability (extracting shared logic, improving organization) rather than correctness issues.
+
 ## References
 
 - [Transport Package README](packages/transport/README.md)
 - [Developer Diary](docs/developer-diary/)
 - [Tech Stack Documentation](docs/TECH_STACK.md)
+- [Code Review](CODE_REVIEW.md) - CLEAN Code and SOLID principles analysis
 - [Godot Documentation](https://docs.godotengine.org/)
 
