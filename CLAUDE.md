@@ -19,7 +19,7 @@ packages/
 └── transport/     # Command/Event transport framework
     ├── type/      # Message, Command, Event base classes
     ├── utils/     # Metrics utilities
-    ├── event/     # EventBus, SubscriptionRegistry, Validator, Bridge
+    ├── event/     # EventBus, SubscriptionRegistry, Validator, SignalBridge
     └── command/   # CommandBus, Validator
 ```
 
@@ -125,7 +125,7 @@ The `MessageTypeResolver` handles Godot's type system complexity:
 **Lifecycle Management:**
 Subscriptions and adapters automatically clean up to prevent memory leaks:
 - Subscriptions bound to objects auto-unsubscribe when object is freed (uses `is_instance_valid()`)
-- `Bridge` automatically disconnects signal connections when freed (uses `_notification(NOTIFICATION_PREDELETE)`)
+- `SignalBridge` and `CommandSignalBridge` automatically disconnect signal connections when freed (uses `_notification(NOTIFICATION_PREDELETE)`)
 - No manual cleanup needed for scene-bound subscriptions and adapters
 
 ### Signal Integration
@@ -143,7 +143,7 @@ Subscriptions and adapters automatically clean up to prevent memory leaks:
 **Usage Guidelines:**
 - Use transport for game logic and domain events
 - Use signals for UI interactions and Godot-specific events
-- Use Bridge when bridging signals to transport
+- Use SignalBridge/CommandSignalBridge when bridging signals to transport
 - Keep adapters thin—only convert formats, no business logic
 
 **Pattern:**
@@ -210,13 +210,13 @@ command_router.clear_registrations(MyCommand)
 command_router.register_handler(MyCommand, my_handler)
 ```
 
-### Issue: Bridge Connection Leaks
+### Issue: Signal Bridge Connection Leaks
 
 **Symptom:** Signal connections remain after adapter is freed, causing errors
 
 **Solution:** Adapter automatically cleans up connections on free (uses `_notification`). If manually managing, call `disconnect_all()`:
 ```gdscript
-adapter.disconnect_all()  # Manual cleanup (auto-cleanup on free)
+signal_bridge.disconnect_all()  # Manual cleanup (auto-cleanup on free)
 ```
 
 ### Issue: Type Resolution Inconsistency
@@ -302,7 +302,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 - `command/` - CommandBus (command_bus.gd), Validator (validator.gd)
 
 **File Naming:**
-- Files match class names: `command_bus.gd`, `event_bus.gd`, `registry.gd`, `bridge.gd`, `validator.gd`
+- Files match class names: `command_bus.gd`, `event_bus.gd`, `registry.gd`, `signal_bridge.gd`, `validator.gd`
 - Class names match filenames (CommandBus, EventBus, etc.)
 - All files are at most one level deep from package root
 
@@ -323,7 +323,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 1. **Metrics Recording:** Fixed double-recording bug in EventBus where metrics were recorded per-listener and again for overall operation. Now correctly records overall operation time once.
 
-2. **Resource Cleanup:** Added automatic cleanup for `Bridge` connections via `_notification()` to prevent memory leaks when adapters are freed.
+2. **Resource Cleanup:** Added automatic cleanup for `SignalBridge` and `CommandSignalBridge` connections via `_notification()` to prevent memory leaks when adapters are freed.
 
 3. **Validation Logic:** Simplified Message._init() validation by removing redundant checks after assertions, improving clarity and maintainability.
 
