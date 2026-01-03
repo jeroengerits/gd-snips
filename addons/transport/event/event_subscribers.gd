@@ -26,6 +26,10 @@ func set_trace_enabled(enabled: bool) -> void:
 	_trace_enabled = enabled
 
 ## Add before-execution middleware.
+##
+## @param callback: Callable that accepts (message: Message, key: StringName) and returns bool (false to cancel)
+## @param priority: Higher priority middleware executes first (default: 0)
+## @return: Middleware ID for later removal
 func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_before.append(mw)
@@ -35,6 +39,10 @@ func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 	return mw.id
 
 ## Add after-execution middleware.
+##
+## @param callback: Callable that accepts (message: Message, key: StringName, result: Variant) and returns void
+## @param priority: Higher priority middleware executes first (default: 0)
+## @return: Middleware ID for later removal
 func add_middleware_after(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_after.append(mw)
@@ -88,7 +96,10 @@ func set_metrics_enabled(enabled: bool) -> void:
 		_metrics.clear()
 
 ## Get metrics for a message type.
-func get_metrics(message_type) -> Dictionary:
+##
+## @param message_type: Message class (must have class_name), instance, or StringName
+## @return: Dictionary with metrics (count, total_time, min_time, max_time, avg_time) or empty dict if metrics disabled
+func get_metrics(message_type: Variant) -> Dictionary:
 	if not _metrics_enabled:
 		return {}
 	

@@ -31,33 +31,80 @@ func set_metrics_enabled(enabled: bool) -> void:
 	super.set_metrics_enabled(enabled)
 
 ## Get metrics for an event type.
-func get_metrics(event_type) -> Dictionary:
+##
+## @param event_type: Event class (must have class_name), instance, or StringName
+## @return: Dictionary with metrics (count, total_time, min_time, max_time, avg_time) or empty dict if metrics disabled
+func get_metrics(event_type: Variant) -> Dictionary:
 	return super.get_metrics(event_type)
 
 ## Get all metrics.
+##
+## @return: Dictionary mapping event type keys to metrics dictionaries
 func get_all_metrics() -> Dictionary:
 	return super.get_all_metrics()
 
 ## Subscribe to an event type.
-func on(event_type, listener: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
+##
+## @param event_type: Event class (must have class_name), instance, or StringName
+## @param listener: Callable that accepts an Event instance
+## @param priority: Higher priority listeners execute first (default: 0)
+## @param once: If true, automatically unsubscribe after first delivery (default: false)
+## @param owner: Object to bind lifecycle to - auto-unsubscribes when freed (default: null)
+## @return: Subscription ID for later unsubscription
+## @example:
+## ```gdscript
+## var sub_id = event_bus.on(EnemyDiedEvent, _on_enemy_died, priority=10, owner=self)
+## ```
+func on(event_type: Variant, listener: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
 	assert(listener.is_valid(), "Listener callable must be valid")
+	
+	# Validate event_type for better error messages
+	if not (event_type is GDScript or event_type is Object or event_type is StringName or event_type is String):
+		push_error("[EventBus] Invalid event_type: %s (expected GDScript class, Object instance, StringName, or String)" % [event_type])
+		return -1
+	
 	return register(event_type, listener, priority, once, owner)
 
 ## Unsubscribe from event type.
-func unsubscribe(event_type, listener: Callable) -> int:
+##
+## @param event_type: Event class (must have class_name), instance, or StringName
+## @param listener: Callable that was used for subscription
+## @return: Number of subscriptions removed
+func unsubscribe(event_type: Variant, listener: Callable) -> int:
 	return unregister(event_type, listener)
 
 ## Unsubscribe by ID.
-func unsubscribe_by_id(event_type, sub_id: int) -> bool:
+##
+## @param event_type: Event class (must have class_name), instance, or StringName
+## @param sub_id: Subscription ID returned from on()
+## @return: true if subscription was found and removed, false otherwise
+func unsubscribe_by_id(event_type: Variant, sub_id: int) -> bool:
 	return unregister_by_id(event_type, sub_id)
 
 ## Emit event to all subscribers.
+##
+## Note: This method still awaits async listeners to prevent memory leaks,
+## even though it doesn't return a value. Use emit_and_await() for explicit async behavior.
+##
+## @param evt: Event instance to emit
+## @example:
+## ```gdscript
+## event_bus.emit(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
+## ```
 func emit(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
 	await _emit_internal(evt, false)
 
 ## Emit event and await all async listeners.
+##
+## Same behavior as emit(), but makes the async behavior explicit in your code.
+##
+## @param evt: Event instance to emit
+## @example:
+## ```gdscript
+## await event_bus.emit_and_await(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
+## ```
 func emit_and_await(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")

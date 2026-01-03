@@ -14,11 +14,22 @@ func _init(event_bus: EventBus) -> void:
 	_event_bus = event_bus
 
 ## Connect signal to event type.
-func connect_signal_to_event(source: Object, signal_name: StringName, event_type, mapper: Callable = Callable()) -> void:
+##
+## @param source: The object emitting the signal
+## @param signal_name: Name of the signal to connect
+## @param event_type: Event class (must have class_name) to create when signal fires
+## @param mapper: Optional callable to map signal arguments to event data (default: auto-map by position)
+## @example:
+## ```gdscript
+## bridge.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
+## bridge.connect_signal_to_event($Area2D, "body_entered", AreaEnteredEvent, func(body): return {"body_name": body.name})
+## ```
+func connect_signal_to_event(source: Object, signal_name: StringName, event_type: Variant, mapper: Callable = Callable()) -> void:
 	assert(source != null, "Signal source cannot be null")
 	assert(not signal_name.is_empty(), "Signal name cannot be empty")
 	assert(event_type != null, "Event type cannot be null")
 	
+	@warning_ignore("unused_parameter")
 	var callback = func(...args):
 		var event_data: Dictionary = {}
 		

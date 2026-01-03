@@ -17,11 +17,21 @@ func _init(command_bus: CommandBus) -> void:
 	_command_bus = command_bus
 
 ## Connect signal to command type.
-func connect_signal_to_command(source: Object, signal_name: StringName, command_type, mapper: Callable = Callable()) -> void:
+##
+## @param source: The object emitting the signal
+## @param signal_name: Name of the signal to connect
+## @param command_type: Command class (must have class_name) to create when signal fires
+## @param mapper: Optional callable to construct command from signal arguments (default: auto-construct)
+## @example:
+## ```gdscript
+## bridge.connect_signal_to_command($SaveButton, "pressed", SaveGameCommand, func(): return SaveGameCommand.new())
+## ```
+func connect_signal_to_command(source: Object, signal_name: StringName, command_type: Variant, mapper: Callable = Callable()) -> void:
 	assert(source != null, "Signal source cannot be null")
 	assert(not signal_name.is_empty(), "Signal name cannot be empty")
 	assert(command_type != null, "Command type cannot be null")
 	
+	@warning_ignore("unused_parameter")
 	var callback = func(...args):
 		var command = null
 		
