@@ -9,7 +9,7 @@ var _connections: Array = []
 ## Create adapter.
 func _init(event_bus: EventBus) -> void:
 	assert(event_bus != null, "EventBus cannot be null")
-	_event_broadcaster = event_broadcaster
+	_event_bus = event_bus
 
 ## Connect signal to event type.
 func connect_signal_to_event(source: Object, signal_name: StringName, event_type, mapper: Callable = Callable()) -> void:
