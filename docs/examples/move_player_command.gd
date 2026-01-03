@@ -7,7 +7,7 @@ class_name MovePlayerCommand
 ##
 ## Usage:
 ##   var cmd = MovePlayerCommand.new(Vector2(100, 200))
-##   var result = await command_router.execute(cmd)
+##   var result = await command_bus.dispatch(cmd)
 
 ## Target position for player movement
 var target_position: Vector2

@@ -18,27 +18,29 @@ This project uses a hybrid structure with standalone addons and a unified engine
 
 ### Option 2: Install Individual Addons
 
-You can install only the addons you need from the `addons/` directory:
+You can install only the addons you need from the `addons/` directory. Each addon includes a `plugin.cfg` file for Godot addon recognition.
 
 **Level 0 (Zero Dependencies):**
-- `addons/support/` - Array/String utilities
-- `addons/utils/` - Metrics/Signal utilities
-- `addons/message/` - Message infrastructure (foundation for others)
+- `addons/support/` - Array/String utilities (no dependencies)
+- `addons/utils/` - Metrics/Signal utilities (no dependencies)
+- `addons/message/` - Message infrastructure (no dependencies, foundation for others)
 
 **Level 1 (Depends on message):**
-- `addons/middleware/` - Middleware infrastructure
-- `addons/subscribers/` - Subscriber management
+- `addons/middleware/` - Middleware infrastructure (requires `message`)
+- `addons/subscribers/` - Subscriber management (requires `message`)
 
 **Level 2 (Depends on multiple packages):**
-- `addons/command/` - Command bus (one-to-one messaging)
-- `addons/event/` - Event bus (one-to-many messaging)
+- `addons/command/` - Command bus (requires `message`, `subscribers`, `middleware`, `utils`)
+- `addons/event/` - Event bus (requires `message`, `subscribers`, `middleware`, `utils`)
+
+**Important:** When installing individual addons, ensure all dependencies are also installed. For example, if you install `command` or `event`, you must also install `message`, `subscribers`, `middleware`, and `utils`.
 
 Then use the engine module or import addons directly:
 ```gdscript
-# Via engine (recommended)
+# Via engine (recommended - handles all dependencies)
 const Engine = preload("res://src/engine.gd")
 
-# Or directly
+# Or directly (must install dependencies manually)
 const Support = preload("res://addons/support/support.gd")
 const Middleware = preload("res://addons/middleware/middleware.gd")
 ```
@@ -168,4 +170,67 @@ event_bus.remove_middleware(log_middleware_id)
 # Clear all middleware
 event_bus.clear_middleware()
 ```
+
+## Addon Structure
+
+Each addon in `addons/` is a standalone Godot addon with:
+- `plugin.cfg` - Addon configuration file (enables Godot addon recognition)
+- Barrel file (`[addon].gd`) - Public API entry point
+- Implementation files - Core functionality
+
+### Dependency Graph
+
+```
+Level 0 (Independent):
+  support, utils, message
+
+Level 1 (Depends on Level 0):
+  middleware → message
+  subscribers → message
+
+Level 2 (Depends on Level 0 + Level 1):
+  command → message, subscribers, middleware, utils
+  event → message, subscribers, middleware, utils
+```
+
+### Using Individual Addons
+
+When using individual addons (not via `Engine`), you must ensure all dependencies are available:
+
+```gdscript
+# Example: Using EventBus directly
+const Message = preload("res://addons/message/message.gd")
+const Subscribers = preload("res://addons/subscribers/subscribers.gd")
+const Middleware = preload("res://addons/middleware/middleware.gd")
+const Utils = preload("res://addons/utils/utils.gd")
+const Event = preload("res://addons/event/event.gd")
+
+var event_bus = Event.Bus.new()
+```
+
+**Recommendation:** Use `Engine` barrel file for simplicity - it handles all dependencies automatically.
+
+## Troubleshooting
+
+### Addons Not Recognized
+
+If Godot doesn't recognize addons:
+1. Ensure `plugin.cfg` files are present in each addon directory
+2. Check that addon directories are directly under `addons/`
+3. Restart Godot editor after adding addons
+4. Verify Godot version is 4.5.1 or later
+
+### Import Errors
+
+If you see import errors:
+- Ensure all required dependencies are installed
+- Check that paths use `res://addons/` (not `res://src/`)
+- Verify `engine.gd` is in `src/` directory if using Engine barrel file
+
+### Missing Dependencies
+
+When installing individual addons, remember:
+- `command` and `event` require: `message`, `subscribers`, `middleware`, `utils`
+- `middleware` and `subscribers` require: `message`
+- `support`, `utils`, `message` have no dependencies
 

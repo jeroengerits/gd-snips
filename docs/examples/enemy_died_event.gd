@@ -7,7 +7,7 @@ class_name EnemyDiedEvent
 ##
 ## Usage:
 ##   var evt = EnemyDiedEvent.new(42, 100, Vector2(50, 60))
-##   event_broadcaster.broadcast(evt)
+##   event_bus.emit(evt)
 
 ## Unique identifier of the enemy that died
 var enemy_id: int
