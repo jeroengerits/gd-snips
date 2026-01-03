@@ -232,6 +232,12 @@ command_bus.handle(MyCommand, my_handler)
 - Developer diary for architectural decisions
 - This file (CLAUDE.md) for AI context
 
+**Documentation Philosophy:**
+- **YAGNI:** Only document what's needed
+- **Brevity:** Short, clear, practical examples
+- **Scannable:** Easy to find what you need quickly
+- **Actionable:** Code examples show usage immediately
+
 ### File Organization
 
 - One class per file (when possible)
