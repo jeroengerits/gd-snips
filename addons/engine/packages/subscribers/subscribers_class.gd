@@ -1,6 +1,6 @@
-const MessageTypeResolver = preload("res://addons/message/message_type_resolver.gd")
-const MiddlewareEntry = preload("res://addons/subscribers/middleware_entry.gd")
-const Subscriber = preload("res://addons/subscribers/subscriber.gd")
+const MessageTypeResolver = preload("res://addons/engine/packages/message/message_type_resolver.gd")
+const MiddlewareEntry = preload("res://addons/engine/packages/subscribers/middleware_entry.gd")
+const Subscriber = preload("res://addons/engine/packages/subscribers/subscriber.gd")
 
 extends RefCounted
 ## Internal subscribers registry. Manages subscriptions, middleware, and metrics.

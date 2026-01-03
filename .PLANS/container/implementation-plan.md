@@ -198,8 +198,8 @@ class GameService:
 Add Container to Engine addon barrel file for unified access:
 
 ```gdscript
-# addons/engine/src/engine.gd
-const Container = preload("res://addons/container/src/container.gd")
+# addons/engine/engine.gd
+const Container = preload("res://addons/container/container.gd")
 ```
 
 ---
