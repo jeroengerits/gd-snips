@@ -1,36 +1,49 @@
 # Godot Snips
 
-Reusable addons for **Godot 4.5.1+** with a focus on modular architecture and clean code.
+Reusable packages for **Godot 4.5.1+** with a focus on modular architecture and clean code.
 
 ## Installation
 
-### Install All Addons
+### Game Project Structure
 
-To install all gd-snips addons at once:
+This project uses a game project structure with all packages in the `src/` folder.
 
-1. Copy the entire `addons/` directory from this repository into your Godot project's `addons/` folder
-2. Open your project in Godot
-3. Go to **Project → Project Settings → Plugins**
-4. Enable the **"Engine"** plugin (this is the only plugin that needs to be enabled)
-
-When you enable the Engine plugin, all addons (Message, Middleware, Utils, Event, Command, Support) are automatically loaded and available. The Engine addon is the single entry point that loads all other addons as libraries. You should not enable any other plugins - only Engine.
+1. Copy the `src/` folder into your Godot project directory
+2. Import the engine module to access all functionality:
+   ```gdscript
+   const Engine = preload("res://src/engine.gd")
+   ```
 
 **Requirements:** Godot 4.5.1 or later
 
+### Project Structure
+
+```
+src/
+├── command/      # Command bus (one-to-one messaging)
+├── event/        # Event bus (one-to-many messaging)
+├── message/      # Base message infrastructure
+├── middleware/  # Middleware infrastructure
+├── subscribers/ # Subscriber management
+├── support/      # Array/String utilities
+├── utils/        # Metrics/Signal utilities
+└── engine.gd    # Unified entry point
+```
+
 ## Quick Start
 
-Load all addons with a single import:
+Load all packages with a single import:
 
 ```gdscript
-const Engine = preload("res://addons/engine/engine.gd")
+const Engine = preload("res://src/engine.gd")
 
-# Access Command addon
+# Access Command package
 var command_bus = Engine.Command.Bus.new()
 
-# Access Event addon
+# Access Event package
 var event_bus = Engine.Event.Bus.new()
 
-# Access Support addon
+# Access Support package
 Engine.Support.Array.remove_indices(arr, [1, 3])
 Engine.Support.String.is_blank("   ")
 ```
@@ -42,7 +55,7 @@ Engine.Support.String.is_blank("   ")
 Subscribe to events and emit them for one-to-many communication:
 
 ```gdscript
-const Engine = preload("res://addons/engine/engine.gd")
+const Engine = preload("res://src/engine.gd")
 
 var event_bus = Engine.Event.Bus.new()
 
@@ -72,7 +85,7 @@ event_bus.emit(event)
 Register command handlers and dispatch commands for one-to-one communication:
 
 ```gdscript
-const Engine = preload("res://addons/engine/engine.gd")
+const Engine = preload("res://src/engine.gd")
 
 var command_bus = Engine.Command.Bus.new()
 
@@ -98,7 +111,7 @@ else:
 Add middleware to intercept messages before and after they reach handlers/listeners:
 
 ```gdscript
-const Engine = preload("res://addons/engine/engine.gd")
+const Engine = preload("res://src/engine.gd")
 
 var event_bus = Engine.Event.Bus.new()
 var command_bus = Engine.Command.Bus.new()

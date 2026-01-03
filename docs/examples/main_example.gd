@@ -8,7 +8,7 @@ extends Node
 ## - Dispatching commands and emitting events
 ## - Using priorities, one-shot subscriptions, and lifecycle binding
 
-const Engine = preload("res://addons/engine/engine.gd")
+const Engine = preload("res://src/engine.gd")
 
 var command_bus: Engine.Command.Bus
 var event_bus: Engine.Event.Bus

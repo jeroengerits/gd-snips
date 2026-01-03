@@ -1,4 +1,4 @@
-const Engine = preload("res://addons/engine/engine.gd")
+const Engine = preload("res://src/engine.gd")
 
 extends Engine.Event.Event
 class_name EnemyDiedEvent

@@ -10,7 +10,7 @@ extends Node
 ## - One-shot listener
 ## - Error isolation
 
-const Engine = preload("res://addons/engine/engine.gd")
+const Engine = preload("res://src/engine.gd")
 
 var command_bus: Engine.Command.Bus
 var event_bus: Engine.Event.Bus

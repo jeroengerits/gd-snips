@@ -5,7 +5,7 @@ extends Node
 ## This shows how to bridge Godot signals to transport events
 ## using the Bridge utility.
 
-const Engine = preload("res://addons/engine/engine.gd")
+const Engine = preload("res://src/engine.gd")
 
 # Example event types
 class ButtonPressedEvent extends Engine.Event.Event:

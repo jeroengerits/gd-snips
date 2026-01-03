@@ -468,7 +468,7 @@ var command_bus = container.resolve_required(CommandBus)
 ### Integration with Command/Event Buses
 
 ```gdscript
-const Engine = preload("res://addons/engine/engine.gd")
+const Engine = preload("res://src/engine.gd")
 
 # Setup container with Command/Event buses
 var container = Container.new()
