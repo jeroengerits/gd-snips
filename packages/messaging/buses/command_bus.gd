@@ -5,52 +5,7 @@ const Command = preload("res://packages/messaging/types/command.gd")
 extends MessageBus
 class_name CommandBus
 
-## Command bus for dispatching commands with exactly one handler.
-##
-## Implements the Command pattern, where commands represent imperative actions
-## that must be handled by exactly one handler. Commands can return values,
-## making them suitable for request-response patterns.
-##
-## **Key Characteristics:**
-## - Commands must have exactly one registered handler
-## - Dispatch returns the handler's result (supports async handlers)
-## - Returns [CommandError] if no handler or multiple handlers are registered
-## - Supports middleware for pre/post-processing
-## - Supports performance metrics tracking
-##
-## **Thread Safety:** This implementation is not thread-safe. All operations
-## should be performed from the main thread.
-##
-## @example Basic usage:
-##   const Messaging = preload("res://packages/messaging/messaging.gd")
-##   var bus = Messaging.CommandBus.new()
-##   
-##   # Register handler (replaces existing handler if present)
-##   bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
-##       return move_player(cmd.target_position)
-##   )
-##   
-##   # Dispatch command (returns handler result)
-##   var result = await bus.dispatch(MovePlayerCommand.new(Vector2(10, 20)))
-##
-## @example Async handler:
-##   bus.handle(SaveGameCommand, func(cmd: SaveGameCommand):
-##       await save_to_file(cmd.filename)
-##       return true
-##   )
-##   var success = await bus.dispatch(SaveGameCommand.new("save1.dat"))
-##
-## @example Error handling:
-##   var result = bus.dispatch(UnknownCommand.new())
-##   if result is CommandBus.CommandError:
-##       print("Error: ", result.message)
-
-## Error class for command dispatch failures.
-##
-## Represents errors that occur during command dispatch, such as missing handlers
-## or multiple handlers being registered for the same command type.
-##
-## @note This extends [RefCounted] and is automatically memory-managed.
+## Command bus: dispatches commands with exactly one handler.
 class CommandError extends RefCounted:
 	var message: String
 	var code: int
@@ -70,59 +25,31 @@ class CommandError extends RefCounted:
 	func to_string() -> String:
 		return "[CommandError: %s (code=%d)]" % [message, code]
 
-## Add pre-processing middleware (before command dispatch).
-## [code]callback[/code]: Callable(command: Command, key: StringName) -> bool (return false to cancel)
-## [code]priority[/code]: Higher priority runs first (default: 0)
-## Returns: Middleware ID for removal
+## Add pre-processing middleware.
 func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
 	return super.add_middleware_pre(callback, priority)
 
-## Add post-processing middleware (after command dispatch).
-## [code]callback[/code]: Callable(command: Command, key: StringName, result: Variant) -> void
-## [code]priority[/code]: Higher priority runs first (default: 0)
-## Returns: Middleware ID for removal
+## Add post-processing middleware.
 func add_middleware_post(callback: Callable, priority: int = 0) -> int:
 	return super.add_middleware_post(callback, priority)
 
-## Remove middleware by ID.
+## Remove middleware.
 func remove_middleware(middleware_id: int) -> bool:
 	return super.remove_middleware(middleware_id)
 
-## Enable performance metrics tracking.
+## Enable metrics tracking.
 func set_metrics_enabled(enabled: bool) -> void:
 	super.set_metrics_enabled(enabled)
 
-## Get performance metrics for a command type.
+## Get metrics for a command type.
 func get_metrics(command_type) -> Dictionary:
 	return super.get_metrics(command_type)
 
-## Get all performance metrics.
+## Get all metrics.
 func get_all_metrics() -> Dictionary:
 	return super.get_all_metrics()
 
-## Register a handler for a command type.
-##
-## Registers a handler function for the specified command type. If a handler
-## already exists for this command type, it will be replaced. The handler will
-## be called when [method dispatch] is invoked with a command of this type.
-##
-## **Handler Signature:** The handler should accept one parameter (the command
-## instance) and return a [Variant] result. The handler can be async and return
-## a [GDScriptFunctionState], which will be automatically awaited.
-##
-## @param command_type The command class (preferred) or [StringName] type identifier.
-##   For best type resolution, use classes with [code]class_name[/code] defined.
-## @param handler A [Callable] that takes the command instance and returns a result.
-##   The handler signature should be: [code]func(cmd: CommandType) -> Variant[/code]
-##
-## @example Register handler:
-##   bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
-##       player.position = cmd.target_position
-##       return true
-##   )
-##
-## @note This replaces any existing handler for the command type. To unregister,
-##   use [method unregister].
+## Register handler for a command type (replaces existing).
 func handle(command_type, handler: Callable) -> void:
 	assert(handler.is_valid(), "Handler callable must be valid")
 	var key: StringName = get_key(command_type)
@@ -135,42 +62,11 @@ func handle(command_type, handler: Callable) -> void:
 	
 	subscribe(command_type, handler, 0, false, null)
 
-## Unregister the handler for a command type.
+## Unregister handler for a command type.
 func unregister(command_type) -> void:
 	clear_type(command_type)
 
-## Dispatch a command to its registered handler.
-##
-## Executes the command by calling its registered handler. The handler's return
-## value is returned directly. If the handler is async (returns [GDScriptFunctionState]),
-## it will be automatically awaited.
-##
-## **Validation:** Before dispatch, validates that exactly one handler is registered
-## for the command type. If validation fails, returns a [CommandError] instead
-## of calling the handler.
-##
-## **Middleware:** Pre-middleware is executed before dispatch (can cancel delivery).
-## Post-middleware is executed after dispatch completes.
-##
-## **Performance:** If metrics are enabled, execution time is recorded for the
-## command type.
-##
-## @param cmd The [Command] instance to dispatch. Must not be [code]null[/code] and
-##   must be an instance of a [Command] subclass.
-##
-## @return The handler's return value as a [Variant], or a [CommandError] if
-##   dispatch fails (no handler, multiple handlers, or handler failure).
-##
-## @example Dispatch command:
-##   var cmd = MovePlayerCommand.new(Vector2(100, 200))
-##   var result = await bus.dispatch(cmd)
-##   if result is CommandBus.CommandError:
-##       print("Dispatch failed: ", result.message)
-##   else:
-##       print("Player moved successfully: ", result)
-##
-## @note This method is async-safe - it will await async handlers automatically.
-##   Always use [code]await[/code] when calling this method, even for sync handlers.
+## Dispatch command to its handler. Returns handler result or CommandError.
 func dispatch(cmd: Command) -> Variant:
 	assert(cmd != null, "Command cannot be null")
 	assert(cmd is Command, "Command must be an instance of Command")
@@ -231,6 +127,6 @@ func dispatch(cmd: Command) -> Variant:
 	
 	return result
 
-## Check if a handler is registered for a command type.
+## Check if handler is registered.
 func has_handler(command_type) -> bool:
 	return get_subscription_count(command_type) > 0

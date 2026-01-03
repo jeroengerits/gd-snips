@@ -1,76 +1,17 @@
 extends RefCounted
 class_name SignalEventAdapter
 
-## Utility for bridging Godot signals to messaging events.
-##
-## Connects Node signals to [EventBus], automatically converting signal emissions
-## into event publications. This adapter is useful for integrating UI interactions,
-## scene tree events, and third-party plugins with the messaging system.
-##
-## **Use Cases:**
-## - Converting UI button clicks to events
-## - Integrating scene tree signals (body_entered, area_entered, etc.) with messaging
-## - Connecting third-party plugin signals to the messaging system
-## - Creating event-driven APIs from signal-based code
-##
-## **Architecture:** This adapter acts as a bridge between Godot's signal system
-## (signal-driven) and the messaging system (event-driven), allowing both patterns
-## to coexist in the same codebase.
-##
-## **Memory Management:** This extends [RefCounted] and implements [method _notification]
-## to automatically cleanup signal connections when the adapter is freed, preventing
-## memory leaks.
-##
-## @example Basic usage:
-##   var adapter = SignalEventAdapter.new(event_bus)
-##   adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
-##
-## @example Custom data mapping:
-##   adapter.connect_signal_to_event(
-##       $Area2D,
-##       "body_entered",
-##       AreaEnteredEvent,
-##       func(body): return {"body_name": body.name, "position": body.position}
-##   )
-##
-## @note This extends [RefCounted] and automatically cleans up connections in
-##   [method _notification] when freed to prevent memory leaks.
-##
-## Usage:
-##   const Messaging = preload("res://packages/messaging/messaging.gd")
-##   var adapter = SignalEventAdapter.new(event_bus)
-##   adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
-##
-## For custom data mapping:
-##   adapter.connect_signal_to_event(
-##       $Area2D,
-##       "body_entered",
-##       AreaEnteredEvent,
-##       func(body): return {"body_name": body.name}
-##   )
+## Bridges Godot signals to EventBus events.
 
 var _event_bus: EventBus
 var _connections: Array = []
 
-## Create a new SignalEventAdapter.
-##
-## [code]event_bus[/code]: EventBus instance to publish events to
+## Create adapter.
 func _init(event_bus: EventBus) -> void:
 	assert(event_bus != null, "EventBus cannot be null")
 	_event_bus = event_bus
 
-## Connect a signal to an event type.
-##
-## When the signal is emitted, an event of the specified type will be published
-## to the EventBus. Signal arguments can be mapped to event data using the
-## optional mapper callback.
-##
-## [code]source[/code]: Object emitting the signal (typically a Node)
-## [code]signal_name[/code]: Name of the signal to connect
-## [code]event_type[/code]: Event class to instantiate
-## [code]mapper[/code]: Optional callback to map signal args to event data
-##   If not provided, signal args are mapped by position (arg0, arg1, etc.)
-##   Mapper signature: func(...args) -> Dictionary
+## Connect signal to event type.
 func connect_signal_to_event(source: Object, signal_name: StringName, event_type, mapper: Callable = Callable()) -> void:
 	assert(source != null, "Signal source cannot be null")
 	assert(not signal_name.is_empty(), "Signal name cannot be empty")
@@ -104,21 +45,18 @@ func connect_signal_to_event(source: Object, signal_name: StringName, event_type
 		"callback": callback
 	})
 
-## Disconnect all signal bridges.
-##
-## Call this when the adapter is no longer needed to prevent memory leaks.
-## This is automatically called when the adapter is freed.
+## Disconnect all signals.
 func disconnect_all() -> void:
 	for conn in _connections:
 		if is_instance_valid(conn.source):
 			conn.source.disconnect(conn.signal, conn.callback)
 	_connections.clear()
 
-## Get the number of active signal connections.
+## Get connection count.
 func get_connection_count() -> int:
 	return _connections.size()
 
-## Internal: Cleanup connections when adapter is freed.
+## Cleanup on free.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		disconnect_all()
