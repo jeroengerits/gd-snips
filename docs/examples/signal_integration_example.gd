@@ -33,15 +33,15 @@ class EnemyDiedEvent extends Messaging.Event:
 		points = pts
 		super._init("enemy_died", {"enemy_id": id, "points": pts})
 
-var event_bus: Messaging.EventBus
+var event_broadcaster: Messaging.EventBroadcaster
 var signal_adapter: Messaging.SignalEventAdapter
 
 func _ready() -> void:
 	# Create bus instance
-	event_bus = Messaging.EventBus.new()
+	event_broadcaster = Messaging.EventBroadcaster.new()
 	
 	# Enable verbose logging
-	event_bus.set_verbose(true)
+	event_broadcaster.set_verbose(true)
 	
 	_setup_signal_to_event_bridge()
 	_setup_event_listeners()
@@ -51,7 +51,7 @@ func _ready() -> void:
 
 ## Example 1: Bridge signals to events
 func _setup_signal_to_event_bridge() -> void:
-	signal_adapter = Messaging.SignalEventAdapter.new(event_bus)
+	signal_adapter = Messaging.SignalEventAdapter.new(event_broadcaster)
 	
 	# Simple signal → event bridge
 	# When button is pressed, ButtonPressedEvent is published
@@ -76,15 +76,15 @@ func _setup_signal_to_event_bridge() -> void:
 ## Example 2: Subscribe to events (normal messaging usage)
 func _setup_event_listeners() -> void:
 	# Subscribe to events published via signal bridge
-	event_bus.subscribe(ButtonPressedEvent, func(evt: ButtonPressedEvent):
+	event_broadcaster.subscribe(ButtonPressedEvent, func(evt: ButtonPressedEvent):
 		print("[Event Listener] Button pressed: ", evt.button_name)
 	)
 	
-	event_bus.subscribe(AreaEnteredEvent, func(evt: AreaEnteredEvent):
+	event_broadcaster.subscribe(AreaEnteredEvent, func(evt: AreaEnteredEvent):
 		print("[Event Listener] Area entered by: ", evt.body_name, " (", evt.body_type, ")")
 	)
 	
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		print("[Event Listener] Enemy died: ", evt.enemy_id, " (+", evt.points, " points)")
 	)
 
@@ -109,7 +109,7 @@ func _run_examples() -> void:
 	
 	# Publish event directly
 	print("\n3. Publishing EnemyDiedEvent directly...")
-	event_bus.publish(EnemyDiedEvent.new(42, 100))
+	event_broadcaster.broadcast(EnemyDiedEvent.new(42, 100))
 	await get_tree().process_frame
 	
 	print("\n=== Examples Complete ===\n")

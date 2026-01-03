@@ -1,26 +1,26 @@
 extends Node
 
-## Example usage of CommandBus and EventBus in gameplay code.
+## Example usage of CommandRouter and EventBroadcaster in gameplay code.
 ##
 ## This demonstrates:
 ## - Registering command handlers
 ## - Subscribing to events
-## - Dispatching commands and publishing events
+## - Executing commands and broadcasting events
 ## - Using priorities, one-shot subscriptions, and lifecycle binding
 
 const Messaging = preload("res://packages/messaging/messaging.gd")
 
-var command_bus: Messaging.CommandBus
-var event_bus: Messaging.EventBus
+var command_router: Messaging.CommandRouter
+var event_broadcaster: Messaging.EventBroadcaster
 
 func _ready() -> void:
-	# Create bus instances
-	command_bus = Messaging.CommandBus.new()
-	event_bus = Messaging.EventBus.new()
+	# Create router and broadcaster instances
+	command_router = Messaging.CommandRouter.new()
+	event_broadcaster = Messaging.EventBroadcaster.new()
 	
 	# Enable verbose logging for this example
-	command_bus.set_verbose(true)
-	event_bus.set_verbose(true)
+	command_router.set_verbose(true)
+	event_broadcaster.set_verbose(true)
 	
 	_setup_command_handlers()
 	_setup_event_listeners()
@@ -30,7 +30,7 @@ func _ready() -> void:
 
 func _setup_command_handlers() -> void:
 	# Register handler for MovePlayerCommand
-	command_bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
+	command_router.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
 		print("Command handler: Moving player to ", cmd.target_position)
 		# Simulate movement logic
 		return true
@@ -38,17 +38,17 @@ func _setup_command_handlers() -> void:
 
 func _setup_event_listeners() -> void:
 	# Subscribe to EnemyDiedEvent with different priorities
-	event_bus.subscribe(EnemyDiedEvent, _on_enemy_died_score, priority=10)
-	event_bus.subscribe(EnemyDiedEvent, _on_enemy_died_sound, priority=5)
-	event_bus.subscribe(EnemyDiedEvent, _on_enemy_died_cleanup, priority=0)
+	event_broadcaster.subscribe(EnemyDiedEvent, _on_enemy_died_score, priority=10)
+	event_broadcaster.subscribe(EnemyDiedEvent, _on_enemy_died_sound, priority=5)
+	event_broadcaster.subscribe(EnemyDiedEvent, _on_enemy_died_cleanup, priority=0)
 	
 	# One-shot subscription example
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		print("One-shot: First enemy death detected!")
-	, one_shot=true)
+	, once=true)
 	
 	# Lifecycle-bound subscription (auto-unsubscribes when this node exits tree)
-	event_bus.subscribe(EnemyDiedEvent, _on_enemy_died_ui, bound_object=self)
+	event_broadcaster.subscribe(EnemyDiedEvent, _on_enemy_died_ui, owner=self)
 
 func _on_enemy_died_score(evt: EnemyDiedEvent) -> void:
 	print("Score system: Enemy ", evt.enemy_id, " died, adding ", evt.points, " points")
@@ -63,24 +63,20 @@ func _on_enemy_died_ui(evt: EnemyDiedEvent) -> void:
 	print("UI: Updating enemy death counter")
 
 func _run_examples() -> void:
-	print("\n=== Command Bus Example ===")
+	print("\n=== Command Router Example ===")
 	
-	# Dispatch a command
+	# Execute a command
 	var cmd = MovePlayerCommand.new(Vector2(100, 200))
-	var result = await command_bus.dispatch(cmd)
+	var result = await command_router.execute(cmd)
 	print("Command result: ", result)
 	
-	print("\n=== Event Bus Example ===")
+	print("\n=== Event Broadcaster Example ===")
 	
-	# Publish an event (multiple listeners will be called)
+	# Broadcast an event (multiple listeners will be called)
 	var evt = EnemyDiedEvent.new(42, 100, Vector2(50, 60))
-	event_bus.publish(evt)
+	event_broadcaster.broadcast(evt)
 	
-	# Publish another event (one-shot listener won't fire again)
+	# Broadcast another event (one-shot listener won't fire again)
 	print("\nSecond enemy death:")
-	event_bus.publish(EnemyDiedEvent.new(43, 150, Vector2(70, 80)))
-	
-	print("\n=== Subscription Info ===")
-	var listeners = event_bus.get_listeners(EnemyDiedEvent)
-	print("EnemyDiedEvent has ", listeners.size(), " active listener(s)")
+	event_broadcaster.broadcast(EnemyDiedEvent.new(43, 150, Vector2(70, 80)))
 

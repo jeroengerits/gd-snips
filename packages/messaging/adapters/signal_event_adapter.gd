@@ -1,15 +1,15 @@
 extends RefCounted
 class_name SignalEventAdapter
 
-## Bridges Godot signals to EventBus events.
+## Bridges Godot signals to EventBroadcaster events.
 
-var _event_bus: EventBus
+var _event_broadcaster: EventBroadcaster
 var _connections: Array = []
 
 ## Create adapter.
-func _init(event_bus: EventBus) -> void:
-	assert(event_bus != null, "EventBus cannot be null")
-	_event_bus = event_bus
+func _init(event_broadcaster: EventBroadcaster) -> void:
+	assert(event_broadcaster != null, "EventBroadcaster cannot be null")
+	_event_broadcaster = event_broadcaster
 
 ## Connect signal to event type.
 func connect_signal_to_event(source: Object, signal_name: StringName, event_type, mapper: Callable = Callable()) -> void:
@@ -29,9 +29,9 @@ func connect_signal_to_event(source: Object, signal_name: StringName, event_type
 			for i in range(min(args.size(), arg_names.size())):
 				event_data[arg_names[i]] = args[i]
 		
-		# Create and publish event
+		# Create and broadcast event
 		var event = event_type.new(signal_name, event_data)
-		_event_bus.publish(event)
+		_event_broadcaster.broadcast(event)
 	
 	# Connect signal to callback
 	if not source.connect(signal_name, callback):

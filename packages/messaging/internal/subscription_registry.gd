@@ -1,12 +1,13 @@
 const MessageTypeResolver = preload("res://packages/messaging/internal/message_type_resolver.gd")
-const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
+const SubscriptionValidator = preload("res://packages/messaging/rules/subscription_validation.gd")
 const MetricsUtils = preload("res://packages/messaging/utilities/metrics_utils.gd")
 
 extends RefCounted
-## Internal message bus core. Use CommandBus or EventBus instead.
+## Internal subscription registry. Manages subscriptions, middleware, and metrics.
+## Use CommandRouter or EventBroadcaster instead.
 
-## Middleware entry
-class Middleware:
+## Middleware registry entry.
+class MiddlewareEntry:
 	var callback: Callable
 	var priority: int = 0
 	var id: int
@@ -19,37 +20,37 @@ class Middleware:
 		self.id = _next_id
 		_next_id += 1
 
-## Subscription entry
-class Subscription:
+## Subscription registry entry.
+class SubscriptionEntry:
 	var callable: Callable
 	var priority: int = 0
-	var one_shot: bool = false
-	var bound_object: Object = null  # For lifecycle safety
+	var once: bool = false
+	var owner: Object = null  # For lifecycle safety
 	var id: int
 	
 	static var _next_id: int = 0
 	
-	func _init(callable: Callable, priority: int = 0, one_shot: bool = false, bound_object: Object = null):
+	func _init(callable: Callable, priority: int = 0, once: bool = false, owner: Object = null):
 		self.callable = callable
 		self.priority = priority
-		self.one_shot = one_shot
-		self.bound_object = bound_object
+		self.once = once
+		self.owner = owner
 		self.id = _next_id
 		_next_id += 1
 	
 	func is_valid() -> bool:
-		if not SubscriptionRules.is_valid_for_lifecycle(bound_object):
+		if not SubscriptionValidator.is_valid_for_lifecycle(owner):
 			return false
 		return callable.is_valid()
 	
 	func hash() -> int:
 		return id
 
-var _subscriptions: Dictionary = {}  # StringName -> Array[Subscription]
+var _registrations: Dictionary = {}  # StringName -> Array[SubscriptionEntry]
 var _verbose: bool = false
 var _trace_enabled: bool = false
-var _middleware_pre: Array[Middleware] = []  # Pre-processing middleware
-var _middleware_post: Array[Middleware] = []  # Post-processing middleware
+var _middleware_pre: Array[MiddlewareEntry] = []  # Pre-processing middleware
+var _middleware_post: Array[MiddlewareEntry] = []  # Post-processing middleware
 var _metrics_enabled: bool = false
 var _metrics: Dictionary = {}  # StringName -> {count: int, total_time: float, min_time: float, max_time: float}
 
@@ -63,20 +64,20 @@ func set_tracing(enabled: bool) -> void:
 
 ## Add pre-processing middleware.
 func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
-	var mw = Middleware.new(callback, priority)
+	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_pre.append(mw)
-	SubscriptionRules.sort_by_priority(_middleware_pre)
+	SubscriptionValidator.sort_by_priority(_middleware_pre)
 	if _verbose:
-		print("[MessageBus] Added pre-middleware (priority=", priority, ")")
+		print("[SubscriptionRegistry] Added pre-middleware (priority=", priority, ")")
 	return mw.id
 
 ## Add post-processing middleware.
 func add_middleware_post(callback: Callable, priority: int = 0) -> int:
-	var mw = Middleware.new(callback, priority)
+	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_post.append(mw)
-	SubscriptionRules.sort_by_priority(_middleware_post)
+	SubscriptionValidator.sort_by_priority(_middleware_post)
 	if _verbose:
-		print("[MessageBus] Added post-middleware (priority=", priority, ")")
+		print("[SubscriptionRegistry] Added post-middleware (priority=", priority, ")")
 	return mw.id
 
 ## Remove middleware.
@@ -94,7 +95,7 @@ func remove_middleware(middleware_id: int) -> bool:
 		_remove_indices_from_array(_middleware_pre, pre_to_remove)
 		removed = true
 		if _verbose:
-			print("[MessageBus] Removed pre-middleware (id=", middleware_id, ")")
+			print("[SubscriptionRegistry] Removed pre-middleware (id=", middleware_id, ")")
 	
 	# Find and remove from post-middleware
 	var post_to_remove: Array = []
@@ -106,7 +107,7 @@ func remove_middleware(middleware_id: int) -> bool:
 		_remove_indices_from_array(_middleware_post, post_to_remove)
 		removed = true
 		if _verbose:
-			print("[MessageBus] Removed post-middleware (id=", middleware_id, ")")
+			print("[SubscriptionRegistry] Removed post-middleware (id=", middleware_id, ")")
 	
 	return removed
 
@@ -115,7 +116,7 @@ func clear_middleware() -> void:
 	_middleware_pre.clear()
 	_middleware_post.clear()
 	if _verbose:
-		print("[MessageBus] Cleared all middleware")
+		print("[SubscriptionRegistry] Cleared all middleware")
 
 ## Enable metrics tracking.
 func set_metrics_enabled(enabled: bool) -> void:
@@ -128,7 +129,7 @@ func get_metrics(message_type) -> Dictionary:
 	if not _metrics_enabled:
 		return {}
 	
-	var key: StringName = get_key(message_type)
+	var key: StringName = resolve_type_key(message_type)
 	if not _metrics.has(key):
 		return {}
 	
@@ -186,155 +187,155 @@ func _record_metrics(key: StringName, elapsed_time: float) -> void:
 	m.min_time = min(m.min_time, elapsed_time)
 	m.max_time = max(m.max_time, elapsed_time)
 
-## Get key from message type.
-static func get_key(message_type) -> StringName:
+## Resolve type key from message type.
+static func resolve_type_key(message_type) -> StringName:
 	return MessageTypeResolver.resolve_type(message_type)
 
-## Get key from message instance.
-static func get_key_from(message: Object) -> StringName:
+## Resolve type key from message instance.
+static func resolve_type_key_from(message: Object) -> StringName:
 	return MessageTypeResolver.resolve_type(message)
 
-## Subscribe to a message type.
-func subscribe(message_type, handler: Callable, priority: int = 0, one_shot: bool = false, bound_object: Object = null) -> int:
+## Register a subscription (internal).
+func register(message_type, handler: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
 	assert(handler.is_valid(), "Handler callable must be valid")
-	var key: StringName = get_key(message_type)
-	var sub: Subscription = Subscription.new(handler, priority, one_shot, bound_object)
+	var key: StringName = resolve_type_key(message_type)
+	var entry: SubscriptionEntry = SubscriptionEntry.new(handler, priority, once, owner)
 	
-	if not _subscriptions.has(key):
-		_subscriptions[key] = []
+	if not _registrations.has(key):
+		_registrations[key] = []
 	
-	var subs: Array = _subscriptions[key]
+	var entries: Array = _registrations[key]
 	# Insert in sorted position (higher priority first) - O(n) insertion
-	# Find insertion point: subscriptions are sorted descending by priority
-	var insert_pos: int = subs.size()
-	for i in range(subs.size() - 1, -1, -1):
-		if subs[i].priority >= priority:
+	# Find insertion point: registrations are sorted descending by priority
+	var insert_pos: int = entries.size()
+	for i in range(entries.size() - 1, -1, -1):
+		if entries[i].priority >= priority:
 			insert_pos = i + 1
 			break
-	subs.insert(insert_pos, sub)
+	entries.insert(insert_pos, entry)
 	
 	if _verbose:
-		print("[MessageBus] Subscribed to ", key, " (priority=", priority, ", one_shot=", one_shot, ")")
+		print("[SubscriptionRegistry] Registered to ", key, " (priority=", priority, ", once=", once, ")")
 	
-	return sub.id
+	return entry.id
 
-## Unsubscribe by ID.
-func unsubscribe_by_id(message_type, sub_id: int) -> bool:
-	assert(sub_id >= 0, "Subscription ID must be non-negative")
-	var key: StringName = get_key(message_type)
-	if not _subscriptions.has(key):
+## Unregister by ID (internal).
+func unregister_by_id(message_type, registration_id: int) -> bool:
+	assert(registration_id >= 0, "Registration ID must be non-negative")
+	var key: StringName = resolve_type_key(message_type)
+	if not _registrations.has(key):
 		return false
 	
-	var subs: Array = _subscriptions[key]
-	var index: int = subs.find(func(s): return s.id == sub_id)
+	var entries: Array = _registrations[key]
+	var index: int = entries.find(func(e): return e.id == registration_id)
 	if index >= 0:
-		_remove_indices_from_array(subs, [index])
-		if subs.is_empty():
-			_subscriptions.erase(key)
+		_remove_indices_from_array(entries, [index])
+		if entries.is_empty():
+			_registrations.erase(key)
 		if _verbose:
-			print("[MessageBus] Unsubscribed from ", key, " (id=", sub_id, ")")
+			print("[SubscriptionRegistry] Unregistered from ", key, " (id=", registration_id, ")")
 		return true
 	return false
 
-## Unsubscribe by callable.
-func unsubscribe(message_type, handler: Callable) -> int:
+## Unregister by callable (internal).
+func unregister(message_type, handler: Callable) -> int:
 	assert(handler.is_valid(), "Handler callable must be valid")
-	var key: StringName = get_key(message_type)
-	if not _subscriptions.has(key):
+	var key: StringName = resolve_type_key(message_type)
+	if not _registrations.has(key):
 		return 0
 	
-	var subs: Array = _subscriptions[key]
+	var entries: Array = _registrations[key]
 	var removed: int = 0
 	var to_remove: Array = []
 	
-	for i in range(subs.size() - 1, -1, -1):
-		var sub: Subscription = subs[i]
-		if sub.callable == handler:
+	for i in range(entries.size() - 1, -1, -1):
+		var entry: SubscriptionEntry = entries[i]
+		if entry.callable == handler:
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		_remove_indices_from_array(subs, to_remove)
+		_remove_indices_from_array(entries, to_remove)
 		removed = to_remove.size()
-		if subs.is_empty():
-			_subscriptions.erase(key)
+		if entries.is_empty():
+			_registrations.erase(key)
 	
 	if _verbose and removed > 0:
-		print("[MessageBus] Unsubscribed ", removed, " subscription(s) from ", key)
+		print("[SubscriptionRegistry] Unregistered ", removed, " registration(s) from ", key)
 	
 	return removed
 
-## Get all subscriptions for a message type.
-func get_subscriptions(message_type) -> Array:
-	var key = get_key(message_type)
-	if not _subscriptions.has(key):
+## Get all registrations for a message type (internal).
+func get_registrations(message_type) -> Array:
+	var key = resolve_type_key(message_type)
+	if not _registrations.has(key):
 		return []
 	
-	var subs = _subscriptions[key]
-	_cleanup_invalid_subscriptions(key, subs)
-	return subs.duplicate()
+	var entries = _registrations[key]
+	_cleanup_invalid_registrations(key, entries)
+	return entries.duplicate()
 
-## Clean up invalid subscriptions.
-func _cleanup_invalid_subscriptions(key: StringName, subs: Array) -> void:
+## Clean up invalid registrations.
+func _cleanup_invalid_registrations(key: StringName, entries: Array) -> void:
 	var to_remove: Array = []
-	for i in range(subs.size() - 1, -1, -1):
-		if not subs[i].is_valid():
+	for i in range(entries.size() - 1, -1, -1):
+		if not entries[i].is_valid():
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		_remove_indices_from_array(subs, to_remove)
-		if subs.is_empty():
-			_subscriptions.erase(key)
+		_remove_indices_from_array(entries, to_remove)
+		if entries.is_empty():
+			_registrations.erase(key)
 
-## Clear subscriptions for a message type.
-func clear_type(message_type) -> void:
-	var key = get_key(message_type)
-	_subscriptions.erase(key)
+## Clear registrations for a message type (internal).
+func clear_registrations(message_type) -> void:
+	var key = resolve_type_key(message_type)
+	_registrations.erase(key)
 	if _verbose:
-		print("[MessageBus] Cleared subscriptions for ", key)
+		print("[SubscriptionRegistry] Cleared registrations for ", key)
 
-## Clear all subscriptions.
+## Clear all registrations.
 func clear() -> void:
-	_subscriptions.clear()
+	_registrations.clear()
 	if _verbose:
-		print("[MessageBus] Cleared all subscriptions")
+		print("[SubscriptionRegistry] Cleared all registrations")
 
 ## Get all registered message types.
 func get_types() -> Array[StringName]:
 	var types: Array[StringName] = []
-	for key in _subscriptions.keys():
-		var subs = _subscriptions[key]
-		_cleanup_invalid_subscriptions(key, subs)
-		if not subs.is_empty():
+	for key in _registrations.keys():
+		var entries = _registrations[key]
+		_cleanup_invalid_registrations(key, entries)
+		if not entries.is_empty():
 			types.append(key)
 	return types
 
-## Get subscription count.
-func get_subscription_count(message_type) -> int:
-	var key: StringName = get_key(message_type)
-	if not _subscriptions.has(key):
+## Get registration count (internal).
+func get_registration_count(message_type) -> int:
+	var key: StringName = resolve_type_key(message_type)
+	if not _registrations.has(key):
 		return 0
-	var subs: Array = _subscriptions[key]
-	_cleanup_invalid_subscriptions(key, subs)
-	return subs.size()
+	var entries: Array = _registrations[key]
+	_cleanup_invalid_registrations(key, entries)
+	return entries.size()
 
-## Get valid subscriptions for a message type.
-func _get_valid_subscriptions(message_type) -> Array[Subscription]:
-	var key: StringName = get_key(message_type)
-	if not _subscriptions.has(key):
+## Get valid registrations for a message type (internal).
+func _get_valid_registrations(message_type) -> Array[SubscriptionEntry]:
+	var key: StringName = resolve_type_key(message_type)
+	if not _registrations.has(key):
 		return []
 	
-	var subs: Array = _subscriptions[key]
-	_cleanup_invalid_subscriptions(key, subs)
-	return subs.duplicate()
+	var entries: Array = _registrations[key]
+	_cleanup_invalid_registrations(key, entries)
+	return entries.duplicate()
 
-## Mark subscription for removal.
-func _mark_for_removal(key: StringName, sub: Subscription) -> void:
-	var subs: Array = _subscriptions.get(key, [])
-	var index: int = subs.find(sub)
+## Mark registration for removal.
+func _mark_for_removal(key: StringName, entry: SubscriptionEntry) -> void:
+	var entries: Array = _registrations.get(key, [])
+	var index: int = entries.find(entry)
 	if index >= 0:
-		_remove_indices_from_array(subs, [index])
-		if subs.is_empty():
-			_subscriptions.erase(key)
+		_remove_indices_from_array(entries, [index])
+		if entries.is_empty():
+			_registrations.erase(key)
 
 ## Remove items at given indices from array.
 func _remove_indices_from_array(array: Array, indices: Array) -> void:
@@ -350,3 +351,4 @@ func _remove_indices_from_array(array: Array, indices: Array) -> void:
 	for i in sorted_indices:
 		if i >= 0 and i < array.size():
 			array.remove_at(i)
+

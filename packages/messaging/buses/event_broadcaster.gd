@@ -1,17 +1,17 @@
-const MessageBus = preload("res://packages/messaging/internal/message_bus.gd")
-const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
+const SubscriptionRegistry = preload("res://packages/messaging/internal/subscription_registry.gd")
+const SubscriptionValidator = preload("res://packages/messaging/rules/subscription_validation.gd")
 const Event = preload("res://packages/messaging/types/event.gd")
 
-extends MessageBus
-class_name EventBus
+extends SubscriptionRegistry
+class_name EventBroadcaster
 
-## Event bus: publishes events to 0..N subscribers.
+## Event broadcaster: broadcasts events to 0..N subscribers.
 
-var _collect_errors: bool = false
+var _log_listener_calls: bool = false
 
-## Enable error logging.
-func set_collect_errors(enabled: bool) -> void:
-	_collect_errors = enabled
+## Enable listener call logging.
+func set_log_listener_calls(enabled: bool) -> void:
+	_log_listener_calls = enabled
 
 ## Add pre-processing middleware.
 func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
@@ -38,71 +38,71 @@ func get_all_metrics() -> Dictionary:
 	return super.get_all_metrics()
 
 ## Subscribe to an event type.
-func subscribe(event_type, listener: Callable, priority: int = 0, one_shot: bool = false, bound_object: Object = null) -> int:
+func subscribe(event_type, listener: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
 	assert(listener.is_valid(), "Listener callable must be valid")
-	return super.subscribe(event_type, listener, priority, one_shot, bound_object)
+	return register(event_type, listener, priority, once, owner)
 
 ## Unsubscribe from event type.
 func unsubscribe(event_type, listener: Callable) -> int:
-	return super.unsubscribe(event_type, listener)
+	return unregister(event_type, listener)
 
 ## Unsubscribe by ID.
 func unsubscribe_by_id(event_type, sub_id: int) -> bool:
-	return super.unsubscribe_by_id(event_type, sub_id)
+	return unregister_by_id(event_type, sub_id)
 
-## Publish event to all subscribers.
-func publish(evt: Event) -> void:
+## Broadcast event to all subscribers.
+func broadcast(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
-	await _publish_internal(evt, false)
+	await _broadcast_internal(evt, false)
 
-## Publish event and await all async listeners.
-func publish_async(evt: Event) -> void:
+## Broadcast event and await all async listeners.
+func broadcast_and_await(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
-	await _publish_internal(evt, true)
+	await _broadcast_internal(evt, true)
 
-## Internal publish implementation.
-func _publish_internal(evt: Event, await_async: bool) -> void:
-	var key: StringName = get_key_from(evt)
+## Internal broadcast implementation.
+func _broadcast_internal(evt: Event, await_async: bool) -> void:
+	var key: StringName = resolve_type_key_from(evt)
 	
 	# Execute pre-middleware (can cancel delivery)
-	if not super._execute_middleware_pre(evt, key):
-		if super._trace_enabled:
-			print("[EventBus] Publishing ", key, " cancelled by middleware")
+	if not _execute_middleware_pre(evt, key):
+		if _trace_enabled:
+			print("[EventBroadcaster] Broadcasting ", key, " cancelled by middleware")
 		return
 	
-	var subs: Array = super._get_valid_subscriptions(key)
+	var entries: Array = _get_valid_registrations(key)
 	
-	if super._trace_enabled:
-		print("[EventBus] Publishing ", key, " -> ", subs.size(), " listener(s)")
+	if _trace_enabled:
+		print("[EventBroadcaster] Broadcasting ", key, " -> ", entries.size(), " listener(s)")
 	
-	if subs.is_empty():
+	if entries.is_empty():
 		return
 	
-	var one_shots_to_remove: Array = []
+	var ones_to_remove: Array = []
 	var start_time: int = Time.get_ticks_msec()
 	
 	# Create a snapshot for safe iteration (subscribers may unsubscribe during dispatch)
-	var subs_snapshot: Array = subs.duplicate()
+	var entries_snapshot: Array = entries.duplicate()
 	
-	for sub in subs_snapshot:
+	for entry in entries_snapshot:
 		# Re-check validity (object might have been freed since snapshot)
-		if not sub.is_valid():
+		if not entry.is_valid():
 			continue
 		
-		if not sub.callable.is_valid():
+		if not entry.callable.is_valid():
 			continue
 		
 		var result: Variant = null
 		
 		# Call listener - errors will propagate (GDScript has no try/catch)
 		# Error logging provides context before errors crash (if enabled)
-		if _collect_errors:
+		if _log_listener_calls:
 			# Log context before calling (helps debug if error occurs)
-			push_warning("[EventBus] Calling listener for event: %s (sub_id=%d)" % [key, sub.id])
+			push_warning("[EventBroadcaster] Calling listener for event: %s (registration_id=%d)" % [key, entry.id])
 		
-		result = sub.callable.call(evt)
+		result = entry.callable.call(evt)
 		
 		# Handle async results
 		if result is GDScriptFunctionState:
@@ -112,20 +112,21 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 			else:
 				# Still await async listeners to prevent memory leaks
 				# Note: This causes brief blocking, but prevents GDScriptFunctionState leaks.
-				# This is why publish() may block even though it doesn't return a result.
+				# This is why broadcast() may block even though it doesn't return a result.
 				result = await result
 		
 		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)
-		if SubscriptionRules.should_remove_after_delivery(sub.one_shot):
-			one_shots_to_remove.append({"key": key, "sub": sub})
+		if SubscriptionValidator.should_remove_after_delivery(entry.once):
+			ones_to_remove.append({"key": key, "entry": entry})
 	
 	# Remove one-shot subscriptions after iteration
-	for item in one_shots_to_remove:
-		super._mark_for_removal(item.key, item.sub)
+	for item in ones_to_remove:
+		_mark_for_removal(item.key, item.entry)
 	
-	# Record overall metrics for the entire publish operation
+	# Record overall metrics for the entire broadcast operation
 	var elapsed: float = (Time.get_ticks_msec() - start_time) / 1000.0
-	super._record_metrics(key, elapsed)
+	_record_metrics(key, elapsed)
 	
 	# Execute post-middleware
-	super._execute_middleware_post(evt, key, null)
+	_execute_middleware_post(evt, key, null)
+

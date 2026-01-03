@@ -1,22 +1,22 @@
 extends RefCounted
-class_name SubscriptionRules
+class_name SubscriptionValidator
 
-## Domain rules for subscription behavior.
+## Validation logic for subscription behavior.
 
 ## Check if subscription a should process before b.
 static func should_process_before(a_priority: int, b_priority: int) -> bool:
 	return a_priority > b_priority
 
 ## Check if subscription should be removed after delivery.
-static func should_remove_after_delivery(one_shot: bool) -> bool:
-	return one_shot
+static func should_remove_after_delivery(once: bool) -> bool:
+	return once
 
 ## Check if subscription is valid for lifecycle.
-static func is_valid_for_lifecycle(bound_object: Object) -> bool:
-	if bound_object == null:
+static func is_valid_for_lifecycle(owner: Object) -> bool:
+	if owner == null:
 		return true  # Not bound to object, always valid
 	
-	return is_instance_valid(bound_object)
+	return is_instance_valid(owner)
 
 ## Sort subscriptions by priority.
 static func sort_by_priority(subscriptions: Array) -> void:

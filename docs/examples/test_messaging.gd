@@ -1,6 +1,6 @@
 extends Node
 
-## Test suite for MessageBus, CommandBus, and EventBus.
+## Test suite for SubscriptionRegistry, CommandRouter, and EventBroadcaster.
 ##
 ## Run this scene to verify:
 ## - Single command handler enforcement
@@ -12,15 +12,15 @@ extends Node
 
 const Messaging = preload("res://packages/messaging/messaging.gd")
 
-var command_bus: Messaging.CommandBus
-var event_bus: Messaging.EventBus
+var command_router: Messaging.CommandRouter
+var event_broadcaster: Messaging.EventBroadcaster
 var test_results: Dictionary = {}
 
 func _ready() -> void:
-	command_bus = Messaging.CommandBus.new()
-	event_bus = Messaging.EventBus.new()
+	command_router = Messaging.CommandRouter.new()
+	event_broadcaster = Messaging.EventBroadcaster.new()
 	
-	print("=== Running MessageBus Tests ===\n")
+	print("=== Running SubscriptionRegistry Tests ===\n")
 	
 	_test_command_single_handler()
 	_test_command_no_handler()
@@ -34,45 +34,45 @@ func _ready() -> void:
 
 func _test_command_single_handler() -> void:
 	var test_name = "Command: Single handler"
-	command_bus.clear()
+	command_router.clear()
 	
 	var handled = false
-	command_bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
+	command_router.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
 		handled = true
 		return true
 	)
 	
 	var cmd = MovePlayerCommand.new(Vector2(10, 20))
-	var result = await command_bus.dispatch(cmd)
+	var result = await command_router.execute(cmd)
 	
 	test_results[test_name] = handled and result == true
 	print("✓ " if test_results[test_name] else "✗ ", test_name)
 
 func _test_command_no_handler() -> void:
 	var test_name = "Command: No handler error"
-	command_bus.clear()
+	command_router.clear()
 	
 	var cmd = MovePlayerCommand.new(Vector2(10, 20))
-	var result = await command_bus.dispatch(cmd)
+	var result = await command_router.execute(cmd)
 	
-	# Should return a CommandError
-	test_results[test_name] = result is Messaging.CommandBus.CommandError
+	# Should return a CommandRoutingError
+	test_results[test_name] = result is Messaging.CommandRouter.CommandRoutingError
 	print("✓ " if test_results[test_name] else "✗ ", test_name)
 
 func _test_command_multiple_handlers() -> void:
 	var test_name = "Command: Multiple handlers error"
-	command_bus.clear()
+	command_router.clear()
 	
 	# Try to register two handlers (should only keep the last one with handle())
-	command_bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
+	command_router.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
 		return false
 	)
-	command_bus.handle(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
+	command_router.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
 		return true
 	)
 	
 	var cmd = MovePlayerCommand.new(Vector2(10, 20))
-	var result = await command_bus.dispatch(cmd)
+	var result = await command_router.execute(cmd)
 	
 	# Should succeed (handle replaces, doesn't add)
 	test_results[test_name] = result == true
@@ -80,21 +80,21 @@ func _test_command_multiple_handlers() -> void:
 
 func _test_event_multiple_listeners() -> void:
 	var test_name = "Event: Multiple listeners"
-	event_bus.clear()
+	event_broadcaster.clear()
 	
 	var call_count = 0
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		call_count += 1
 	)
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		call_count += 1
 	)
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		call_count += 1
 	)
 	
 	var evt = EnemyDiedEvent.new(1, 100)
-	event_bus.publish(evt)
+	event_broadcaster.broadcast(evt)
 	
 	# Wait a frame for async operations
 	await get_tree().process_frame
@@ -104,24 +104,24 @@ func _test_event_multiple_listeners() -> void:
 
 func _test_event_priority_ordering() -> void:
 	var test_name = "Event: Priority ordering"
-	event_bus.clear()
+	event_broadcaster.clear()
 	
 	var call_order: Array[int] = []
 	
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		call_order.append(3)
 	, priority=0)
 	
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		call_order.append(1)
 	, priority=10)
 	
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		call_order.append(2)
 	, priority=5)
 	
 	var evt = EnemyDiedEvent.new(1, 100)
-	event_bus.publish(evt)
+	event_broadcaster.broadcast(evt)
 	
 	await get_tree().process_frame
 	
@@ -131,19 +131,19 @@ func _test_event_priority_ordering() -> void:
 
 func _test_event_one_shot() -> void:
 	var test_name = "Event: One-shot listener"
-	event_bus.clear()
+	event_broadcaster.clear()
 	
 	var call_count = 0
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		call_count += 1
-	, one_shot=true)
+	, once=true)
 	
 	var evt1 = EnemyDiedEvent.new(1, 100)
-	event_bus.publish(evt1)
+	event_broadcaster.broadcast(evt1)
 	await get_tree().process_frame
 	
 	var evt2 = EnemyDiedEvent.new(2, 100)
-	event_bus.publish(evt2)
+	event_broadcaster.broadcast(evt2)
 	await get_tree().process_frame
 	
 	# One-shot should only fire once
@@ -152,20 +152,20 @@ func _test_event_one_shot() -> void:
 
 func _test_event_auto_unsubscribe() -> void:
 	var test_name = "Event: Auto-unsubscribe on node exit"
-	event_bus.clear()
+	event_broadcaster.clear()
 	
 	# Create a temporary node that subscribes
 	var temp_node = Node.new()
 	add_child(temp_node)
 	
 	var call_count = 0
-	event_bus.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
 		call_count += 1
-	, bound_object=temp_node)
+	, owner=temp_node)
 	
 	# Verify it works initially
 	var evt1 = EnemyDiedEvent.new(1, 100)
-	event_bus.publish(evt1)
+	event_broadcaster.broadcast(evt1)
 	await get_tree().process_frame
 	
 	# Remove the node (should auto-unsubscribe)
@@ -174,7 +174,7 @@ func _test_event_auto_unsubscribe() -> void:
 	
 	# Publish again - listener should not fire
 	var evt2 = EnemyDiedEvent.new(2, 100)
-	event_bus.publish(evt2)
+	event_broadcaster.broadcast(evt2)
 	await get_tree().process_frame
 	
 	# Should only have been called once (before node was freed)
