@@ -300,6 +300,7 @@ The transport system is designed as an alternative to Godot signals, but sometim
 
 ### Using the Bridge
 
+**Event Bridge:**
 ```gdscript
 const Transport = preload("res://packages/transport/transport.gd")
 
@@ -321,7 +322,34 @@ bridge.connect_signal_to_event(
 bridge.disconnect_all()
 ```
 
-The bridge automatically cleans up connections when it's freed, so you don't need to worry about memory leaks.
+**Command Bridge:**
+```gdscript
+const Transport = preload("res://packages/transport/transport.gd")
+
+var command_bus = Transport.CommandBus.new()
+var command_bridge = Transport.CommandBridge.new(command_bus)
+
+# Bridge button click → command (use mapper to construct command properly)
+command_bridge.connect_signal_to_command(
+    $SaveButton,
+    "pressed",
+    SaveGameCommand,
+    func(): return SaveGameCommand.new()
+)
+
+# Bridge with signal arguments
+command_bridge.connect_signal_to_command(
+    $MenuItem,
+    "selected",
+    OpenMenuCommand,
+    func(menu_id: int): return OpenMenuCommand.new(menu_id)
+)
+
+# Clean up when done (automatically happens when bridge is freed)
+command_bridge.disconnect_all()
+```
+
+The bridges automatically clean up connections when they're freed, so you don't need to worry about memory leaks.
 
 ### When to Use What
 
@@ -367,7 +395,8 @@ Events are emitted to all subscribers in priority order. Each listener completes
 - **Message** - Base class for all messages (commands and events extend this)
 - **Command** - Base class for commands
 - **Event** - Base class for events
-- **Bridge** - Connects Godot signals to the transport system
+- **CommandBridge** - Connects Godot signals to CommandBus commands
+- **Bridge** - Connects Godot signals to EventBus events
 - **SubscriptionRegistry** - Internal implementation (you don't use this directly)
 
 ## Best Practices
