@@ -216,7 +216,7 @@ command_router.register_handler(MyCommand, my_handler)
 
 **Solution:** Adapter automatically cleans up connections on free (uses `_notification`). If manually managing, call `disconnect_all()`:
 ```gdscript
-signal_bridge.disconnect_all()  # Manual cleanup (auto-cleanup on free)
+event_signal_bridge.disconnect_all()  # Manual cleanup (auto-cleanup on free)
 ```
 
 ### Issue: Type Resolution Inconsistency
