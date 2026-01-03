@@ -1,5 +1,4 @@
 ## Middleware addon public API.
 
-const Middleware = preload("res://addons/middleware/src/middleware.gd")
-const MiddlewareEntry = preload("res://addons/middleware/src/middleware_entry.gd")
-
+const Middleware = preload("res://addons/middleware/middleware_class.gd")
+const MiddlewareEntry = preload("res://addons/middleware/middleware_entry.gd")

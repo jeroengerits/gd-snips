@@ -1,4 +1,4 @@
-const Engine = preload("res://addons/engine/src/engine.gd")
+const Engine = preload("res://addons/engine/engine.gd")
 
 extends Engine.Command.Command
 class_name MovePlayerCommand

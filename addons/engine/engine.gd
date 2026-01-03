@@ -6,6 +6,9 @@
 # Message addon exports
 const Message = preload("res://addons/message/message.gd")
 
+# Subscribers addon exports
+const Subscribers = preload("res://addons/subscribers/subscribers.gd")
+
 # Middleware addon exports
 const Middleware = preload("res://addons/middleware/middleware.gd")
 

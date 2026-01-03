@@ -1,7 +1,7 @@
 ## Support utilities public API.
 
-const Array = preload("res://addons/support/src/array.gd")
-const String = preload("res://addons/support/src/string.gd")
+const Array = preload("res://addons/support/array.gd")
+const String = preload("res://addons/support/string.gd")
 
 # Backward compatibility aliases
 const ArrayUtils = Array

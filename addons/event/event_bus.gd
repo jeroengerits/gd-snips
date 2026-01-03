@@ -1,7 +1,7 @@
-const Subscribers = preload("res://addons/event/src/event_subscribers.gd")
-const EventValidator = preload("res://addons/event/src/event_validator.gd")
-const Event = preload("res://addons/event/src/event.gd")
-const MessageTypeResolver = preload("res://addons/message/src/message_type_resolver.gd")
+const Subscribers = preload("res://addons/subscribers/subscribers_class.gd")
+const EventValidator = preload("res://addons/event/event_validator.gd")
+const Event = preload("res://addons/event/event_class.gd")
+const MessageTypeResolver = preload("res://addons/message/message_type_resolver.gd")
 
 extends Subscribers
 class_name EventBus

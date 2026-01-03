@@ -1,15 +1,13 @@
-const MessageTypeResolver = preload("res://addons/message/src/message_type_resolver.gd")
-const MetricsUtils = preload("res://addons/utils/src/metrics_utils.gd")
-const Array = preload("res://addons/support/src/array.gd")
-const MiddlewareEntry = preload("res://addons/middleware/src/middleware_entry.gd")
-const EventSubscriber = preload("res://addons/event/src/event_subscriber.gd")
+const MessageTypeResolver = preload("res://addons/message/message_type_resolver.gd")
+const MiddlewareEntry = preload("res://addons/subscribers/middleware_entry.gd")
+const Subscriber = preload("res://addons/subscribers/subscriber.gd")
 
 extends RefCounted
 ## Internal subscribers registry. Manages subscriptions, middleware, and metrics.
 ## Shared infrastructure used by both CommandBus and EventBus.
 ## Use CommandBus or EventBus instead.
 
-var _registrations: Dictionary = {}  # StringName -> Array[EventSubscriber]
+var _registrations: Dictionary = {}  # StringName -> Array[Subscriber]
 var _verbose: bool = false
 var _trace_enabled: bool = false
 var _middleware_before: Array[MiddlewareEntry] = []  # Before-execution middleware
@@ -25,6 +23,37 @@ func set_verbose(enabled: bool) -> void:
 func set_trace_enabled(enabled: bool) -> void:
 	_trace_enabled = enabled
 
+## Remove items at given indices from array (safe removal from highest to lowest index).
+## Inlined from support/array.gd to avoid dependency.
+func _remove_indices(array: Array, indices: Array) -> void:
+	if indices.is_empty() or array.is_empty():
+		return
+	
+	# Sort indices in descending order for safe removal
+	var sorted_indices: Array = indices.duplicate()
+	sorted_indices.sort()
+	sorted_indices.reverse()
+	
+	# Remove items (from highest index to lowest to avoid index shifting issues)
+	for i in sorted_indices:
+		if i >= 0 and i < array.size():
+			array.remove_at(i)
+
+## Find insertion position for priority-sorted array (higher priority first).
+##
+## Uses O(n) insertion sort algorithm to find the correct position.
+##
+## @param array: Array of objects with `priority` property (sorted descending by priority)
+## @param priority: Priority value to find insertion point for
+## @return: Index position where item should be inserted
+func _find_priority_insertion_position(array: Array, priority: int) -> int:
+	var insert_pos: int = array.size()
+	for i in range(array.size() - 1, -1, -1):
+		if array[i].priority >= priority:
+			insert_pos = i + 1
+			break
+	return insert_pos
+
 ## Insert middleware entry into array in sorted position (higher priority first).
 ##
 ## @param middleware_array: Array to insert into
@@ -32,15 +61,10 @@ func set_trace_enabled(enabled: bool) -> void:
 ## @param priority: Priority of the entry
 ## @param log_type: Type name for logging ("before-middleware" or "after-middleware")
 func _insert_middleware_entry(middleware_array: Array, entry: MiddlewareEntry, priority: int, log_type: String) -> void:
-	# Insert in sorted position (higher priority first) - O(n) insertion sort
-	var insert_pos: int = middleware_array.size()
-	for i in range(middleware_array.size() - 1, -1, -1):
-		if middleware_array[i].priority >= priority:
-			insert_pos = i + 1
-			break
+	var insert_pos: int = _find_priority_insertion_position(middleware_array, priority)
 	middleware_array.insert(insert_pos, entry)
 	if _verbose:
-		print("[EventSubscribers] Added ", log_type, " (priority=", priority, ")")
+		print("[Subscribers] Added ", log_type, " (priority=", priority, ")")
 
 ## Add before-execution middleware.
 ##
@@ -75,7 +99,7 @@ func _remove_middleware_from_array(middleware_array: Array, middleware_id: int, 
 		if middleware_array[i].id == middleware_id:
 			middleware_array.remove_at(i)
 			if _verbose:
-				print("[EventSubscribers] Removed ", log_type, " (id=", middleware_id, ")")
+				print("[Subscribers] Removed ", log_type, " (id=", middleware_id, ")")
 			return true
 	return false
 
@@ -98,7 +122,7 @@ func clear_middleware() -> void:
 	_middleware_before.clear()
 	_middleware_after.clear()
 	if _verbose:
-		print("[EventSubscribers] Cleared all middleware")
+		print("[Subscribers] Cleared all middleware")
 
 ## Enable metrics tracking.
 func set_metrics_enabled(enabled: bool) -> void:
@@ -120,7 +144,8 @@ func get_metrics(message_type: Variant) -> Dictionary:
 	
 	var m: Dictionary = _metrics[key]
 	var result: Dictionary = m.duplicate()
-	result.avg_time = MetricsUtils.calculate_average_time(m)
+	var count: int = m.get("count", 0)
+	result.avg_time = m.get("total_time", 0.0) / count if count > 0 else 0.0
 	return result
 
 ## Get all metrics.
@@ -132,7 +157,8 @@ func get_all_metrics() -> Dictionary:
 	for key in _metrics.keys():
 		var m: Dictionary = _metrics[key]
 		var metrics_dict: Dictionary = m.duplicate()
-		metrics_dict.avg_time = MetricsUtils.calculate_average_time(m)
+		var count: int = m.get("count", 0)
+		metrics_dict.avg_time = m.get("total_time", 0.0) / count if count > 0 else 0.0
 		result[key] = metrics_dict
 	return result
 
@@ -164,7 +190,12 @@ func _record_metrics(key: StringName, elapsed_time: float) -> void:
 		return
 	
 	if not _metrics.has(key):
-		_metrics[key] = MetricsUtils.create_empty_metrics()
+		_metrics[key] = {
+			"count": 0,
+			"total_time": 0.0,
+			"min_time": INF,
+			"max_time": 0.0
+		}
 	
 	var m: Dictionary = _metrics[key]
 	m.count += 1
@@ -176,23 +207,18 @@ func _record_metrics(key: StringName, elapsed_time: float) -> void:
 func register(message_type, handler: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
 	assert(handler.is_valid(), "Handler callable must be valid")
 	var key: StringName = MessageTypeResolver.resolve_type(message_type)
-	var entry: EventSubscriber = EventSubscriber.new(handler, priority, once, owner)
+	var entry: Subscriber = Subscriber.new(handler, priority, once, owner)
 	
 	if not _registrations.has(key):
 		_registrations[key] = []
 	
 	var entries: Array = _registrations[key]
 	# Insert in sorted position (higher priority first) - O(n) insertion
-	# Find insertion point: registrations are sorted descending by priority
-	var insert_pos: int = entries.size()
-	for i in range(entries.size() - 1, -1, -1):
-		if entries[i].priority >= priority:
-			insert_pos = i + 1
-			break
+	var insert_pos: int = _find_priority_insertion_position(entries, priority)
 	entries.insert(insert_pos, entry)
 	
 	if _verbose:
-		print("[EventSubscribers] Registered to ", key, " (priority=", priority, ", once=", once, ")")
+		print("[Subscribers] Registered to ", key, " (priority=", priority, ", once=", once, ")")
 	
 	return entry.id
 
@@ -214,10 +240,10 @@ func unregister_by_id(message_type, registration_id: int) -> bool:
 	var entries: Array = _registrations[key]
 	var index: int = entries.find(func(e): return e.id == registration_id)
 	if index >= 0:
-		Array.remove_indices(entries, [index])
+		_remove_indices(entries, [index])
 		_erase_empty_key_if_needed(key, entries)
 		if _verbose:
-			print("[EventSubscribers] Unregistered from ", key, " (id=", registration_id, ")")
+			print("[Subscribers] Unregistered from ", key, " (id=", registration_id, ")")
 		return true
 	return false
 
@@ -233,24 +259,24 @@ func unregister(message_type, handler: Callable) -> int:
 	var to_remove: Array = []
 	
 	for i in range(entries.size() - 1, -1, -1):
-		var entry: EventSubscriber = entries[i]
+		var entry: Subscriber = entries[i]
 		if entry.callable == handler:
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		Array.remove_indices(entries, to_remove)
+		_remove_indices(entries, to_remove)
 		removed = to_remove.size()
 		_erase_empty_key_if_needed(key, entries)
 	
 	if _verbose and removed > 0:
-		print("[EventSubscribers] Unregistered ", removed, " registration(s) from ", key)
+		print("[Subscribers] Unregistered ", removed, " registration(s) from ", key)
 	
 	return removed
 
 ## Clean up invalid registrations.
 ##
 ## @param key: Registration key
-## @param entries: Array of EventSubscriber entries (modified in place if cleanup needed)
+## @param entries: Array of Subscriber entries (modified in place if cleanup needed)
 ## @return: true if any entries were removed, false otherwise
 func _cleanup_invalid_registrations(key: StringName, entries: Array) -> bool:
 	var to_remove: Array = []
@@ -259,7 +285,7 @@ func _cleanup_invalid_registrations(key: StringName, entries: Array) -> bool:
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		Array.remove_indices(entries, to_remove)
+		_remove_indices(entries, to_remove)
 		_erase_empty_key_if_needed(key, entries)
 		return true
 	return false
@@ -269,13 +295,13 @@ func clear_registrations(message_type) -> void:
 	var key = MessageTypeResolver.resolve_type(message_type)
 	_registrations.erase(key)
 	if _verbose:
-		print("[EventSubscribers] Cleared registrations for ", key)
+		print("[Subscribers] Cleared registrations for ", key)
 
 ## Clear all registrations.
 func clear() -> void:
 	_registrations.clear()
 	if _verbose:
-		print("[EventSubscribers] Cleared all registrations")
+		print("[Subscribers] Cleared all registrations")
 
 ## Get registration count (internal).
 func get_registration_count(message_type) -> int:
@@ -292,8 +318,8 @@ func get_registration_count(message_type) -> int:
 ## change during iteration. Only duplicates if cleanup was needed.
 ##
 ## @param message_type: Message type to get registrations for
-## @return: Array of valid EventSubscriber entries (snapshot, safe for iteration)
-func _get_valid_registrations(message_type) -> Array[EventSubscriber]:
+## @return: Array of valid Subscriber entries (snapshot, safe for iteration)
+func _get_valid_registrations(message_type) -> Array[Subscriber]:
 	var key: StringName = MessageTypeResolver.resolve_type(message_type)
 	if not _registrations.has(key):
 		return []
@@ -307,10 +333,10 @@ func _get_valid_registrations(message_type) -> Array[EventSubscriber]:
 	return entries.duplicate()
 
 ## Mark registration for removal.
-func _mark_for_removal(key: StringName, entry: EventSubscriber) -> void:
+func _mark_for_removal(key: StringName, entry: Subscriber) -> void:
 	var entries: Array = _registrations.get(key, [])
 	var index: int = entries.find(entry)
 	if index >= 0:
-		Array.remove_indices(entries, [index])
+		_remove_indices(entries, [index])
 		_erase_empty_key_if_needed(key, entries)
 

@@ -22,7 +22,7 @@ When you enable the Engine plugin, all addons (Message, Middleware, Utils, Event
 Load all addons with a single import:
 
 ```gdscript
-const Engine = preload("res://addons/engine/src/engine.gd")
+const Engine = preload("res://addons/engine/engine.gd")
 
 # Access Command addon
 var command_bus = Engine.Command.Bus.new()
@@ -42,7 +42,7 @@ Engine.Support.String.is_blank("   ")
 Subscribe to events and emit them for one-to-many communication:
 
 ```gdscript
-const Engine = preload("res://addons/engine/src/engine.gd")
+const Engine = preload("res://addons/engine/engine.gd")
 
 var event_bus = Engine.Event.Bus.new()
 
@@ -72,7 +72,7 @@ event_bus.emit(event)
 Register command handlers and dispatch commands for one-to-one communication:
 
 ```gdscript
-const Engine = preload("res://addons/engine/src/engine.gd")
+const Engine = preload("res://addons/engine/engine.gd")
 
 var command_bus = Engine.Command.Bus.new()
 
@@ -98,7 +98,7 @@ else:
 Add middleware to intercept messages before and after they reach handlers/listeners:
 
 ```gdscript
-const Engine = preload("res://addons/engine/src/engine.gd")
+const Engine = preload("res://addons/engine/engine.gd")
 
 var event_bus = Engine.Event.Bus.new()
 var command_bus = Engine.Command.Bus.new()
