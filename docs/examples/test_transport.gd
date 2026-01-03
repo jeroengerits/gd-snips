@@ -1,6 +1,6 @@
 extends Node
 
-## Test suite for SubscriptionRegistry, CommandBus, and EventBus.
+## Test suite for CommandBus and EventBus.
 ##
 ## Run this scene to verify:
 ## - Single command handler enforcement
@@ -20,7 +20,7 @@ func _ready() -> void:
 	command_bus = Transport.CommandBus.new()
 	event_bus = Transport.EventBus.new()
 	
-	print("=== Running Subscribers Tests ===\n")
+	print("=== Running Transport Tests ===\n")
 	
 	_test_command_single_handler()
 	_test_command_no_handler()

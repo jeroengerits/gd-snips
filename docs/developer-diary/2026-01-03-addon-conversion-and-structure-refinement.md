@@ -124,6 +124,17 @@ The refactoring improved code organization:
 
 The codebase structure is now more maintainable and easier to navigate for new contributors.
 
+## Post-Script: Further Structure Refinement
+
+**Note (January 2026):** The structure described above was further refined later. The `core/` directory was removed in favor of domain-based organization:
+
+- **Message infrastructure** moved to `message/` directory (Message, MessageTypeResolver)
+- **Middleware** moved to `middleware/` directory (Middleware, MiddlewareEntry)
+- **EventSubscribers** moved to `event/event_subscribers.gd` (formerly Subscribers in core/)
+- **Final structure:** `message/`, `middleware/`, `command/`, `event/`, `utils/`
+
+This evolution reflects the principle that functional domains should be clearly separated, and shared infrastructure can be organized within those domains rather than requiring a generic `core/` folder.
+
 ---
 
 *Next steps: Consider versioning strategy and potential editor functionality as the project evolves.*
