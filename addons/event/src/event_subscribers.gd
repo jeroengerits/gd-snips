@@ -64,25 +64,32 @@ func add_middleware_after(callback: Callable, priority: int = 0) -> int:
 	_insert_middleware_entry(_middleware_after, mw, priority, "after-middleware")
 	return mw.id
 
+## Remove middleware entry from array by ID (single pass).
+##
+## @param middleware_array: Array to search and remove from
+## @param middleware_id: ID of middleware to remove
+## @param log_type: Type name for logging ("before-middleware" or "after-middleware")
+## @return: true if found and removed, false otherwise
+func _remove_middleware_from_array(middleware_array: Array, middleware_id: int, log_type: String) -> bool:
+	for i in range(middleware_array.size()):
+		if middleware_array[i].id == middleware_id:
+			middleware_array.remove_at(i)
+			if _verbose:
+				print("[EventSubscribers] Removed ", log_type, " (id=", middleware_id, ")")
+			return true
+	return false
+
 ## Remove middleware.
 func remove_middleware(middleware_id: int) -> bool:
 	assert(middleware_id >= 0, "Middleware ID must be non-negative")
 	
 	# Find and remove from before-middleware (single pass)
-	for i in range(_middleware_before.size()):
-		if _middleware_before[i].id == middleware_id:
-			_middleware_before.remove_at(i)
-			if _verbose:
-				print("[EventSubscribers] Removed before-middleware (id=", middleware_id, ")")
-			return true
+	if _remove_middleware_from_array(_middleware_before, middleware_id, "before-middleware"):
+		return true
 	
 	# Find and remove from after-middleware (single pass)
-	for i in range(_middleware_after.size()):
-		if _middleware_after[i].id == middleware_id:
-			_middleware_after.remove_at(i)
-			if _verbose:
-				print("[EventSubscribers] Removed after-middleware (id=", middleware_id, ")")
-			return true
+	if _remove_middleware_from_array(_middleware_after, middleware_id, "after-middleware"):
+		return true
 	
 	return false
 
