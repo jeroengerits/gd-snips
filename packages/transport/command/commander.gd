@@ -3,9 +3,9 @@ const Validator = preload("res://packages/transport/command/validator.gd")
 const Command = preload("res://packages/transport/type/command.gd")
 
 extends SubscriptionRegistry
-class_name Commander
+class_name CommandBus
 
-## Commander: routes commands to exactly one handler.
+## CommandBus: routes commands to exactly one handler.
 
 ## Error raised during command routing/execution.
 class CommandRoutingError extends RefCounted:
@@ -28,7 +28,7 @@ class CommandRoutingError extends RefCounted:
 		return "[CommandRoutingError: %s (code=%d)]" % [message, code]
 
 ## Register handler for a command type (replaces existing).
-func register_handler(command_type, handler: Callable) -> void:
+func handle(command_type, handler: Callable) -> void:
 	assert(handler.is_valid(), "Handler callable must be valid")
 	var key: StringName = resolve_type_key(command_type)
 	var existing: int = get_registration_count(command_type)
@@ -36,7 +36,7 @@ func register_handler(command_type, handler: Callable) -> void:
 	if existing > 0:
 		clear_registrations(command_type)
 		if _verbose:
-			print("[Commander] Replaced existing handler for ", key)
+			print("[CommandBus] Replaced existing handler for ", key)
 	
 	register(command_type, handler, 0, false, null)
 
@@ -44,8 +44,8 @@ func register_handler(command_type, handler: Callable) -> void:
 func unregister_handler(command_type) -> void:
 	clear_registrations(command_type)
 
-## Execute command. Returns handler result or CommandRoutingError.
-func execute(cmd: Command) -> Variant:
+## Dispatch command. Returns handler result or CommandRoutingError.
+func dispatch(cmd: Command) -> Variant:
 	assert(cmd != null, "Command cannot be null")
 	assert(cmd is Command, "Command must be an instance of Command")
 	var key: StringName = resolve_type_key_from(cmd)
@@ -54,7 +54,7 @@ func execute(cmd: Command) -> Variant:
 	# Execute pre-middleware (can cancel delivery)
 	if not _execute_middleware_pre(cmd, key):
 		if _trace_enabled:
-			print("[Commander] Executing ", key, " cancelled by middleware")
+			print("[CommandBus] Dispatching ", key, " cancelled by middleware")
 		return CommandRoutingError.new("Command execution cancelled by middleware", CommandRoutingError.Code.HANDLER_FAILED)
 	
 	var entries: Array = _get_valid_registrations(key)
@@ -82,7 +82,7 @@ func execute(cmd: Command) -> Variant:
 	var entry = entries[0]
 	
 	if _trace_enabled:
-		print("[Commander] Executing ", key, " -> handler (priority=", entry.priority, ")")
+		print("[CommandBus] Dispatching ", key, " -> handler (priority=", entry.priority, ")")
 	
 	if not entry.is_valid():
 		var err: CommandRoutingError = CommandRoutingError.new("Handler is invalid (freed object) for command type: %s" % key, CommandRoutingError.Code.HANDLER_FAILED)

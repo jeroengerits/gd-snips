@@ -33,15 +33,15 @@ class EnemyDiedEvent extends Transport.Event:
 		points = pts
 		super._init("enemy_died", {"enemy_id": id, "points": pts})
 
-var event_broadcaster: Transport.Publisher
+var event_bus: Transport.EventBus
 var signal_adapter: Transport.Bridge
 
 func _ready() -> void:
-	# Create broadcaster instance
-	event_broadcaster = Transport.Publisher.new()
+	# Create event bus instance
+	event_bus = Transport.EventBus.new()
 	
 	# Enable verbose logging
-	event_broadcaster.set_verbose(true)
+	event_bus.set_verbose(true)
 	
 	_setup_signal_to_event_bridge()
 	_setup_event_listeners()
@@ -51,7 +51,7 @@ func _ready() -> void:
 
 ## Example 1: Bridge signals to events
 func _setup_signal_to_event_bridge() -> void:
-	signal_adapter = Transport.Bridge.new(event_broadcaster)
+	signal_adapter = Transport.Bridge.new(event_bus)
 	
 	# Simple signal → event bridge
 	# When button is pressed, ButtonPressedEvent is published
@@ -76,16 +76,16 @@ func _setup_signal_to_event_bridge() -> void:
 ## Example 2: Subscribe to events (normal transport usage)
 func _setup_event_listeners() -> void:
 	# Subscribe to events published via signal bridge
-	event_broadcaster.subscribe(ButtonPressedEvent, func(evt: ButtonPressedEvent):
-		print("[Event Listener] Button pressed: ", evt.button_name)
+	event_bus.on(ButtonPressedEvent, func(event):
+		print("[Event Listener] Button pressed: ", event.button_name)
 	)
 	
-	event_broadcaster.subscribe(AreaEnteredEvent, func(evt: AreaEnteredEvent):
-		print("[Event Listener] Area entered by: ", evt.body_name, " (", evt.body_type, ")")
+	event_bus.on(AreaEnteredEvent, func(event):
+		print("[Event Listener] Area entered by: ", event.body_name, " (", event.body_type, ")")
 	)
 	
-	event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
-		print("[Event Listener] Enemy died: ", evt.enemy_id, " (+", evt.points, " points)")
+	event_bus.on(EnemyDiedEvent, func(event):
+		print("[Event Listener] Enemy died: ", event.enemy_id, " (+", event.points, " points)")
 	)
 
 ## Run example scenarios
@@ -107,9 +107,9 @@ func _run_examples() -> void:
 		await get_tree().process_frame
 		test_body.queue_free()
 	
-	# Publish event directly
-	print("\n3. Publishing EnemyDiedEvent directly...")
-	event_broadcaster.broadcast(EnemyDiedEvent.new(42, 100))
+	# Emit event directly
+	print("\n3. Emitting EnemyDiedEvent directly...")
+	event_bus.emit(EnemyDiedEvent.new(42, 100))
 	await get_tree().process_frame
 	
 	print("\n=== Examples Complete ===\n")

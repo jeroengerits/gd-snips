@@ -1,7 +1,7 @@
 ## Transport system public API.
 
-const Commander = preload("res://packages/transport/command/commander.gd")
-const Publisher = preload("res://packages/transport/event/publisher.gd")
+const CommandBus = preload("res://packages/transport/command/commander.gd")
+const EventBus = preload("res://packages/transport/event/publisher.gd")
 const Message = preload("res://packages/transport/type/message.gd")
 const Command = preload("res://packages/transport/type/command.gd")
 const Event = preload("res://packages/transport/type/event.gd")

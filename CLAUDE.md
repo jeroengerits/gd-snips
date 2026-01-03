@@ -19,8 +19,8 @@ packages/
 └── transport/     # Command/Event transport framework
     ├── type/      # Message, Command, Event base classes
     ├── utils/     # Metrics utilities
-    ├── event/     # Publisher, SubscriptionRegistry, Validator, Bridge
-    └── command/   # Commander, Validator
+    ├── event/     # EventBus, SubscriptionRegistry, Validator, Bridge
+    └── command/   # CommandBus, Validator
 ```
 
 ## Architectural Decisions
@@ -97,7 +97,7 @@ packages/
 
 **Layered Design:**
 ```
-Public API (Commander/Publisher)
+Public API (CommandBus/EventBus)
     ↓
 Foundation (SubscriptionRegistry)
     ↓
@@ -138,7 +138,7 @@ Subscriptions and adapters automatically clean up to prevent memory leaks:
 - Adapters enable gradual migration from signals to transport
 
 **Adapters:**
-- **Bridge:** Bridges Node signals → Publisher (RefCounted utility)
+- **Bridge:** Bridges Node signals → EventBus (RefCounted utility)
 
 **Usage Guidelines:**
 - Use transport for game logic and domain events
@@ -162,8 +162,8 @@ adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
 const Transport = preload("res://packages/transport/transport.gd")
 
 # Use via barrel file
-var router = Transport.Commander.new()
-var broadcaster = Transport.Publisher.new()
+var command_bus = Transport.CommandBus.new()
+var event_bus = Transport.EventBus.new()
 ```
 
 **Direct Import (for internal files):**
@@ -225,7 +225,7 @@ extends Message
 class_name MyCommand  # Required for consistent resolution
 ```
 
-### Issue: Publisher.broadcast() Blocks
+### Issue: EventBus.emit() Blocks
 
 **Symptom:** `broadcast()` appears to block even though it's "fire-and-forget"
 
@@ -248,7 +248,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 ### Naming Conventions
 
-- **Classes:** PascalCase (`Commander`, `Publisher`, `Message`)
+- **Classes:** PascalCase (`CommandBus`, `EventBus`, `Message`)
 - **Methods:** snake_case (`get_key()`, `remove_at()`)
 - **Variables:** snake_case (`command_bus`, `subscriptions`)
 - **Constants:** UPPER_SNAKE_CASE (not used in this project)
@@ -294,12 +294,12 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 **Current Structure:**
 - `type/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
-- `event/` - Publisher (publisher.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), Bridge (bridge.gd)
-- `command/` - Commander (commander.gd), Validator (validator.gd)
+- `event/` - EventBus (publisher.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), Bridge (bridge.gd)
+- `command/` - CommandBus (commander.gd), Validator (validator.gd)
 
 **File Naming:**
 - Files use short, descriptive names: `publisher.gd`, `commander.gd`, `registry.gd`, `bridge.gd`, `validator.gd`
-- Class names remain unchanged (Publisher, Commander, etc.)
+- Class names match filenames (CommandBus, EventBus, etc.)
 - All files are at most one level deep from package root
 
 **Impact:**
@@ -317,7 +317,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 ### Bug Fixes
 
-1. **Metrics Recording:** Fixed double-recording bug in Publisher where metrics were recorded per-listener and again for overall operation. Now correctly records overall operation time once.
+1. **Metrics Recording:** Fixed double-recording bug in EventBus where metrics were recorded per-listener and again for overall operation. Now correctly records overall operation time once.
 
 2. **Resource Cleanup:** Added automatic cleanup for `Bridge` connections via `_notification()` to prevent memory leaks when adapters are freed.
 
@@ -327,13 +327,13 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 1. **Documentation:** Enhanced all code files with comprehensive GDScript documentation following best practices. Added `@param`, `@return`, and `@example` tags throughout the codebase.
 
-2. **Documentation:** Clarified async behavior in Publisher.broadcast() - documented that async listeners are awaited to prevent memory leaks, even though the method doesn't return a value.
+2. **Documentation:** Clarified async behavior in EventBus.emit() - documented that async listeners are awaited to prevent memory leaks, even though the method doesn't return a value.
 
 ### Code Simplification
 
 1. **Collection Package Removal:** Removed Collection package dependency from transport system. Replaced with direct array/dictionary operations using helper functions (`_remove_indices_from_array()`). Simplifies codebase and reduces dependencies.
 
-2. **Obsolete Code Cleanup:** Removed unused `listener_start_time` variable from Publisher that was never used (leftover from planned per-listener metrics).
+2. **Obsolete Code Cleanup:** Removed unused `listener_start_time` variable from EventBus that was never used (leftover from planned per-listener metrics).
 
 ## Future Considerations
 

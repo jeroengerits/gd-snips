@@ -4,7 +4,7 @@ const MetricsUtils = preload("res://packages/transport/utils/metrics_utils.gd")
 
 extends RefCounted
 ## Internal subscription registry. Manages subscriptions, middleware, and metrics.
-## Use Commander or Publisher instead.
+## Use CommandBus or EventBus instead.
 
 ## Middleware registry entry.
 class MiddlewareEntry:

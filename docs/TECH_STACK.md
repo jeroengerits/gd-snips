@@ -66,7 +66,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
 
 ### When to Use RefCounted
 
-**Current Usage:** ✅ We use `RefCounted` for all transport classes (SubscriptionRegistry, Commander, Publisher, Message, Command, Event).
+**Current Usage:** ✅ We use `RefCounted` for all transport classes (SubscriptionRegistry, CommandBus, EventBus, Message, Command, Event).
 
 **Best Practices:**
 

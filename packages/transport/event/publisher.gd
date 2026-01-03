@@ -3,9 +3,9 @@ const Validator = preload("res://packages/transport/event/validator.gd")
 const Event = preload("res://packages/transport/type/event.gd")
 
 extends SubscriptionRegistry
-class_name Publisher
+class_name EventBus
 
-## Publisher: broadcasts events to 0..N subscribers.
+## EventBus: broadcasts events to 0..N subscribers.
 
 var _log_listener_calls: bool = false
 
@@ -38,7 +38,7 @@ func get_all_metrics() -> Dictionary:
 	return super.get_all_metrics()
 
 ## Subscribe to an event type.
-func subscribe(event_type, listener: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
+func on(event_type, listener: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
 	assert(listener.is_valid(), "Listener callable must be valid")
 	return register(event_type, listener, priority, once, owner)
 
@@ -50,14 +50,14 @@ func unsubscribe(event_type, listener: Callable) -> int:
 func unsubscribe_by_id(event_type, sub_id: int) -> bool:
 	return unregister_by_id(event_type, sub_id)
 
-## Broadcast event to all subscribers.
-func broadcast(evt: Event) -> void:
+## Emit event to all subscribers.
+func emit(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
 	await _broadcast_internal(evt, false)
 
-## Broadcast event and await all async listeners.
-func broadcast_and_await(evt: Event) -> void:
+## Emit event and await all async listeners.
+func emit_and_await(evt: Event) -> void:
 	assert(evt != null, "Event cannot be null")
 	assert(evt is Event, "Event must be an instance of Event")
 	await _broadcast_internal(evt, true)
@@ -69,13 +69,13 @@ func _broadcast_internal(evt: Event, await_async: bool) -> void:
 	# Execute pre-middleware (can cancel delivery)
 	if not _execute_middleware_pre(evt, key):
 		if _trace_enabled:
-			print("[Publisher] Broadcasting ", key, " cancelled by middleware")
+			print("[EventBus] Emitting ", key, " cancelled by middleware")
 		return
 	
 	var entries: Array = _get_valid_registrations(key)
 	
 	if _trace_enabled:
-		print("[Publisher] Broadcasting ", key, " -> ", entries.size(), " listener(s)")
+		print("[EventBus] Emitting ", key, " -> ", entries.size(), " listener(s)")
 	
 	if entries.is_empty():
 		return
@@ -100,7 +100,7 @@ func _broadcast_internal(evt: Event, await_async: bool) -> void:
 		# Error logging provides context before errors crash (if enabled)
 		if _log_listener_calls:
 			# Log context before calling (helps debug if error occurs)
-			push_warning("[Publisher] Calling listener for event: %s (registration_id=%d)" % [key, entry.id])
+			push_warning("[EventBus] Calling listener for event: %s (registration_id=%d)" % [key, entry.id])
 		
 		result = entry.callable.call(evt)
 		
@@ -112,7 +112,7 @@ func _broadcast_internal(evt: Event, await_async: bool) -> void:
 			else:
 				# Still await async listeners to prevent memory leaks
 				# Note: This causes brief blocking, but prevents GDScriptFunctionState leaks.
-				# This is why broadcast() may block even though it doesn't return a result.
+				# This is why emit() may block even though it doesn't return a result.
 				result = await result
 		
 		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)

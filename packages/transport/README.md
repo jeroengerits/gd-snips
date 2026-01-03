@@ -13,8 +13,8 @@ A simple, type-safe messaging framework for Godot 4.5.1+ that helps you build mo
 - [Usage Guide](#usage-guide)
   - [Creating Commands](#creating-commands)
   - [Creating Events](#creating-events)
-  - [Commander](#commander)
-  - [Publisher](#publisher)
+  - [CommandBus](#commandbus)
+  - [EventBus](#eventbus)
   - [Middleware](#middleware)
   - [Metrics](#metrics)
 - [Signal Integration](#signal-integration)
@@ -46,26 +46,26 @@ Here's everything you need to get started in 30 seconds:
 ```gdscript
 const Transport = preload("res://packages/transport/transport.gd")
 
-# Create your commander and publisher instances
-var commander = Transport.Commander.new()
-var publisher = Transport.Publisher.new()
+# Create your command and event bus instances
+var command_bus = Transport.CommandBus.new()
+var event_bus = Transport.EventBus.new()
 
 # Register a command handler (one handler per command type)
-commander.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
-    print("Moving player to ", cmd.target_position)
+command_bus.handle(MovePlayerCommand, func(command):
+    print("Moving player to ", command.target_position)
     return true
 )
 
 # Subscribe to events (zero or more listeners per event type)
-publisher.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
-    print("Enemy ", evt.enemy_id, " died!")
+event_bus.on(EnemyDiedEvent, func(event):
+    print("Enemy ", event.enemy_id, " died!")
 )
 
-# Execute a command (returns result or error)
-await commander.execute(MovePlayerCommand.new(Vector2(100, 200)))
+# Dispatch a command (returns result or error)
+await command_bus.dispatch(MovePlayerCommand.new(Vector2(100, 200)))
 
-# Broadcast an event (notifies all subscribers)
-publisher.broadcast(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
+# Emit an event (notifies all subscribers)
+event_bus.emit(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
 ```
 
 That's it! You're ready to build a clean, decoupled architecture.
@@ -142,32 +142,32 @@ func _init(e_id: int, pts: int, pos: Vector2 = Vector2.ZERO) -> void:
     super._init("enemy_died", {"enemy_id": e_id, "points": pts, "position": pos}, "Enemy %d died" % e_id)
 ```
 
-### Commander
+### CommandBus
 
-The `Commander` handles command execution. It ensures exactly one handler processes each command.
+The `CommandBus` handles command execution. It ensures exactly one handler processes each command.
 
 #### Registering Handlers
 
 ```gdscript
 # Register a handler for a command type
-commander.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
+command_bus.handle(MovePlayerCommand, func(command):
     # Handle the command
-    player.move_to(cmd.target_position)
+    player.move_to(command.target_position)
     return true
 )
 ```
 
 **Note:** If you register a handler for a command type that already has one, the old handler is replaced. This prevents accidental duplicate handlers.
 
-#### Executing Commands
+#### Dispatching Commands
 
 ```gdscript
-# Execute a command (returns result or CommandRoutingError)
+# Dispatch a command (returns result or CommandRoutingError)
 var cmd = MovePlayerCommand.new(Vector2(100, 200))
-var result = await commander.execute(cmd)
+var result = await command_bus.dispatch(cmd)
 
 # Check for errors
-if result is Commander.CommandRoutingError:
+if result is CommandBus.CommandRoutingError:
     print("Command failed: ", result.message)
 else:
     print("Command succeeded: ", result)
@@ -175,57 +175,57 @@ else:
 
 #### Error Handling
 
-Commands return `Commander.CommandRoutingError` when something goes wrong:
+Commands return `CommandBus.CommandRoutingError` when something goes wrong:
 - `NO_HANDLER` - No handler registered for this command type
 - `MULTIPLE_HANDLERS` - Multiple handlers registered (should never happen, but we check)
 - `HANDLER_FAILED` - Handler execution failed or was cancelled by middleware
 
-### Publisher
+### EventBus
 
-The `Publisher` handles event broadcasting. It notifies all subscribers when an event occurs.
+The `EventBus` handles event broadcasting. It notifies all subscribers when an event occurs.
 
 #### Subscribing to Events
 
 ```gdscript
 # Basic subscription
-publisher.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
-    print("Enemy died: ", evt.enemy_id)
+event_bus.on(EnemyDiedEvent, func(event):
+    print("Enemy died: ", event.enemy_id)
 )
 
 # With priority (higher numbers run first)
-publisher.subscribe(EnemyDiedEvent, _handle_enemy_died, priority=10)
+event_bus.on(EnemyDiedEvent, _handle_enemy_died, priority=10)
 
 # One-shot subscription (automatically unsubscribes after first call)
-publisher.subscribe(EnemyDiedEvent, _on_first_enemy_death, once=true)
+event_bus.on(EnemyDiedEvent, _on_first_enemy_death, once=true)
 
 # Lifecycle-bound subscription (auto-unsubscribes when owner is freed)
-publisher.subscribe(EnemyDiedEvent, _update_ui, owner=self)
+event_bus.on(EnemyDiedEvent, _update_ui, owner=self)
 ```
 
 **Priority ordering:** Listeners with higher priority values execute first. If two listeners have the same priority, they execute in registration order.
 
-#### Broadcasting Events
+#### Emitting Events
 
 ```gdscript
-# Broadcast an event (listeners execute sequentially)
-var evt = EnemyDiedEvent.new(42, 100, Vector2(50, 60))
-publisher.broadcast(evt)
+# Emit an event (listeners execute sequentially)
+var event = EnemyDiedEvent.new(42, 100, Vector2(50, 60))
+event_bus.emit(event)
 
 # Or await all async listeners to complete
-await publisher.broadcast_and_await(evt)
+await event_bus.emit_and_await(event)
 ```
 
-**Note:** Even though `broadcast()` doesn't return a value, it still awaits async listeners to prevent memory leaks. This means it may briefly block, but it's necessary for proper cleanup.
+**Note:** Even though `emit()` doesn't return a value, it still awaits async listeners to prevent memory leaks. This means it may briefly block, but it's necessary for proper cleanup.
 
 #### Unsubscribing
 
 ```gdscript
 # Unsubscribe by callable
-publisher.unsubscribe(EnemyDiedEvent, _my_listener)
+event_bus.unsubscribe(EnemyDiedEvent, _my_listener)
 
 # Unsubscribe by subscription ID (useful for anonymous functions)
-var sub_id = publisher.subscribe(EnemyDiedEvent, func(evt): print("Event!"))
-publisher.unsubscribe_by_id(EnemyDiedEvent, sub_id)
+var sub_id = event_bus.on(EnemyDiedEvent, func(event): print("Event!"))
+event_bus.unsubscribe_by_id(EnemyDiedEvent, sub_id)
 ```
 
 ### Middleware
@@ -235,20 +235,20 @@ Middleware lets you intercept and process messages before and after they reach t
 ```gdscript
 # Pre-processing middleware (runs before handlers/listeners)
 # Can cancel delivery by returning false
-commander.add_middleware_pre(func(cmd: Command):
+command_bus.add_middleware_pre(func(cmd: Command):
     print("Pre-processing: ", cmd)
     return true  # Return false to cancel delivery
 , priority=0)
 
 # Post-processing middleware (runs after handlers/listeners)
 # Receives the message and the result
-commander.add_middleware_post(func(cmd: Command, result):
+command_bus.add_middleware_post(func(cmd: Command, result):
     print("Post-processing result: ", result)
 , priority=0)
 
 # Remove middleware when you're done
-var middleware_id = commander.add_middleware_pre(my_callback)
-commander.remove_middleware(middleware_id)
+var middleware_id = command_bus.add_middleware_pre(my_callback)
+command_bus.remove_middleware(middleware_id)
 ```
 
 **Use cases:**
@@ -263,11 +263,11 @@ Track performance and usage patterns with built-in metrics:
 
 ```gdscript
 # Enable metrics tracking
-commander.set_metrics_enabled(true)
-publisher.set_metrics_enabled(true)
+command_bus.set_metrics_enabled(true)
+event_bus.set_metrics_enabled(true)
 
 # Get metrics for a specific command/event type
-var cmd_metrics = commander.get_metrics(MovePlayerCommand)
+var cmd_metrics = command_bus.get_metrics(MovePlayerCommand)
 # Returns: {
 #   "count": 42,
 #   "total_time": 123.4,
@@ -277,7 +277,7 @@ var cmd_metrics = commander.get_metrics(MovePlayerCommand)
 # }
 
 # Get all metrics at once
-var all_metrics = commander.get_all_metrics()
+var all_metrics = command_bus.get_all_metrics()
 ```
 
 **Metrics include:**
@@ -303,8 +303,8 @@ The transport system is designed as an alternative to Godot signals, but sometim
 ```gdscript
 const Transport = preload("res://packages/transport/transport.gd")
 
-var publisher = Transport.Publisher.new()
-var bridge = Transport.Bridge.new(publisher)
+var event_bus = Transport.EventBus.new()
+var bridge = Transport.Bridge.new(event_bus)
 
 # Simple bridge: button press → event
 bridge.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
@@ -348,22 +348,22 @@ The bridge automatically cleans up connections when it's freed, so you don't nee
 
 **Command Flow:**
 ```
-Input → Commander → Validation → Single Handler → Result/Error
+Input → CommandBus → Validation → Single Handler → Result/Error
 ```
 
-Commands are validated to ensure exactly one handler exists, then executed. The result (or error) is returned to the caller.
+Commands are validated to ensure exactly one handler exists, then dispatched. The result (or error) is returned to the caller.
 
 **Event Flow:**
 ```
-Broadcast → Publisher → Middleware → Listeners (priority order) → Done
+Emit → EventBus → Middleware → Listeners (priority order) → Done
 ```
 
-Events are broadcast to all subscribers in priority order. Each listener completes before the next starts, ensuring predictable execution.
+Events are emitted to all subscribers in priority order. Each listener completes before the next starts, ensuring predictable execution.
 
 ### Component Overview
 
-- **Commander** - Executes commands with a single-handler guarantee
-- **Publisher** - Broadcasts events to zero or more subscribers
+- **CommandBus** - Dispatches commands with a single-handler guarantee
+- **EventBus** - Emits events to zero or more subscribers
 - **Message** - Base class for all messages (commands and events extend this)
 - **Command** - Base class for commands
 - **Event** - Base class for events
