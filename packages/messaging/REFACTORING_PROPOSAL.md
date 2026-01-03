@@ -146,154 +146,54 @@
    - `clear_type` → `clear_registrations` (internal)
    - `get_key` → `resolve_type_key`
    - `get_key_from` → `resolve_type_key_from`
-   - **Risk**: Low (internal only, public API wrappers remain)
+   - **Risk**: Low (internal only)
 
 ### Phase 2: Public API Refactoring (Medium Risk)
 
 5. **Rename CommandBus to CommandRouter**
    - Rename file: `buses/command_bus.gd` → `routers/command_router.gd` (or keep in buses/)
    - Rename class: `CommandBus` → `CommandRouter`
-   - Add backward compatibility alias in `messaging.gd`
-   - **Risk**: Medium (public API change, but alias provides compatibility)
+   - Update all references in codebase
+   - **Risk**: Medium (public API change)
 
 6. **Rename EventBus to EventBroadcaster**
    - Rename file: `buses/event_bus.gd` → `buses/event_broadcaster.gd`
    - Rename class: `EventBus` → `EventBroadcaster`
-   - Add backward compatibility alias in `messaging.gd`
-   - **Risk**: Medium (public API change, but alias provides compatibility)
+   - Update all references in codebase
+   - **Risk**: Medium (public API change)
 
 7. **Rename CommandError to CommandRoutingError**
    - Rename nested class in CommandRouter
    - Update all references
-   - Add backward compatibility type alias if possible
-   - **Risk**: Medium (public API, but error types are rarely directly referenced)
+   - **Risk**: Medium (public API, error types are rarely directly referenced)
 
 8. **Rename CommandBus methods**
-   - `handle` → `register_handler` (add deprecated wrapper)
-   - `unregister` → `unregister_handler` (add deprecated wrapper)
-   - `dispatch` → `execute` (add deprecated wrapper)
-   - **Risk**: Medium (public API, but wrappers provide compatibility)
+   - `handle` → `register_handler`
+   - `unregister` → `unregister_handler`
+   - `dispatch` → `execute`
+   - Update all call sites
+   - **Risk**: Medium (public API change)
 
 9. **Rename EventBus methods**
-   - `publish` → `broadcast` (add deprecated wrapper)
-   - `publish_async` → `broadcast_and_await` (add deprecated wrapper)
-   - `set_collect_errors` → `set_log_listener_calls` (add deprecated wrapper)
-   - **Risk**: Medium (public API, but wrappers provide compatibility)
+   - `publish` → `broadcast`
+   - `publish_async` → `broadcast_and_await`
+   - `set_collect_errors` → `set_log_listener_calls`
+   - Update all call sites
+   - **Risk**: Medium (public API change)
 
-### Phase 3: Parameter Renaming (Low Risk with Compatibility)
+### Phase 3: Parameter Renaming (Low Risk)
 
 10. **Rename subscription parameters**
-    - `one_shot` → `once` (add parameter alias support or deprecated overload)
-    - `bound_object` → `owner` (add parameter alias support or deprecated overload)
-    - **Risk**: Low (can support both via method overloading or default parameters)
+    - `one_shot` → `once`
+    - `bound_object` → `owner`
+    - Update all call sites
+    - **Risk**: Low (parameter name changes, easy to find/replace)
 
 ---
 
-## 3. Backward Compatibility Strategy
+## 3. Key Code Changes by File
 
-### 3.1 Type Aliases (messaging.gd)
-
-```gdscript
-## Messaging system public API.
-
-# New names (primary)
-const CommandRouter = preload("res://packages/messaging/routers/command_router.gd")
-const EventBroadcaster = preload("res://packages/messaging/buses/event_broadcaster.gd")
-const Message = preload("res://packages/messaging/types/message.gd")
-const Command = preload("res://packages/messaging/types/command.gd")
-const Event = preload("res://packages/messaging/types/event.gd")
-const CommandValidator = preload("res://packages/messaging/rules/command_validation.gd")
-const SubscriptionValidator = preload("res://packages/messaging/rules/subscription_validation.gd")
-const SignalEventAdapter = preload("res://packages/messaging/adapters/signal_event_adapter.gd")
-
-# Backward compatibility aliases (deprecated)
-const CommandBus = CommandRouter  # @deprecated Use CommandRouter instead
-const EventBus = EventBroadcaster  # @deprecated Use EventBroadcaster instead
-const CommandRules = CommandValidator  # @deprecated Use CommandValidator instead
-const SubscriptionRules = SubscriptionValidator  # @deprecated Use SubscriptionValidator instead
-```
-
-### 3.2 Method Wrappers (Deprecated)
-
-#### CommandRouter (command_router.gd)
-
-```gdscript
-## Register handler for a command type (replaces existing).
-func register_handler(command_type, handler: Callable) -> void:
-    # ... implementation ...
-
-## @deprecated Use register_handler() instead.
-func handle(command_type, handler: Callable) -> void:
-    push_warning("[CommandRouter] handle() is deprecated. Use register_handler() instead.")
-    register_handler(command_type, handler)
-
-## Unregister handler for a command type.
-func unregister_handler(command_type) -> void:
-    # ... implementation ...
-
-## @deprecated Use unregister_handler() instead.
-func unregister(command_type) -> void:
-    push_warning("[CommandRouter] unregister() is deprecated. Use unregister_handler() instead.")
-    unregister_handler(command_type)
-
-## Execute command. Returns handler result or CommandRoutingError.
-func execute(cmd: Command) -> Variant:
-    # ... implementation ...
-
-## @deprecated Use execute() instead.
-func dispatch(cmd: Command) -> Variant:
-    push_warning("[CommandRouter] dispatch() is deprecated. Use execute() instead.")
-    return execute(cmd)
-```
-
-#### EventBroadcaster (event_broadcaster.gd)
-
-```gdscript
-## Broadcast event to all subscribers.
-func broadcast(evt: Event) -> void:
-    # ... implementation ...
-
-## @deprecated Use broadcast() instead.
-func publish(evt: Event) -> void:
-    push_warning("[EventBroadcaster] publish() is deprecated. Use broadcast() instead.")
-    await broadcast(evt)
-
-## Broadcast event and await all async listeners.
-func broadcast_and_await(evt: Event) -> void:
-    # ... implementation ...
-
-## @deprecated Use broadcast_and_await() instead.
-func publish_async(evt: Event) -> void:
-    push_warning("[EventBroadcaster] publish_async() is deprecated. Use broadcast_and_await() instead.")
-    await broadcast_and_await(evt)
-
-## Enable listener call logging.
-func set_log_listener_calls(enabled: bool) -> void:
-    _log_listener_calls = enabled
-
-## @deprecated Use set_log_listener_calls() instead.
-func set_collect_errors(enabled: bool) -> void:
-    push_warning("[EventBroadcaster] set_collect_errors() is deprecated. Use set_log_listener_calls() instead.")
-    set_log_listener_calls(enabled)
-```
-
-### 3.3 Error Type Compatibility
-
-For `CommandRoutingError`, provide a type alias if GDScript supports it, or document the migration:
-
-```gdscript
-# In command_router.gd, after class definition:
-## @deprecated Use CommandRoutingError instead.
-const CommandError = CommandRoutingError
-```
-
-However, GDScript doesn't support const aliases for classes. Instead, document the change and provide a migration guide.
-
----
-
-## 4. Key Code Changes by File
-
-### 4.1 internal/subscription_registry.gd (was message_bus.gd)
+### 3.1 internal/subscription_registry.gd (was message_bus.gd)
 
 **Key Changes**:
 - Rename class: `MessageBus` → `SubscriptionRegistry`
@@ -386,7 +286,7 @@ static func resolve_type_key_from(message: Object) -> StringName:
     return MessageTypeResolver.resolve_type(message)
 ```
 
-### 4.2 routers/command_router.gd (was buses/command_bus.gd)
+### 3.2 routers/command_router.gd (was buses/command_bus.gd)
 
 **Key Changes**:
 - Rename class: `CommandBus` → `CommandRouter`
@@ -439,11 +339,6 @@ func register_handler(command_type, handler: Callable) -> void:
             print("[CommandRouter] Replaced existing handler for ", key)
     
     register(command_type, handler, 0, false, null)
-
-## @deprecated Use register_handler() instead.
-func handle(command_type, handler: Callable) -> void:
-    push_warning("[CommandRouter] handle() is deprecated. Use register_handler() instead.")
-    register_handler(command_type, handler)
 
 ## Execute command. Returns handler result or CommandRoutingError.
 func execute(cmd: Command) -> Variant:
@@ -501,14 +396,9 @@ func execute(cmd: Command) -> Variant:
     _execute_middleware_post(cmd, key, result)
     
     return result
-
-## @deprecated Use execute() instead.
-func dispatch(cmd: Command) -> Variant:
-    push_warning("[CommandRouter] dispatch() is deprecated. Use execute() instead.")
-    return execute(cmd)
 ```
 
-### 4.3 buses/event_broadcaster.gd (was buses/event_bus.gd)
+### 3.3 buses/event_broadcaster.gd (was buses/event_bus.gd)
 
 **Key Changes**:
 - Rename class: `EventBus` → `EventBroadcaster`
@@ -536,20 +426,10 @@ var _log_listener_calls: bool = false  # Renamed from _collect_errors
 func set_log_listener_calls(enabled: bool) -> void:
     _log_listener_calls = enabled
 
-## @deprecated Use set_log_listener_calls() instead.
-func set_collect_errors(enabled: bool) -> void:
-    push_warning("[EventBroadcaster] set_collect_errors() is deprecated. Use set_log_listener_calls() instead.")
-    set_log_listener_calls(enabled)
-
 ## Subscribe to an event type.
 func subscribe(event_type, listener: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
     assert(listener.is_valid(), "Listener callable must be valid")
     return register(event_type, listener, priority, once, owner)
-
-## Backward compatibility: support one_shot and bound_object parameter names.
-func subscribe_legacy(event_type, listener: Callable, priority: int = 0, one_shot: bool = false, bound_object: Object = null) -> int:
-    push_warning("[EventBroadcaster] subscribe() parameters 'one_shot' and 'bound_object' are deprecated. Use 'once' and 'owner' instead.")
-    return subscribe(event_type, listener, priority, one_shot, bound_object)
 
 ## Broadcast event to all subscribers.
 func broadcast(evt: Event) -> void:
@@ -557,21 +437,11 @@ func broadcast(evt: Event) -> void:
     assert(evt is Event, "Event must be an instance of Event")
     await _broadcast_internal(evt, false)
 
-## @deprecated Use broadcast() instead.
-func publish(evt: Event) -> void:
-    push_warning("[EventBroadcaster] publish() is deprecated. Use broadcast() instead.")
-    await broadcast(evt)
-
 ## Broadcast event and await all async listeners.
 func broadcast_and_await(evt: Event) -> void:
     assert(evt != null, "Event cannot be null")
     assert(evt is Event, "Event must be an instance of Event")
     await _broadcast_internal(evt, true)
-
-## @deprecated Use broadcast_and_await() instead.
-func publish_async(evt: Event) -> void:
-    push_warning("[EventBroadcaster] publish_async() is deprecated. Use broadcast_and_await() instead.")
-    await broadcast_and_await(evt)
 
 ## Internal broadcast implementation.
 func _broadcast_internal(evt: Event, await_async: bool) -> void:
@@ -622,7 +492,7 @@ func _broadcast_internal(evt: Event, await_async: bool) -> void:
     _execute_middleware_post(evt, key, null)
 ```
 
-### 4.4 rules/command_validation.gd (was rules/command_rules.gd)
+### 3.4 rules/command_validation.gd (was rules/command_rules.gd)
 
 **Key Changes**:
 - Rename file and class: `CommandRules` → `CommandValidator`
@@ -657,7 +527,7 @@ static func is_valid_handler_count(handler_count: int) -> bool:
     return validate_count(handler_count) == Result.VALID
 ```
 
-### 4.5 rules/subscription_validation.gd (was rules/subscription_rules.gd)
+### 3.5 rules/subscription_validation.gd (was rules/subscription_rules.gd)
 
 **Key Changes**:
 - Rename file and class: `SubscriptionRules` → `SubscriptionValidator`
@@ -693,18 +563,16 @@ static func sort_by_priority(subscriptions: Array) -> void:
     )
 ```
 
-### 4.6 messaging.gd (Public API)
+### 3.6 messaging.gd (Public API)
 
 **Key Changes**:
-- Update preload paths
-- Add backward compatibility aliases
+- Update preload paths to new file locations and class names
 
 **Key Snippets**:
 
 ```gdscript
 ## Messaging system public API.
 
-# Primary API (new names)
 const CommandRouter = preload("res://packages/messaging/routers/command_router.gd")
 const EventBroadcaster = preload("res://packages/messaging/buses/event_broadcaster.gd")
 const Message = preload("res://packages/messaging/types/message.gd")
@@ -713,26 +581,13 @@ const Event = preload("res://packages/messaging/types/event.gd")
 const CommandValidator = preload("res://packages/messaging/rules/command_validation.gd")
 const SubscriptionValidator = preload("res://packages/messaging/rules/subscription_validation.gd")
 const SignalEventAdapter = preload("res://packages/messaging/adapters/signal_event_adapter.gd")
-
-# Backward compatibility aliases (deprecated)
-## @deprecated Use CommandRouter instead.
-const CommandBus = CommandRouter
-
-## @deprecated Use EventBroadcaster instead.
-const EventBus = EventBroadcaster
-
-## @deprecated Use CommandValidator instead.
-const CommandRules = CommandValidator
-
-## @deprecated Use SubscriptionValidator instead.
-const SubscriptionRules = SubscriptionValidator
 ```
 
 ---
 
-## 5. Migration Guide
+## 4. Migration Guide
 
-### 5.1 Quick Migration Checklist
+### 4.1 Quick Migration Checklist
 
 - [ ] Replace `CommandBus` → `CommandRouter`
 - [ ] Replace `EventBus` → `EventBroadcaster`
@@ -746,7 +601,7 @@ const SubscriptionRules = SubscriptionValidator
 - [ ] Update error codes: `CommandError.ErrorCode` → `CommandRoutingError.Code`
 - [ ] Update validation: `CommandRules.ValidationResult` → `CommandValidator.Result`
 
-### 5.2 Example Migration
+### 4.2 Example Migration
 
 **Before**:
 ```gdscript
@@ -784,9 +639,9 @@ event_broadcaster.broadcast(EnemyDiedEvent.new(42, 100))
 
 ---
 
-## 6. Behavioral Invariants (Must Remain True)
+## 5. Behavioral Invariants (Must Remain True)
 
-### 6.1 Command Routing
+### 5.1 Command Routing
 
 - ✅ Exactly one handler required (errors if 0 or 2+)
 - ✅ Handler replacement: `register_handler()` replaces existing handler
@@ -796,7 +651,7 @@ event_broadcaster.broadcast(EnemyDiedEvent.new(42, 100))
 - ✅ Metrics record execution time
 - ✅ Error types: `NO_HANDLER`, `MULTIPLE_HANDLERS`, `HANDLER_FAILED`
 
-### 6.2 Event Broadcasting
+### 5.2 Event Broadcasting
 
 - ✅ 0..N listeners allowed
 - ✅ Priority ordering: higher priority executes first
@@ -808,21 +663,21 @@ event_broadcaster.broadcast(EnemyDiedEvent.new(42, 100))
 - ✅ Post-middleware receives null (events don't return values)
 - ✅ Metrics record total broadcast time
 
-### 6.3 Subscription Management
+### 5.3 Subscription Management
 
 - ✅ Subscriptions sorted by priority (descending)
 - ✅ Invalid subscriptions cleaned up automatically
 - ✅ Unsubscribe by callable removes all matching subscriptions
 - ✅ Unsubscribe by ID removes specific subscription
 
-### 6.4 Middleware
+### 5.4 Middleware
 
 - ✅ Pre-middleware: receives (message, key), can cancel by returning false
 - ✅ Post-middleware: receives (message, key, result)
 - ✅ Middleware sorted by priority (descending)
 - ✅ Middleware can be removed by ID
 
-### 6.5 Metrics
+### 5.5 Metrics
 
 - ✅ Metrics keys: `count`, `total_time`, `min_time`, `max_time`, `avg_time`
 - ✅ Metrics enabled/disabled via `set_metrics_enabled()`
@@ -831,33 +686,9 @@ event_broadcaster.broadcast(EnemyDiedEvent.new(42, 100))
 
 ---
 
-## 7. Implementation Notes
+## 6. Implementation Notes
 
-### 7.1 Parameter Compatibility
-
-For `subscribe()` parameters (`one_shot` → `once`, `bound_object` → `owner`), we have two options:
-
-**Option A**: Support both names via method overloading (GDScript 2.0 supports this)
-```gdscript
-func subscribe(event_type, listener: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
-    # New signature
-
-func subscribe(event_type, listener: Callable, priority: int = 0, one_shot: bool = false, bound_object: Object = null) -> int:
-    # Deprecated signature - maps to new parameters
-    push_warning("[EventBroadcaster] subscribe() parameters 'one_shot' and 'bound_object' are deprecated. Use 'once' and 'owner' instead.")
-    return subscribe(event_type, listener, priority, one_shot, bound_object)
-```
-
-However, GDScript doesn't support method overloading based on parameter names. Instead, we must use a single signature but document both names, or use a different approach.
-
-**Option B**: Keep old parameter names but add deprecation warnings in documentation
-- Keep `one_shot` and `bound_object` as parameter names
-- Document that `once` and `owner` are preferred in future versions
-- In next major version, rename parameters
-
-**Recommendation**: Option B (keep parameter names, document preferred names for future).
-
-### 7.2 Directory Structure
+### 6.1 Directory Structure
 
 Consider renaming `buses/` to `routers/` for CommandRouter, or keep both buses in `buses/`:
 
@@ -886,16 +717,16 @@ packages/messaging/
 
 ---
 
-## 8. Testing Strategy
+## 7. Testing Strategy
 
 1. **Unit Tests**: Verify all renamed methods work identically to old methods
-2. **Backward Compatibility Tests**: Verify deprecated methods still work and emit warnings
-3. **Integration Tests**: Verify examples still work with new API
-4. **Migration Tests**: Verify code using old API can be migrated to new API
+2. **Integration Tests**: Verify examples still work with new API
+3. **Migration Tests**: Verify code using old API can be migrated to new API
+4. **Regression Tests**: Verify behavioral invariants remain unchanged
 
 ---
 
-## 9. Summary of Proposed Changes
+## 8. Summary of Proposed Changes
 
 ### High-Impact (Public API)
 - `CommandBus` → `CommandRouter`
@@ -917,7 +748,7 @@ packages/messaging/
 - Internal method renames (`subscribe` → `register`, etc.)
 - Variable renames (`_subscriptions` → `_registrations`, etc.)
 
-### Parameter Names (Future consideration)
-- `one_shot` → `once` (documented, but keep current name for compatibility)
-- `bound_object` → `owner` (documented, but keep current name for compatibility)
+### Parameter Names
+- `one_shot` → `once`
+- `bound_object` → `owner`
 
