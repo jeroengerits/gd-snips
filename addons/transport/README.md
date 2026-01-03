@@ -282,11 +282,15 @@ event_bus.set_trace_enabled(true)
 
 # Enable listener call logging (EventBus only - logs each listener invocation)
 event_bus.set_log_listener_calls(true)
+
+# Enable type resolution verbose warnings (for debugging type resolution issues)
+Transport.MessageTypeResolver.set_verbose(true)
 ```
 
 **Verbose logging** shows detailed information about operations (handler registration, middleware execution, etc.).  
 **Trace logging** shows execution flow (dispatch/emit operations, listener counts, etc.).  
-**Listener call logging** logs each individual listener call, useful for debugging listener execution order and errors.
+**Listener call logging** logs each individual listener call, useful for debugging listener execution order and errors.  
+**Type resolution verbose mode** shows warnings when types are resolved from script paths instead of `class_name`, helping identify missing `class_name` declarations.
 
 ## Signal Integration
 
