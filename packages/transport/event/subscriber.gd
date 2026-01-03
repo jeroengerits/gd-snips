@@ -1,5 +1,3 @@
-const EventValidator = preload("res://packages/transport/event/event_validator.gd")
-
 extends RefCounted
 class_name Subscriber
 
@@ -22,7 +20,8 @@ func _init(callable: Callable, priority: int = 0, once: bool = false, owner: Obj
 	_next_id += 1
 
 func is_valid() -> bool:
-	if not EventValidator.is_valid_for_lifecycle(owner):
+	# Check lifecycle validity (owner is valid or null)
+	if owner != null and not is_instance_valid(owner):
 		return false
 	return callable.is_valid()
 

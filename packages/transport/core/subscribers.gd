@@ -1,11 +1,11 @@
 const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
-const EventValidator = preload("res://packages/transport/event/event_validator.gd")
 const MetricsUtils = preload("res://packages/transport/utils/metrics_utils.gd")
 const MiddlewareEntry = preload("res://packages/transport/middleware/middleware_entry.gd")
 const Subscriber = preload("res://packages/transport/event/subscriber.gd")
 
 extends RefCounted
 ## Internal subscribers registry. Manages subscriptions, middleware, and metrics.
+## Shared infrastructure used by both CommandBus and EventBus.
 ## Use CommandBus or EventBus instead.
 
 var _registrations: Dictionary = {}  # StringName -> Array[Subscriber]
@@ -20,11 +20,15 @@ var _metrics: Dictionary = {}  # StringName -> {count: int, total_time: float, m
 func set_verbose(enabled: bool) -> void:
 	_verbose = enabled
 
+## Enable trace logging.
+func set_trace_enabled(enabled: bool) -> void:
+	_trace_enabled = enabled
+
 ## Add before-execution middleware.
 func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_before.append(mw)
-	EventValidator.sort_by_priority(_middleware_before)
+	_sort_by_priority(_middleware_before)
 	if _verbose:
 		print("[Subscribers] Added before-middleware (priority=", priority, ")")
 	return mw.id
@@ -33,7 +37,7 @@ func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 func add_middleware_after(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_after.append(mw)
-	EventValidator.sort_by_priority(_middleware_after)
+	_sort_by_priority(_middleware_after)
 	if _verbose:
 		print("[Subscribers] Added after-middleware (priority=", priority, ")")
 	return mw.id
@@ -289,4 +293,8 @@ func _remove_indices_from_array(array: Array, indices: Array) -> void:
 	for i in sorted_indices:
 		if i >= 0 and i < array.size():
 			array.remove_at(i)
+
+## Sort array of items with priority property by priority (higher first).
+static func _sort_by_priority(items: Array) -> void:
+	items.sort_custom(func(a, b): return a.priority > b.priority)
 

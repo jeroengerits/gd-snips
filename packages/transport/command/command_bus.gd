@@ -1,4 +1,4 @@
-const Subscribers = preload("res://packages/transport/event/subscribers.gd")
+const Subscribers = preload("res://packages/transport/core/subscribers.gd")
 const CommandValidator = preload("res://packages/transport/command/command_validator.gd")
 const Command = preload("res://packages/transport/type/command.gd")
 const CommandRoutingError = preload("res://packages/transport/command/command_routing_error.gd")

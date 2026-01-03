@@ -1,4 +1,4 @@
-const Subscribers = preload("res://packages/transport/event/subscribers.gd")
+const Subscribers = preload("res://packages/transport/core/subscribers.gd")
 const EventValidator = preload("res://packages/transport/event/event_validator.gd")
 const Event = preload("res://packages/transport/type/event.gd")
 
