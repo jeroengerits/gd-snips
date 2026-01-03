@@ -1,6 +1,6 @@
-const SubscriptionRegistry = preload("res://packages/transport/events/registry.gd")
-const Validator = preload("res://packages/transport/commands/validator.gd")
-const Command = preload("res://packages/transport/types/command.gd")
+const SubscriptionRegistry = preload("res://packages/transport/event/registry.gd")
+const Validator = preload("res://packages/transport/command/validator.gd")
+const Command = preload("res://packages/transport/type/command.gd")
 
 extends SubscriptionRegistry
 class_name Commander

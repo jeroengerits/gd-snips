@@ -17,10 +17,10 @@ All packages live under `packages/`:
 ```
 packages/
 └── transport/     # Command/Event transport framework
-    ├── types/      # Message, Command, Event base classes
-    ├── utils/      # Metrics utilities
-    ├── events/     # Publisher, SubscriptionRegistry, Validator, Bridge
-    └── commands/   # Commander, Validator
+    ├── type/      # Message, Command, Event base classes
+    ├── utils/     # Metrics utilities
+    ├── event/     # Publisher, SubscriptionRegistry, Validator, Bridge
+    └── command/   # Commander, Validator
 ```
 
 ## Architectural Decisions
@@ -91,7 +91,7 @@ packages/
 - Easier to add new packages following the same pattern
 
 **Examples:**
-- `transport/transport.gd` → `types/message.gd`, `commands/router.gd`
+- `transport/transport.gd` → `type/message.gd`, `command/commander.gd`
 
 ### Transport Package Architecture
 
@@ -108,7 +108,7 @@ Infrastructure (MessageTypeResolver)
 
 **Key Patterns:**
 - **Barrel Files:** Each package has a main entry point (e.g., `transport.gd`)
-- **Domain Rules:** Business logic separated into validation classes (Validator in commands/, Validator in events/)
+- **Domain Rules:** Business logic separated into validation classes (Validator in command/, Validator in event/)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
 - **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
 - **Organized Structure:** Functionality-based organization (messages, routing, pubsub, validation, observability, adapters)
@@ -168,7 +168,7 @@ var broadcaster = Transport.Publisher.new()
 
 **Direct Import (for internal files):**
 ```gdscript
-const SubscriptionRegistry = preload("res://packages/transport/events/registry.gd")
+const SubscriptionRegistry = preload("res://packages/transport/event/registry.gd")
 ```
 
 **Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations instead.
@@ -286,16 +286,16 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 - Flatter structure with no nested subdirectories
 
 **Evolution:**
-1. Initial: `types/`, `buses/`, `routers/`, `rules/`, `internal/`, `utilities/`
+1. Initial: `types/`, `buses/`, `routers/`, `rules/`, `internal/`, `utilities/` (plural)
 2. First refactor: `messages/`, `pubsub/`, `routing/`, `validation/`, `observability/`, `adapters/`
 3. Flattened: Removed nested `internal/` folders
-4. Final structure: `types/`, `utils/`, `events/`, `commands/`
+4. Final structure: `type/`, `utils/`, `event/`, `command/` (singular folder names)
 
 **Current Structure:**
-- `types/` - Message, Command, Event base classes and MessageTypeResolver
+- `type/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
-- `events/` - Publisher (publisher.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), Bridge (bridge.gd)
-- `commands/` - Commander (commander.gd), Validator (validator.gd)
+- `event/` - Publisher (publisher.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), Bridge (bridge.gd)
+- `command/` - Commander (commander.gd), Validator (validator.gd)
 
 **File Naming:**
 - Files use short, descriptive names: `publisher.gd`, `commander.gd`, `registry.gd`, `bridge.gd`, `validator.gd`
