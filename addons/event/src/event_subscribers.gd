@@ -25,6 +25,23 @@ func set_verbose(enabled: bool) -> void:
 func set_trace_enabled(enabled: bool) -> void:
 	_trace_enabled = enabled
 
+## Insert middleware entry into array in sorted position (higher priority first).
+##
+## @param middleware_array: Array to insert into
+## @param entry: MiddlewareEntry to insert
+## @param priority: Priority of the entry
+## @param log_type: Type name for logging ("before-middleware" or "after-middleware")
+func _insert_middleware_entry(middleware_array: Array, entry: MiddlewareEntry, priority: int, log_type: String) -> void:
+	# Insert in sorted position (higher priority first) - O(n) insertion sort
+	var insert_pos: int = middleware_array.size()
+	for i in range(middleware_array.size() - 1, -1, -1):
+		if middleware_array[i].priority >= priority:
+			insert_pos = i + 1
+			break
+	middleware_array.insert(insert_pos, entry)
+	if _verbose:
+		print("[EventSubscribers] Added ", log_type, " (priority=", priority, ")")
+
 ## Add before-execution middleware.
 ##
 ## @param callback: Callable that accepts (message: Message, key: StringName) and returns bool (false to cancel)
@@ -33,15 +50,7 @@ func set_trace_enabled(enabled: bool) -> void:
 func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 	assert(callback.is_valid(), "Middleware callback must be valid")
 	var mw = MiddlewareEntry.new(callback, priority)
-	# Insert in sorted position (higher priority first) - O(n) insertion sort
-	var insert_pos: int = _middleware_before.size()
-	for i in range(_middleware_before.size() - 1, -1, -1):
-		if _middleware_before[i].priority >= priority:
-			insert_pos = i + 1
-			break
-	_middleware_before.insert(insert_pos, mw)
-	if _verbose:
-		print("[EventSubscribers] Added before-middleware (priority=", priority, ")")
+	_insert_middleware_entry(_middleware_before, mw, priority, "before-middleware")
 	return mw.id
 
 ## Add after-execution middleware.
@@ -52,15 +61,7 @@ func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 func add_middleware_after(callback: Callable, priority: int = 0) -> int:
 	assert(callback.is_valid(), "Middleware callback must be valid")
 	var mw = MiddlewareEntry.new(callback, priority)
-	# Insert in sorted position (higher priority first) - O(n) insertion sort
-	var insert_pos: int = _middleware_after.size()
-	for i in range(_middleware_after.size() - 1, -1, -1):
-		if _middleware_after[i].priority >= priority:
-			insert_pos = i + 1
-			break
-	_middleware_after.insert(insert_pos, mw)
-	if _verbose:
-		print("[EventSubscribers] Added after-middleware (priority=", priority, ")")
+	_insert_middleware_entry(_middleware_after, mw, priority, "after-middleware")
 	return mw.id
 
 ## Remove middleware.
