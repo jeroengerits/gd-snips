@@ -2,8 +2,8 @@ extends Node
 
 ## Example demonstrating signal integration with the messaging system.
 ##
-## This shows how to bridge between Godot signals and messaging events
-## using the SignalEventAdapter and EventSignalAdapter utilities.
+## This shows how to bridge Godot signals to messaging events
+## using the SignalEventAdapter utility.
 
 const Messaging = preload("res://packages/messaging/messaging.gd")
 
@@ -35,11 +35,6 @@ class EnemyDiedEvent extends Messaging.Event:
 
 var event_bus: Messaging.EventBus
 var signal_adapter: Messaging.SignalEventAdapter
-var event_adapter: Messaging.EventSignalAdapter
-
-# Signals for EventSignalAdapter
-signal enemy_died(enemy_id: int, points: int)
-signal button_pressed(button_name: String)
 
 func _ready() -> void:
 	# Create bus instance
@@ -49,7 +44,6 @@ func _ready() -> void:
 	event_bus.set_verbose(true)
 	
 	_setup_signal_to_event_bridge()
-	_setup_event_to_signal_bridge()
 	_setup_event_listeners()
 	
 	# Run example scenarios
@@ -79,31 +73,7 @@ func _setup_signal_to_event_bridge() -> void:
 			func(body: Node2D): return {"body_name": body.name, "body_type": body.get_class()}
 		)
 
-## Example 2: Bridge events to signals
-func _setup_event_to_signal_bridge() -> void:
-	event_adapter = Messaging.EventSignalAdapter.new()
-	event_adapter.set_event_bus(event_bus)
-	
-	# Connect event to signal
-	# When EnemyDiedEvent is published, enemy_died signal is emitted
-	event_adapter.connect_event_to_signal(
-		EnemyDiedEvent,
-		"enemy_died",
-		func(evt: EnemyDiedEvent): return [evt.enemy_id, evt.points]
-	)
-	
-	# Connect button event to signal
-	event_adapter.connect_event_to_signal(
-		ButtonPressedEvent,
-		"button_pressed",
-		func(evt: ButtonPressedEvent): return [evt.button_name]
-	)
-	
-	# Listen to the signals
-	enemy_died.connect(_on_enemy_died_signal)
-	button_pressed.connect(_on_button_pressed_signal)
-
-## Example 3: Subscribe to events (normal messaging usage)
+## Example 2: Subscribe to events (normal messaging usage)
 func _setup_event_listeners() -> void:
 	# Subscribe to events published via signal bridge
 	event_bus.subscribe(ButtonPressedEvent, func(evt: ButtonPressedEvent):
@@ -118,18 +88,11 @@ func _setup_event_listeners() -> void:
 		print("[Event Listener] Enemy died: ", evt.enemy_id, " (+", evt.points, " points)")
 	)
 
-## Signal handlers (for EventSignalAdapter)
-func _on_enemy_died_signal(enemy_id: int, points: int) -> void:
-	print("[Signal Handler] Enemy died: ", enemy_id, " (+", points, " points)")
-
-func _on_button_pressed_signal(button_name: String) -> void:
-	print("[Signal Handler] Button pressed: ", button_name)
-
 ## Run example scenarios
 func _run_examples() -> void:
 	print("\n=== Signal Integration Examples ===\n")
 	
-	# Simulate button press (triggers signal → event → signal chain)
+	# Simulate button press (triggers signal → event)
 	if has_node("Button"):
 		print("1. Simulating button press...")
 		$Button.pressed.emit()
@@ -144,7 +107,7 @@ func _run_examples() -> void:
 		await get_tree().process_frame
 		test_body.queue_free()
 	
-	# Publish event directly (triggers event → signal chain)
+	# Publish event directly
 	print("\n3. Publishing EnemyDiedEvent directly...")
 	event_bus.publish(EnemyDiedEvent.new(42, 100))
 	await get_tree().process_frame
@@ -152,9 +115,7 @@ func _run_examples() -> void:
 	print("\n=== Examples Complete ===\n")
 
 func _exit_tree() -> void:
-	# Cleanup adapters
+	# Cleanup adapter
 	if signal_adapter:
 		signal_adapter.disconnect_all()
-	if event_adapter:
-		event_adapter.disconnect_all()
 

@@ -79,7 +79,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
 2. **Node for scene tree integration:**
    - Classes that need signals, groups, or scene tree access
    - Classes that need `_ready()`, `_process()`, etc.
-   - **Our use case:** EventSignalAdapter (needs signals)
+   - **Our use case:** None (we use RefCounted for all messaging classes)
 
 ### Cleanup Patterns
 

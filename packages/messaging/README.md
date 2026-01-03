@@ -129,39 +129,7 @@ adapter.connect_signal_to_event(
 )
 ```
 
-### Event → Signal (EventSignalAdapter)
-
-Expose messaging events as signals:
-
-```gdscript
-extends Node
-
-const Messaging = preload("res://packages/messaging/messaging.gd")
-
-# Declare signals on your Node
-signal enemy_died(enemy_id: int, points: int)
-signal health_changed(current: int, max: int)
-
-var event_bus = Messaging.EventBus.new()
-var adapter = Messaging.EventSignalAdapter.new()
-adapter.set_event_bus(event_bus)
-
-# Connect event to signal (signal must be declared on this Node)
-adapter.connect_event_to_signal(EnemyDiedEvent, "enemy_died")
-
-# Custom data extraction
-adapter.connect_event_to_signal(
-    PlayerHealthChangedEvent,
-    "health_changed",
-    func(evt): return [evt.current_health, evt.max_health]
-)
-
-# Listen to the signals (declared on this Node)
-enemy_died.connect(_on_enemy_died)
-health_changed.connect(_on_health_changed)
-```
-
-### When to Use Each
+### When to Use Signal Integration
 
 **Use messaging (preferred for game logic):**
 - Business logic and domain events
@@ -175,11 +143,10 @@ health_changed.connect(_on_health_changed)
 - Godot built-in events (area_entered, etc.)
 - Third-party plugin integrations
 
-**Use bridges when:**
+**Use SignalEventAdapter when:**
 - Migrating from signals to messaging
 - Integrating legacy signal-based code
 - Connecting UI signals to game logic
-- Exposing messaging events to signal-based systems
 
 ## Design Principles
 

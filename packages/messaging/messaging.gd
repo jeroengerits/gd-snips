@@ -6,6 +6,5 @@ const Command = preload("res://packages/messaging/types/command.gd")
 const Event = preload("res://packages/messaging/types/event.gd")
 const CommandRules = preload("res://packages/messaging/rules/command_rules.gd")
 const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
-const SignalEventAdapter = preload("res://packages/messaging/utilities/signal_event_adapter.gd")
-const EventSignalAdapter = preload("res://packages/messaging/utilities/event_signal_adapter.gd")
+const SignalEventAdapter = preload("res://packages/messaging/adapters/signal_event_adapter.gd")
 
