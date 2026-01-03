@@ -196,6 +196,14 @@ func register(message_type, handler: Callable, priority: int = 0, once: bool = f
 	
 	return entry.id
 
+## Erase registration key if entries array is empty.
+##
+## @param key: Registration key to check
+## @param entries: Array of entries to check
+func _erase_empty_key_if_needed(key: StringName, entries: Array) -> void:
+	if entries.is_empty():
+		_registrations.erase(key)
+
 ## Unregister by ID (internal).
 func unregister_by_id(message_type, registration_id: int) -> bool:
 	assert(registration_id >= 0, "Registration ID must be non-negative")
@@ -207,8 +215,7 @@ func unregister_by_id(message_type, registration_id: int) -> bool:
 	var index: int = entries.find(func(e): return e.id == registration_id)
 	if index >= 0:
 		Array.remove_indices(entries, [index])
-		if entries.is_empty():
-			_registrations.erase(key)
+		_erase_empty_key_if_needed(key, entries)
 		if _verbose:
 			print("[EventSubscribers] Unregistered from ", key, " (id=", registration_id, ")")
 		return true
@@ -233,8 +240,7 @@ func unregister(message_type, handler: Callable) -> int:
 	if to_remove.size() > 0:
 		Array.remove_indices(entries, to_remove)
 		removed = to_remove.size()
-		if entries.is_empty():
-			_registrations.erase(key)
+		_erase_empty_key_if_needed(key, entries)
 	
 	if _verbose and removed > 0:
 		print("[EventSubscribers] Unregistered ", removed, " registration(s) from ", key)
@@ -254,8 +260,7 @@ func _cleanup_invalid_registrations(key: StringName, entries: Array) -> bool:
 	
 	if to_remove.size() > 0:
 		Array.remove_indices(entries, to_remove)
-		if entries.is_empty():
-			_registrations.erase(key)
+		_erase_empty_key_if_needed(key, entries)
 		return true
 	return false
 
@@ -307,6 +312,5 @@ func _mark_for_removal(key: StringName, entry: EventSubscriber) -> void:
 	var index: int = entries.find(entry)
 	if index >= 0:
 		Array.remove_indices(entries, [index])
-		if entries.is_empty():
-			_registrations.erase(key)
+		_erase_empty_key_if_needed(key, entries)
 
