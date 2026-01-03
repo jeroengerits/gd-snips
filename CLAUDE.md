@@ -70,6 +70,30 @@ addons/
 - Code is more straightforward and easier to understand
 - No breaking changes to transport API
 
+### Utils Addon Extraction
+
+**Decision:** Extracted array utilities to separate `utils` addon (January 2026)
+
+**Rationale:**
+- Array utilities are generic and reusable across multiple projects
+- Separating utilities from transport addon improves modularity
+- Other addons can use utils without depending on transport
+- Follows single responsibility principle - each addon has a focused purpose
+
+**Implementation:**
+- Created new `addons/utils/` directory with `plugin.cfg`
+- Moved `array_utils.gd` from `addons/transport/utils/` to `addons/utils/`
+- Updated transport addon to preload from new location
+- Created README.md for utils addon
+
+**Impact:**
+- Breaking change: ArrayUtils import path changed from `res://addons/transport/utils/array_utils.gd` to `res://addons/utils/array_utils.gd`
+- Transport addon now depends on utils addon (must be installed together)
+- Array utilities can be used independently in other projects
+- Better separation of concerns
+
+**Key Insight:** Generic utilities should be in separate addons when they're reusable across projects, not just within a single addon.
+
 ### Subscribers Architecture Refactoring
 
 **Decision:** Moved Subscribers from `event/` to `core/` directory and removed EventValidator dependency (January 2026)
