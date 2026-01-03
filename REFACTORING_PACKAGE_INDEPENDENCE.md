@@ -2,9 +2,9 @@
 
 ## Executive Summary
 
-**Note:** This document describes the historical refactoring from `src/` structure. The current structure uses `src/` as a game project layout.
+**Status:** ✅ **COMPLETED THEN SIMPLIFIED** - Packages were extracted to addons but later moved back to `src/` for simplicity.
 
-**Current Structure:** All packages are now in `src/`:
+**Current Structure:** All packages are in `src/` (simplified game project structure):
 ```
 src/
   ├── command/
@@ -19,7 +19,7 @@ src/
 
 ## Historical Context
 
-This analysis was performed when packages were nested under `src/`. The structure has since been converted to a game project layout with all packages in `src/`.
+This document originally described the plan to extract packages from `src/` to standalone addons. The extraction was completed successfully, but later reversed in favor of simplicity. The current structure keeps all packages in `src/` as a simple game project layout - no addon configuration needed.
 
 ## Dependency Analysis
 

@@ -1,7 +1,7 @@
-const CommandBus = preload("res://addons/command/command_bus.gd")
-const CommandRoutingError = preload("res://addons/command/command_routing_error.gd")
-const Command = preload("res://addons/command/command_class.gd")
-const SignalConnectionTracker = preload("res://addons/utils/signal_connection_tracker.gd")
+const CommandBus = preload("res://src/command/command_bus.gd")
+const CommandRoutingError = preload("res://src/command/command_routing_error.gd")
+const Command = preload("res://src/command/command_class.gd")
+const SignalConnectionTracker = preload("res://src/utils/signal_connection_tracker.gd")
 
 extends RefCounted
 class_name CommandSignalBridge

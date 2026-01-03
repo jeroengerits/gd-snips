@@ -1,8 +1,8 @@
-const Subscribers = preload("res://addons/subscribers/subscribers_class.gd")
-const CommandValidator = preload("res://addons/command/command_validator.gd")
-const Command = preload("res://addons/command/command_class.gd")
-const CommandRoutingError = preload("res://addons/command/command_routing_error.gd")
-const MessageTypeResolver = preload("res://addons/message/message_type_resolver.gd")
+const Subscribers = preload("res://src/subscribers/subscribers_class.gd")
+const CommandValidator = preload("res://src/command/command_validator.gd")
+const Command = preload("res://src/command/command_class.gd")
+const CommandRoutingError = preload("res://src/command/command_routing_error.gd")
+const MessageTypeResolver = preload("res://src/message/message_type_resolver.gd")
 
 extends Subscribers
 class_name CommandBus
