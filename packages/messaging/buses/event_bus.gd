@@ -161,9 +161,9 @@ func _publish_internal(evt: Event, await_async: bool) -> void:
 				# Await async listener completion
 				result = await result
 			else:
-				# Fire-and-forget mode: still await to prevent memory leaks
+				# Still await async listeners to prevent memory leaks
 				# Note: This causes brief blocking, but prevents GDScriptFunctionState leaks.
-				# This is why publish() may block even though it's "fire-and-forget".
+				# This is why publish() may block even though it doesn't return a result.
 				result = await result
 		
 		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)
