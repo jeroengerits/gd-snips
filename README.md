@@ -11,9 +11,9 @@ To install all gd-snips addons at once:
 1. Copy the entire `addons/` directory from this repository into your Godot project's `addons/` folder
 2. Open your project in Godot
 3. Go to **Project → Project Settings → Plugins**
-4. Enable the "Engine" plugin
+4. Enable the **"Engine"** plugin (this is the only plugin that needs to be enabled)
 
-When you install the Engine addon, all addons (Message, Middleware, Utils, Event, Command, Support) are automatically available. The Engine addon provides a unified entry point to access all functionality.
+When you enable the Engine plugin, all addons (Message, Middleware, Utils, Event, Command, Support) are automatically loaded and available. The Engine addon is the single entry point that loads all other addons as libraries. You should not enable any other plugins - only Engine.
 
 **Requirements:** Godot 4.5.1 or later
 
