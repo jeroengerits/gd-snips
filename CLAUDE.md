@@ -19,7 +19,8 @@ packages/
 └── transport/     # Command/Event transport framework
     ├── type/      # Message, Command, Event base classes
     ├── utils/     # Metrics utilities
-    ├── event/     # EventBus, Subscribers, Validator, EventSignalBridge
+    ├── core/      # Shared infrastructure (Subscribers)
+    ├── event/     # EventBus, Validator, EventSignalBridge, Subscriber
     └── command/   # CommandBus, Validator
 ```
 
@@ -60,6 +61,27 @@ packages/
 - Code is more straightforward and easier to understand
 - No breaking changes to transport API
 
+### Subscribers Architecture Refactoring
+
+**Decision:** Moved Subscribers from `event/` to `core/` directory and removed EventValidator dependency (January 2026)
+
+**Rationale:**
+- Subscribers is shared infrastructure used by both CommandBus and EventBus, not event-specific code
+- Location in `event/` folder was misleading and created false dependency impression
+- Removing EventValidator dependency from Subscribers improves separation of concerns (priority sorting is generic logic, not event-specific validation)
+
+**Implementation:**
+- Moved `event/subscribers.gd` → `core/subscribers.gd`
+- Extracted priority sorting logic to `_sort_by_priority()` method in Subscribers class
+- Removed EventValidator dependency from Subscribers (was only used for sorting middleware)
+- Inlined lifecycle validation in Subscriber class (removed EventValidator dependency)
+- Updated imports in command_bus.gd and event_bus.gd to use new path
+
+**Impact:**
+- Better architectural clarity - core/ folder explicitly shows shared infrastructure
+- Reduced coupling - Subscribers no longer depends on event-specific validators
+- No breaking changes - public API unchanged (Subscribers is internal implementation)
+- Improved maintainability - clearer separation between shared and domain-specific code
 
 ### Method Naming Convention
 
@@ -99,19 +121,20 @@ packages/
 ```
 Public API (CommandBus/EventBus)
     ↓
-Foundation (Subscribers)
+Shared Infrastructure (Subscribers in core/)
     ↓
-Domain Rules (Validator classes)
+Domain Rules (Validator classes in command/ and event/)
     ↓
-Infrastructure (MessageTypeResolver)
+Infrastructure (MessageTypeResolver in type/)
 ```
 
 **Key Patterns:**
 - **Barrel Files:** Each package has a main entry point (e.g., `transport.gd`)
+- **Shared Infrastructure:** Core functionality (Subscribers) in `core/` folder, used by both CommandBus and EventBus
 - **Domain Rules:** Business logic separated into validation classes (Validator in command/, Validator in event/)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
 - **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
-- **Organized Structure:** Functionality-based organization (messages, routing, pubsub, validation, observability, adapters)
+- **Organized Structure:** Functionality-based organization with clear separation between shared infrastructure (core/) and domain-specific code (command/, event/)
 
 ### Type Resolution and Lifecycle Management
 
@@ -172,7 +195,7 @@ var event_bus = Transport.EventBus.new()
 
 **Direct Import (for internal files):**
 ```gdscript
-const Subscribers = preload("res://packages/transport/event/subscribers.gd")
+const Subscribers = preload("res://packages/transport/core/subscribers.gd")
 ```
 
 **Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations instead.
@@ -298,8 +321,9 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 **Current Structure:**
 - `type/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
+- `core/` - Shared infrastructure: Subscribers (subscribers.gd)
 - `middleware/` - Middleware base class (middleware.gd), MiddlewareEntry (middleware_entry.gd)
-- `event/` - EventBus (event_bus.gd), Subscribers (subscribers.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd)
+- `event/` - EventBus (event_bus.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd), Subscriber (subscriber.gd)
 - `command/` - CommandBus (command_bus.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
 
 **File Naming:**
@@ -341,6 +365,13 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 1. **Collection Package Removal:** Removed Collection package dependency from transport system. Replaced with direct array/dictionary operations using helper functions (`_remove_indices_from_array()`). Simplifies codebase and reduces dependencies.
 
 2. **Obsolete Code Cleanup:** Removed unused `listener_start_time` variable from EventBus that was never used (leftover from planned per-listener metrics).
+
+### Architecture Improvements
+
+1. **Subscribers Refactoring:** Moved Subscribers to core/ directory and removed EventValidator dependency (January 2026).
+   - Better architectural clarity - shared infrastructure explicitly separated
+   - Reduced coupling between shared code and domain-specific validators
+   - Improved maintainability with clearer separation of concerns
 
 ### API Naming Improvements
 
