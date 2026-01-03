@@ -1,6 +1,6 @@
 const MessageTypeResolver = preload("res://addons/transport/message/message_type_resolver.gd")
 const MetricsUtils = preload("res://addons/transport/utils/metrics_utils.gd")
-const ArrayUtils = preload("res://addons/utils/array_utils.gd")
+const ArrayUtils = preload("res://addons/support/array.gd")
 const MiddlewareEntry = preload("res://addons/transport/middleware/middleware_entry.gd")
 const EventSubscriber = preload("res://addons/transport/event/event_subscriber.gd")
 

@@ -24,9 +24,11 @@ addons/
 │   ├── utils/     # Metrics utilities, signal connection tracker
 │   ├── event/     # EventBus, Event, EventSubscribers, EventSubscriber, Validator, EventSignalBridge
 │   └── command/   # CommandBus, Command, Validator, CommandSignalBridge, CommandRoutingError
-└── utils/         # Array utility functions (Godot addon)
+└── support/       # Support utility functions (Godot addon)
     ├── plugin.cfg # Addon configuration
-    ├── array_utils.gd # Array utility functions
+    ├── support.gd # Public API barrel file
+    ├── array.gd   # Array utility functions
+    ├── string.gd  # String utility functions
     └── README.md  # Documentation
 ```
 
@@ -94,6 +96,108 @@ addons/
 
 **Key Insight:** Generic utilities should be in separate addons when they're reusable across projects, not just within a single addon.
 
+### Utils Addon Expansion
+
+**Decision:** Expanded utils addon with StringUtils class and additional ArrayUtils methods (January 2026)
+
+**Rationale:**
+- String utilities are commonly needed across projects
+- Array utilities were minimal (only 2 methods) and could benefit from functional programming helpers
+- Following the same pattern as ArrayUtils ensures consistency
+- Provides a comprehensive utility library for common operations
+
+**Implementation:**
+- Created `string_utils.gd` with 10 string utility methods:
+  - Validation: `is_blank()`, `is_not_blank()`
+  - Formatting: `pad_left()`, `pad_right()`, `truncate()`, `capitalize()`, `to_title_case()`
+  - Manipulation: `remove()`, `starts_with_any()`, `ends_with_any()`
+- Added 10 new methods to `array_utils.gd`:
+  - Functional: `filter()`, `map()`, `find()`, `contains()`
+  - Accessors: `first()`, `last()`, `unique()`
+  - Manipulation: `shuffle()`, `chunk()`, `flatten()`
+- Updated README.md with comprehensive API documentation
+- All methods follow consistent patterns: static functions, full documentation, type safety
+
+**Impact:**
+- Utils addon now provides 22 utility methods (12 ArrayUtils + 10 StringUtils)
+- More comprehensive utility library for common operations
+- Functional programming patterns available for arrays (filter, map, find)
+- Better developer experience with well-documented, type-safe utilities
+- No breaking changes - all additions are new methods
+
+**Key Insight:** Utility addons should grow organically based on common needs. Starting with a focused set (array operations) and expanding to related utilities (strings) maintains cohesion while providing value.
+
+### Utils to Support Addon Rename
+
+**Decision:** Renamed `utils` addon to `support` and simplified file names (January 2026)
+
+**Rationale:**
+- "Support" better reflects the addon's purpose as supporting utility classes
+- Simpler file names (`array.gd`, `string.gd`) are more concise than `array_utils.gd`, `string_utils.gd`
+- Maintains clarity while reducing verbosity
+- Class references remain `ArrayUtils` and `StringUtils` via preload constants for consistency
+
+**Implementation:**
+- Renamed `addons/utils/` → `addons/support/`
+- Renamed `array_utils.gd` → `array.gd`
+- Renamed `string_utils.gd` → `string.gd`
+- Updated plugin name from "Utils" to "Support"
+- Updated all import paths in transport addon
+- Updated documentation
+
+**Impact:**
+- Breaking change: Import paths changed from `res://addons/utils/array_utils.gd` to `res://addons/support/array.gd`
+- Breaking change: Import paths changed from `res://addons/utils/string_utils.gd` to `res://addons/support/string.gd`
+- Class usage remains the same: `const ArrayUtils = preload("res://addons/support/array.gd")`
+- Transport addon updated to use new paths
+- All documentation updated to reflect new structure
+
+**Key Insight:** File names can be simplified when class references are made via preload constants. The constant name (`ArrayUtils`) provides the context, so the file name (`array.gd`) can be more concise.
+
+### Support Barrel File Addition
+
+**Decision:** Added `support.gd` barrel file for unified API access (January 2026)
+
+**Rationale:**
+- Consistent with transport addon pattern (`transport.gd`)
+- Provides single import point for all support utilities
+- Improves developer experience with namespace organization
+- Enables future additions without breaking existing code
+
+**Implementation:**
+- Created `support.gd` with preloads for `ArrayUtils` and `StringUtils`
+- Updated README.md to document both barrel file and individual preload patterns
+- Follows same pattern as `transport.gd` barrel file
+
+**Impact:**
+- New feature: Users can now use `const Support = preload("res://addons/support/support.gd")` and access via `Support.ArrayUtils` and `Support.StringUtils`
+- Backward compatible: Individual preloads still work as before
+- No breaking changes - all existing code continues to work
+
+**Key Insight:** Barrel files provide a clean namespace and single import point, improving code organization and making it easier to discover available utilities.
+
+### Version and Author Standardization
+
+**Decision:** Standardized all addon versions to `0.0.1` and author to `"Jeroen Gerits"` (January 2026)
+
+**Rationale:**
+- Consistent versioning across all addons
+- Proper attribution for all addons
+- Starting with `0.0.1` indicates early development stage
+- Author field provides clear ownership information
+
+**Implementation:**
+- Updated `addons/transport/plugin.cfg`: version `1.0.0` → `0.0.1`, author `""` → `"Jeroen Gerits"`
+- Updated `addons/support/plugin.cfg`: version `1.0.0` → `0.0.1`, author `""` → `"Jeroen Gerits"`
+
+**Impact:**
+- All addons now have consistent versioning
+- Author information properly attributed
+- Version `0.0.1` indicates early development stage (pre-1.0.0 release)
+- No functional changes - metadata only
+
+**Key Insight:** Consistent metadata across addons improves project professionalism and makes version management easier as the project grows.
+
 ### Subscribers Architecture Refactoring
 
 **Decision:** Moved Subscribers from `event/` to `core/` directory and removed EventValidator dependency (January 2026)
@@ -105,7 +209,7 @@ addons/
 
 **Implementation:**
 - Moved `event/subscribers.gd` → `core/subscribers.gd` (later moved to `event/event_subscribers.gd`)
-- Extracted priority sorting logic to `_sort_by_priority()` method in Subscribers class (later moved to ArrayUtils, then extracted to separate utils addon)
+- Extracted priority sorting logic to `_sort_by_priority()` method in Subscribers class (later moved to ArrayUtils, then extracted to separate support addon, originally named `utils`)
 - Removed EventValidator dependency from Subscribers (was only used for sorting middleware)
 - Inlined lifecycle validation in EventSubscriber class (removed EventValidator dependency)
 - Updated imports in command_bus.gd and event_bus.gd to use new path
@@ -150,6 +254,7 @@ addons/
 
 **Examples:**
 - `transport/transport.gd` → `message/message.gd`, `command/command_bus.gd`
+- `support/support.gd` → `array.gd`, `string.gd`
 
 ### Transport Package Architecture
 
@@ -165,7 +270,7 @@ Base Types (Command, Event in their respective directories)
 ```
 
 **Key Patterns:**
-- **Barrel Files:** Each package has a main entry point (e.g., `transport.gd`)
+- **Barrel Files:** Each addon has a main entry point (e.g., `transport.gd`, `support.gd`)
 - **Shared Infrastructure:** Message infrastructure in `message/`, middleware in `middleware/`, and EventSubscribers in `event/` (used by both CommandBus and EventBus)
 - **Domain Rules:** Business logic separated into validation classes (Validator in command/, Validator in event/)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
@@ -224,21 +329,25 @@ command_adapter.connect_signal_to_command($SaveButton, "pressed", SaveGameComman
 
 **Addon Import (Barrel Files):**
 ```gdscript
+# Transport addon
 const Transport = preload("res://addons/transport/transport.gd")
-
-# Use via barrel file
 var command_bus = Transport.CommandBus.new()
 var event_bus = Transport.EventBus.new()
+
+# Support addon
+const Support = preload("res://addons/support/support.gd")
+Support.ArrayUtils.remove_indices(arr, [1, 3])
+Support.StringUtils.is_blank("   ")
 ```
 
 **Direct Import (for internal files):**
 ```gdscript
 const Subscribers = preload("res://addons/transport/event/event_subscribers.gd")
 const MessageTypeResolver = preload("res://addons/transport/message/message_type_resolver.gd")
-const ArrayUtils = preload("res://addons/utils/array_utils.gd")
+const ArrayUtils = preload("res://addons/support/array.gd")
 ```
 
-**Note:** Collection package was removed (January 2026). Array utilities were extracted to separate `utils` addon (January 2026). Use direct GDScript array/dictionary operations or `ArrayUtils` from the utils addon for common array operations.
+**Note:** Collection package was removed (January 2026). Array utilities were extracted to separate `support` addon (January 2026, renamed from `utils`). The support addon includes both `ArrayUtils` (12 methods) and `StringUtils` (10 methods) for common operations. Use direct GDScript array/dictionary operations or utilities from the support addon.
 
 ### Transport Patterns
 
@@ -535,8 +644,11 @@ if not source.connect(signal_name, callback):
    - Reduced indirection and improved code clarity
    - Updated `CommandBus`, `EventBus`, and `Subscribers` to use direct resolver calls
 
-4. **Utility Function Organization:** Moved generic array utilities to `utils/array_utils.gd` (January 2026), later extracted to separate addon (January 2026).
+4. **Utility Function Organization:** Moved generic array utilities to `utils/array_utils.gd` (January 2026), later extracted to separate addon (January 2026). Expanded with StringUtils (10 methods) and additional ArrayUtils methods (10 new methods, 12 total) in January 2026.
    - `_remove_indices_from_array()` and `_sort_by_priority()` extracted to reusable utility
+   - Added functional programming helpers: `filter()`, `map()`, `find()`, `contains()`
+   - Added convenience methods: `first()`, `last()`, `unique()`, `shuffle()`, `chunk()`, `flatten()`
+   - Added string utilities: validation, formatting, manipulation methods
    - Better organization - utilities belong in utils/ not domain classes
    - Reusable across codebase without coupling to Subscribers
    - Improved Single Responsibility Principle adherence
@@ -602,7 +714,8 @@ A comprehensive code review was performed analyzing the transport package agains
 **Refactoring Results:** High-priority improvements have been implemented:
 - SignalBridge connection management extracted to reusable utility
 - Type resolution API cleaned up (removed wrapper methods)
-- Array utilities moved to utils/ for better organization, later extracted to separate utils addon
+- Array utilities moved to utils/ for better organization, later extracted to separate support addon (renamed from `utils` in January 2026)
+- Support addon expanded with StringUtils (10 methods) and additional ArrayUtils methods (10 new methods, 12 total) in January 2026
 
 The codebase demonstrates solid architectural thinking with good separation of concerns. Remaining recommendations focus on incremental refactoring for better maintainability rather than correctness issues.
 

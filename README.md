@@ -10,11 +10,11 @@ Type-safe command/event transport framework.
 
 **[Documentation →](addons/transport/README.md)**
 
-### Utils
+### Support
 
-Utility functions for array operations.
+Utility functions for array and string operations.
 
-**[Documentation →](addons/utils/README.md)**
+**[Documentation →](addons/support/README.md)**
 
 ## Installation
 
