@@ -58,10 +58,6 @@ var _metrics: Dictionary = {}  # StringName -> {count: int, total_time: float, m
 func set_verbose(enabled: bool) -> void:
 	_verbose = enabled
 
-## Enable tracing.
-func set_trace_enabled(enabled: bool) -> void:
-	_trace_enabled = enabled
-
 ## Add pre-processing middleware.
 func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
@@ -264,16 +260,6 @@ func unregister(message_type, handler: Callable) -> int:
 	
 	return removed
 
-## Get all registrations for a message type (internal).
-func get_registrations(message_type) -> Array:
-	var key = resolve_type_key(message_type)
-	if not _registrations.has(key):
-		return []
-	
-	var entries = _registrations[key]
-	_cleanup_invalid_registrations(key, entries)
-	return entries.duplicate()
-
 ## Clean up invalid registrations.
 func _cleanup_invalid_registrations(key: StringName, entries: Array) -> void:
 	var to_remove: Array = []
@@ -298,16 +284,6 @@ func clear() -> void:
 	_registrations.clear()
 	if _verbose:
 		print("[SubscriptionRegistry] Cleared all registrations")
-
-## Get all registered message types.
-func get_types() -> Array[StringName]:
-	var types: Array[StringName] = []
-	for key in _registrations.keys():
-		var entries = _registrations[key]
-		_cleanup_invalid_registrations(key, entries)
-		if not entries.is_empty():
-			types.append(key)
-	return types
 
 ## Get registration count (internal).
 func get_registration_count(message_type) -> int:

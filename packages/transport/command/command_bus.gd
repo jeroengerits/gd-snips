@@ -105,7 +105,3 @@ func dispatch(cmd: Command) -> Variant:
 	
 	return result
 
-## Check if handler is registered.
-func has_handler(command_type) -> bool:
-	return get_registration_count(command_type) > 0
-
