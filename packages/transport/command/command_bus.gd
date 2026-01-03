@@ -2,6 +2,7 @@ const Subscribers = preload("res://packages/transport/core/subscribers.gd")
 const CommandValidator = preload("res://packages/transport/command/command_validator.gd")
 const Command = preload("res://packages/transport/type/command.gd")
 const CommandRoutingError = preload("res://packages/transport/command/command_routing_error.gd")
+const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
 
 extends Subscribers
 class_name CommandBus
@@ -11,7 +12,7 @@ class_name CommandBus
 ## Register handler for a command type (replaces existing).
 func handle(command_type, handler: Callable) -> void:
 	assert(handler.is_valid(), "Handler callable must be valid")
-	var key: StringName = resolve_type_key(command_type)
+	var key: StringName = MessageTypeResolver.resolve_type(command_type)
 	var existing: int = get_registration_count(command_type)
 	
 	if existing > 0:
@@ -36,7 +37,7 @@ func _handle_routing_error(cmd: Command, key: StringName, error_code: CommandRou
 func dispatch(cmd: Command) -> Variant:
 	assert(cmd != null, "Command cannot be null")
 	assert(cmd is Command, "Command must be an instance of Command")
-	var key: StringName = resolve_type_key_from(cmd)
+	var key: StringName = MessageTypeResolver.resolve_type(cmd)
 	var start_time: int = Time.get_ticks_msec()
 	
 	# Execute before-middleware (can cancel delivery)

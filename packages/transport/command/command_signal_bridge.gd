@@ -1,6 +1,7 @@
 const CommandBus = preload("res://packages/transport/command/command_bus.gd")
 const CommandRoutingError = preload("res://packages/transport/command/command_routing_error.gd")
 const Command = preload("res://packages/transport/type/command.gd")
+const SignalConnectionTracker = preload("res://packages/transport/utils/signal_connection_tracker.gd")
 
 extends RefCounted
 class_name CommandSignalBridge
@@ -8,7 +9,7 @@ class_name CommandSignalBridge
 ## Bridges Godot signals to CommandBus commands.
 
 var _command_bus: CommandBus
-var _connections: Array = []
+var _connection_tracker: SignalConnectionTracker = SignalConnectionTracker.new()
 
 ## Create bridge.
 func _init(command_bus: CommandBus) -> void:
@@ -54,32 +55,20 @@ func connect_signal_to_command(source: Object, signal_name: StringName, command_
 		if result is CommandRoutingError:
 			push_error("[CommandSignalBridge] Command dispatch failed: %s" % result.message)
 	
-	# Connect signal to callback
-	var err: int = source.connect(signal_name, callback)
-	if err != OK:
-		push_error("[CommandSignalBridge] Failed to connect signal: %s (error: %d)" % [signal_name, err])
+	# Connect signal to callback and track for cleanup
+	if not _connection_tracker.connect_and_track(source, signal_name, callback, "CommandSignalBridge"):
 		return
-	
-	# Store connection for cleanup
-	_connections.append({
-		"source": source,
-		"signal": signal_name,
-		"callback": callback
-	})
 
 ## Disconnect all signals.
 func disconnect_all() -> void:
-	for conn in _connections:
-		if is_instance_valid(conn.source) and conn.source.is_connected(conn.signal, conn.callback):
-			conn.source.disconnect(conn.signal, conn.callback)
-	_connections.clear()
+	_connection_tracker.disconnect_all()
 
 ## Get connection count.
 func get_connection_count() -> int:
-	return _connections.size()
+	return _connection_tracker.get_connection_count()
 
 ## Cleanup on free.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		disconnect_all()
+		_connection_tracker.disconnect_all()
 

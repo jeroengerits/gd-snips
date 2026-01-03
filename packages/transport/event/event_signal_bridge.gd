@@ -1,10 +1,12 @@
+const SignalConnectionTracker = preload("res://packages/transport/utils/signal_connection_tracker.gd")
+
 extends RefCounted
 class_name EventSignalBridge
 
 ## Bridges Godot signals to EventBus events.
 
 var _event_bus: EventBus
-var _connections: Array = []
+var _connection_tracker: SignalConnectionTracker = SignalConnectionTracker.new()
 
 ## Create adapter.
 func _init(event_bus: EventBus) -> void:
@@ -33,32 +35,20 @@ func connect_signal_to_event(source: Object, signal_name: StringName, event_type
 		var event = event_type.new(signal_name, event_data)
 		_event_bus.emit(event)
 	
-	# Connect signal to callback
-	var err: int = source.connect(signal_name, callback)
-	if err != OK:
-		push_error("[EventSignalBridge] Failed to connect signal: %s (error: %d)" % [signal_name, err])
+	# Connect signal to callback and track for cleanup
+	if not _connection_tracker.connect_and_track(source, signal_name, callback, "EventSignalBridge"):
 		return
-	
-	# Store connection for cleanup
-	_connections.append({
-		"source": source,
-		"signal": signal_name,
-		"callback": callback
-	})
 
 ## Disconnect all signals.
 func disconnect_all() -> void:
-	for conn in _connections:
-		if is_instance_valid(conn.source) and conn.source.is_connected(conn.signal, conn.callback):
-			conn.source.disconnect(conn.signal, conn.callback)
-	_connections.clear()
+	_connection_tracker.disconnect_all()
 
 ## Get connection count.
 func get_connection_count() -> int:
-	return _connections.size()
+	return _connection_tracker.get_connection_count()
 
 ## Cleanup on free.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		disconnect_all()
+		_connection_tracker.disconnect_all()
 

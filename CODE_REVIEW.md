@@ -458,12 +458,12 @@ func _execute_middleware_before(message: Object, key: StringName) -> bool:
 ## Refactoring Priority
 
 **High Priority (Do First):**
-1. Issue #2: Extract SignalBridge connection management (DRY violation, easy win)
-2. Issue #4: Remove type resolution wrapper methods (API clarity)
+1. ✅ Issue #2: Extract SignalBridge connection management (DRY violation, easy win) - **COMPLETED**
+2. ✅ Issue #4: Remove type resolution wrapper methods (API clarity) - **COMPLETED**
 
 **Medium Priority (Do When Time Permits):**
-3. Issue #5: Move utility functions to utils/ (better organization)
-4. Issue #3: Extract type resolver methods (readability)
+3. ✅ Issue #5: Move utility functions to utils/ (better organization) - **COMPLETED**
+4. Issue #3: Extract type resolver methods (readability) - **OPTIONAL** (current approach is acceptable)
 
 **Low Priority (Consider for Future):**
 5. Issue #1: Extract metrics/middleware from Subscribers (large refactor, current code works)

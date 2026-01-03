@@ -196,9 +196,11 @@ var event_bus = Transport.EventBus.new()
 **Direct Import (for internal files):**
 ```gdscript
 const Subscribers = preload("res://packages/transport/core/subscribers.gd")
+const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
+const ArrayUtils = preload("res://packages/transport/utils/array_utils.gd")
 ```
 
-**Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations instead.
+**Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations or `ArrayUtils` for common array operations.
 
 ### Transport Patterns
 
@@ -410,6 +412,24 @@ if not source.connect(signal_name, callback):
    - Better architectural clarity - shared infrastructure explicitly separated
    - Reduced coupling between shared code and domain-specific validators
    - Improved maintainability with clearer separation of concerns
+
+2. **SignalBridge Connection Management Extraction:** Extracted shared connection management logic to `SignalConnectionTracker` utility class (January 2026).
+   - Eliminated code duplication between `CommandSignalBridge` and `EventSignalBridge`
+   - Single source of truth for connection tracking and cleanup
+   - Consistent behavior across both bridge classes
+   - Easier to extend with new connection management features
+
+3. **Type Resolution API Cleanup:** Removed unnecessary wrapper methods from `Subscribers` class (January 2026).
+   - Direct use of `MessageTypeResolver.resolve_type()` throughout codebase
+   - Clearer API surface (one way to resolve types)
+   - Reduced indirection and improved code clarity
+   - Updated `CommandBus`, `EventBus`, and `Subscribers` to use direct resolver calls
+
+4. **Utility Function Organization:** Moved generic array utilities to `utils/array_utils.gd` (January 2026).
+   - `_remove_indices_from_array()` and `_sort_by_priority()` extracted to reusable utility
+   - Better organization - utilities belong in utils/ not domain classes
+   - Reusable across codebase without coupling to Subscribers
+   - Improved Single Responsibility Principle adherence
 
 ### API Naming Improvements
 

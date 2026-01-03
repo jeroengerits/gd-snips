@@ -1,5 +1,6 @@
 const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
 const MetricsUtils = preload("res://packages/transport/utils/metrics_utils.gd")
+const ArrayUtils = preload("res://packages/transport/utils/array_utils.gd")
 const MiddlewareEntry = preload("res://packages/transport/middleware/middleware_entry.gd")
 const Subscriber = preload("res://packages/transport/event/subscriber.gd")
 
@@ -28,7 +29,7 @@ func set_trace_enabled(enabled: bool) -> void:
 func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_before.append(mw)
-	_sort_by_priority(_middleware_before)
+	ArrayUtils.sort_by_priority(_middleware_before)
 	if _verbose:
 		print("[Subscribers] Added before-middleware (priority=", priority, ")")
 	return mw.id
@@ -37,7 +38,7 @@ func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 func add_middleware_after(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_after.append(mw)
-	_sort_by_priority(_middleware_after)
+	ArrayUtils.sort_by_priority(_middleware_after)
 	if _verbose:
 		print("[Subscribers] Added after-middleware (priority=", priority, ")")
 	return mw.id
@@ -54,7 +55,7 @@ func remove_middleware(middleware_id: int) -> bool:
 			before_to_remove.append(i)
 	
 	if before_to_remove.size() > 0:
-		_remove_indices_from_array(_middleware_before, before_to_remove)
+		ArrayUtils.remove_indices(_middleware_before, before_to_remove)
 		removed = true
 		if _verbose:
 			print("[Subscribers] Removed before-middleware (id=", middleware_id, ")")
@@ -66,7 +67,7 @@ func remove_middleware(middleware_id: int) -> bool:
 			after_to_remove.append(i)
 	
 	if after_to_remove.size() > 0:
-		_remove_indices_from_array(_middleware_after, after_to_remove)
+		ArrayUtils.remove_indices(_middleware_after, after_to_remove)
 		removed = true
 		if _verbose:
 			print("[Subscribers] Removed after-middleware (id=", middleware_id, ")")
@@ -91,7 +92,7 @@ func get_metrics(message_type) -> Dictionary:
 	if not _metrics_enabled:
 		return {}
 	
-	var key: StringName = resolve_type_key(message_type)
+	var key: StringName = MessageTypeResolver.resolve_type(message_type)
 	if not _metrics.has(key):
 		return {}
 	
@@ -149,18 +150,10 @@ func _record_metrics(key: StringName, elapsed_time: float) -> void:
 	m.min_time = min(m.min_time, elapsed_time)
 	m.max_time = max(m.max_time, elapsed_time)
 
-## Resolve type key from message type.
-static func resolve_type_key(message_type) -> StringName:
-	return MessageTypeResolver.resolve_type(message_type)
-
-## Resolve type key from message instance.
-static func resolve_type_key_from(message: Object) -> StringName:
-	return MessageTypeResolver.resolve_type(message)
-
 ## Register a subscription (internal).
 func register(message_type, handler: Callable, priority: int = 0, once: bool = false, owner: Object = null) -> int:
 	assert(handler.is_valid(), "Handler callable must be valid")
-	var key: StringName = resolve_type_key(message_type)
+	var key: StringName = MessageTypeResolver.resolve_type(message_type)
 	var entry: Subscriber = Subscriber.new(handler, priority, once, owner)
 	
 	if not _registrations.has(key):
@@ -184,14 +177,14 @@ func register(message_type, handler: Callable, priority: int = 0, once: bool = f
 ## Unregister by ID (internal).
 func unregister_by_id(message_type, registration_id: int) -> bool:
 	assert(registration_id >= 0, "Registration ID must be non-negative")
-	var key: StringName = resolve_type_key(message_type)
+	var key: StringName = MessageTypeResolver.resolve_type(message_type)
 	if not _registrations.has(key):
 		return false
 	
 	var entries: Array = _registrations[key]
 	var index: int = entries.find(func(e): return e.id == registration_id)
 	if index >= 0:
-		_remove_indices_from_array(entries, [index])
+		ArrayUtils.remove_indices(entries, [index])
 		if entries.is_empty():
 			_registrations.erase(key)
 		if _verbose:
@@ -202,7 +195,7 @@ func unregister_by_id(message_type, registration_id: int) -> bool:
 ## Unregister by callable (internal).
 func unregister(message_type, handler: Callable) -> int:
 	assert(handler.is_valid(), "Handler callable must be valid")
-	var key: StringName = resolve_type_key(message_type)
+	var key: StringName = MessageTypeResolver.resolve_type(message_type)
 	if not _registrations.has(key):
 		return 0
 	
@@ -216,7 +209,7 @@ func unregister(message_type, handler: Callable) -> int:
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		_remove_indices_from_array(entries, to_remove)
+		ArrayUtils.remove_indices(entries, to_remove)
 		removed = to_remove.size()
 		if entries.is_empty():
 			_registrations.erase(key)
@@ -234,13 +227,13 @@ func _cleanup_invalid_registrations(key: StringName, entries: Array) -> void:
 			to_remove.append(i)
 	
 	if to_remove.size() > 0:
-		_remove_indices_from_array(entries, to_remove)
+		ArrayUtils.remove_indices(entries, to_remove)
 		if entries.is_empty():
 			_registrations.erase(key)
 
 ## Clear registrations for a message type (internal).
 func clear_registrations(message_type) -> void:
-	var key = resolve_type_key(message_type)
+	var key = MessageTypeResolver.resolve_type(message_type)
 	_registrations.erase(key)
 	if _verbose:
 		print("[Subscribers] Cleared registrations for ", key)
@@ -253,7 +246,7 @@ func clear() -> void:
 
 ## Get registration count (internal).
 func get_registration_count(message_type) -> int:
-	var key: StringName = resolve_type_key(message_type)
+	var key: StringName = MessageTypeResolver.resolve_type(message_type)
 	if not _registrations.has(key):
 		return 0
 	var entries: Array = _registrations[key]
@@ -262,7 +255,7 @@ func get_registration_count(message_type) -> int:
 
 ## Get valid registrations for a message type (internal).
 func _get_valid_registrations(message_type) -> Array[Subscriber]:
-	var key: StringName = resolve_type_key(message_type)
+	var key: StringName = MessageTypeResolver.resolve_type(message_type)
 	if not _registrations.has(key):
 		return []
 	
@@ -275,26 +268,7 @@ func _mark_for_removal(key: StringName, entry: Subscriber) -> void:
 	var entries: Array = _registrations.get(key, [])
 	var index: int = entries.find(entry)
 	if index >= 0:
-		_remove_indices_from_array(entries, [index])
+		ArrayUtils.remove_indices(entries, [index])
 		if entries.is_empty():
 			_registrations.erase(key)
-
-## Remove items at given indices from array.
-func _remove_indices_from_array(array: Array, indices: Array) -> void:
-	if indices.is_empty() or array.is_empty():
-		return
-	
-	# Sort indices in descending order for safe removal
-	var sorted_indices: Array = indices.duplicate()
-	sorted_indices.sort()
-	sorted_indices.reverse()
-	
-	# Remove items (from highest index to lowest to avoid index shifting issues)
-	for i in sorted_indices:
-		if i >= 0 and i < array.size():
-			array.remove_at(i)
-
-## Sort array of items with priority property by priority (higher first).
-static func _sort_by_priority(items: Array) -> void:
-	items.sort_custom(func(a, b): return a.priority > b.priority)
 

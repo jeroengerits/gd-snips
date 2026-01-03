@@ -1,6 +1,7 @@
 const Subscribers = preload("res://packages/transport/core/subscribers.gd")
 const EventValidator = preload("res://packages/transport/event/event_validator.gd")
 const Event = preload("res://packages/transport/type/event.gd")
+const MessageTypeResolver = preload("res://packages/transport/type/message_type_resolver.gd")
 
 extends Subscribers
 class_name EventBus
@@ -64,7 +65,7 @@ func emit_and_await(evt: Event) -> void:
 
 ## Internal emit implementation.
 func _emit_internal(evt: Event, await_async: bool) -> void:
-	var key: StringName = resolve_type_key_from(evt)
+	var key: StringName = MessageTypeResolver.resolve_type(evt)
 	
 	# Execute before-middleware (can cancel delivery)
 	if not _execute_middleware_before(evt, key):
