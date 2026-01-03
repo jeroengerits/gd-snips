@@ -299,7 +299,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 - `type/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
 - `middleware/` - Middleware base class (middleware.gd), MiddlewareEntry (middleware_entry.gd)
-- `event/` - EventBus (event_bus.gd), SubscriptionRegistry (registry.gd), Validator (event_validator.gd), SignalBridge (signal_bridge.gd)
+- `event/` - EventBus (event_bus.gd), SubscriptionRegistry (registry.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd)
 - `command/` - CommandBus (command_bus.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
 
 **File Naming:**
