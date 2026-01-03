@@ -134,15 +134,19 @@ adapter.connect_signal_to_event(
 Expose messaging events as signals:
 
 ```gdscript
+extends Node
+
 const Messaging = preload("res://packages/messaging/messaging.gd")
 
+# Declare signals on your Node
 signal enemy_died(enemy_id: int, points: int)
+signal health_changed(current: int, max: int)
 
 var event_bus = Messaging.EventBus.new()
 var adapter = Messaging.EventSignalAdapter.new()
 adapter.set_event_bus(event_bus)
 
-# Connect event to signal
+# Connect event to signal (signal must be declared on this Node)
 adapter.connect_event_to_signal(EnemyDiedEvent, "enemy_died")
 
 # Custom data extraction
@@ -152,8 +156,9 @@ adapter.connect_event_to_signal(
     func(evt): return [evt.current_health, evt.max_health]
 )
 
-# Listen to the signal
-adapter.enemy_died.connect(_on_enemy_died)
+# Listen to the signals (declared on this Node)
+enemy_died.connect(_on_enemy_died)
+health_changed.connect(_on_health_changed)
 ```
 
 ### When to Use Each

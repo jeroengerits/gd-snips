@@ -7,10 +7,18 @@ class_name EventSignalAdapter
 ## Useful for exposing messaging events to signal-based systems (UI, plugins).
 ##
 ## Usage:
+##   extends Node
 ##   const Messaging = preload("res://packages/messaging/messaging.gd")
-##   var adapter = EventSignalAdapter.new()
+##   
+##   # Declare signals on your Node
+##   signal enemy_died(enemy_id: int, points: int)
+##   
+##   var adapter = Messaging.EventSignalAdapter.new()
+##   adapter.set_event_bus(event_bus)
 ##   adapter.connect_event_to_signal(EnemyDiedEvent, "enemy_died")
-##   adapter.enemy_died.connect(_on_enemy_died)
+##   
+##   # Listen to the signal (declared on this Node)
+##   enemy_died.connect(_on_enemy_died)
 ##
 ## For custom data extraction:
 ##   adapter.connect_event_to_signal(
