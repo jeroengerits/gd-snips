@@ -50,11 +50,17 @@ packages/
 2. Refactored to `utilities/collection.gd` as a class
 3. Moved to `packages/collection/` as standalone package
 4. Method names shortened (e.g., `is_empty()` → `empty()`)
+5. Restructured to match messaging package (January 2026)
 
 **Rationale:**
 - Collection is substantial enough to be its own package
 - Better discoverability and documentation
-- Follows same structure as messaging package
+- Consistent structure across all packages improves maintainability
+
+**Current Structure:**
+- `collection.gd` - Barrel file (public API entry point)
+- `types/collection.gd` - Main Collection class
+- Matches messaging package structure for consistency
 
 ### Method Naming Convention
 
@@ -70,6 +76,24 @@ packages/
 - More concise and readable
 - Consistent with modern API design
 - Context makes meaning clear
+
+### Package Structure Consistency
+
+**Decision:** All packages follow the same structural pattern (January 2026)
+
+**Pattern:**
+- Barrel file at root (`{package}.gd`) - Public API entry point
+- `types/` subdirectory - Core classes/types
+- Additional subdirectories as needed (e.g., `buses/`, `rules/`, `internal/`)
+
+**Rationale:**
+- Consistency makes packages easier to navigate
+- Predictable structure reduces cognitive load
+- Easier to add new packages following the same pattern
+
+**Examples:**
+- `messaging/messaging.gd` → `types/message.gd`, `buses/command_bus.gd`
+- `collection/collection.gd` → `types/collection.gd`
 
 ### Messaging Package Architecture
 

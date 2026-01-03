@@ -2,17 +2,8 @@
 
 A curated collection of packages and utilities for **Godot 4.5.1+**, designed for modular game architecture and clean code practices.
 
-## Project Structure
 
-All packages are organized under the `packages/` directory:
-
-```
-packages/
-├── messaging/    # Command/Event messaging framework
-└── collection/   # Fluent array wrapper
-```
-
-Each package is self-contained with its own documentation and can be used independently. Package-specific utilities live within each package's `utilities/` folder.
+Each package is self-contained with its own documentation and can be used independently. 
 
 ## Packages
 

@@ -22,19 +22,16 @@ var collection = Collection.new([1, 2, 3])
 
 ```gdscript
 const Collection = preload("res://packages/collection/collection.gd")
-var collection = Collection.Collection.new([1, 2, 3])
-
-# Create a collection
-var collection = Collection.new([1, 2, 3, 4, 5])
+var numbers = Collection.Collection.new([1, 2, 3, 4, 5])
 
 # Filter items
-var evens = collection.filter(func(item): return item % 2 == 0).array()
+var evens = numbers.filter(func(item): return item % 2 == 0).array()
 
 # Map items
-var doubled = collection.map(func(item): return item * 2).array()
+var doubled = numbers.map(func(item): return item * 2).array()
 
 # Chain operations
-var result = collection.filter(func(x): return x > 2).map(func(x): return x * 2).array()
+var result = numbers.filter(func(x): return x > 2).map(func(x): return x * 2).array()
 ```
 
 ## Common Methods
