@@ -21,8 +21,7 @@ addons/
     ├── transport.gd # Public API barrel file
     ├── type/      # Message, Command, Event base classes
     ├── utils/     # Metrics utilities
-    ├── core/      # Shared infrastructure (Subscribers)
-    ├── middleware/# Middleware base classes
+    ├── core/      # Shared infrastructure (Subscribers, Middleware, MiddlewareEntry)
     ├── event/     # EventBus, Validator, EventSignalBridge, EventSubscriber
     └── command/   # CommandBus, Validator, CommandSignalBridge
 ```
@@ -137,7 +136,7 @@ Infrastructure (MessageTypeResolver in type/)
 
 **Key Patterns:**
 - **Barrel Files:** Each package has a main entry point (e.g., `transport.gd`)
-- **Shared Infrastructure:** Core functionality (Subscribers) in `core/` folder, used by both CommandBus and EventBus
+- **Shared Infrastructure:** Core functionality (Subscribers, Middleware, MiddlewareEntry) in `core/` folder, used by both CommandBus and EventBus
 - **Domain Rules:** Business logic separated into validation classes (Validator in command/, Validator in event/)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
 - **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
@@ -354,6 +353,28 @@ if not source.connect(signal_name, callback):
 - Addons can now be enabled/disabled through Godot's plugin interface
 - Better alignment with Godot ecosystem standards
 
+### Middleware Move to Core Directory
+
+**Decision:** Moved Middleware and MiddlewareEntry from `middleware/` to `core/` directory (January 2026)
+
+**Rationale:**
+- Middleware is shared infrastructure used by both CommandBus and EventBus, not domain-specific code
+- Consistent with other shared infrastructure (Subscribers) being in `core/`
+- Reduces folder count and simplifies structure
+- Better reflects that middleware is infrastructure, not a separate domain
+
+**Implementation:**
+- Moved `middleware/middleware.gd` → `core/middleware.gd`
+- Moved `middleware/middleware_entry.gd` → `core/middleware_entry.gd`
+- Updated preload paths in `subscribers.gd` and `transport.gd`
+- Removed empty `middleware/` directory
+
+**Impact:**
+- Internal change only (Middleware is exported via barrel file, path change is transparent)
+- No breaking changes to public API
+- Improved architectural clarity - all shared infrastructure now in `core/`
+- Cleaner folder structure
+
 ### Folder Structure Refactoring
 
 **Decision:** Reorganized transport package structure for better clarity and organization (January 2026)
@@ -373,8 +394,7 @@ if not source.connect(signal_name, callback):
 **Current Structure:**
 - `type/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
-- `core/` - Shared infrastructure: Subscribers (subscribers.gd)
-- `middleware/` - Middleware base class (middleware.gd), MiddlewareEntry (middleware_entry.gd)
+- `core/` - Shared infrastructure: Subscribers (subscribers.gd), Middleware (middleware.gd), MiddlewareEntry (middleware_entry.gd)
 - `event/` - EventBus (event_bus.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd), EventSubscriber (event_subscriber.gd)
 - `command/` - CommandBus (command_bus.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
 

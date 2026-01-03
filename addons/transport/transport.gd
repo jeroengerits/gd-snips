@@ -9,5 +9,5 @@ const CommandValidator = preload("res://addons/transport/command/command_validat
 const EventValidator = preload("res://addons/transport/event/event_validator.gd")
 const CommandSignalBridge = preload("res://addons/transport/command/command_signal_bridge.gd")
 const EventSignalBridge = preload("res://addons/transport/event/event_signal_bridge.gd")
-const Middleware = preload("res://addons/transport/middleware/middleware.gd")
+const Middleware = preload("res://addons/transport/core/middleware.gd")
 const CommandRoutingError = preload("res://addons/transport/command/command_routing_error.gd")
