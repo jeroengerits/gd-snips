@@ -21,19 +21,32 @@ func connect_signal_to_command(source: Object, signal_name: StringName, command_
 	assert(command_type != null, "Command type cannot be null")
 	
 	var callback = func(...args):
-		var command_data: Dictionary = {}
+		var command = null
 		
 		if mapper.is_valid():
-			# Use custom mapper
-			command_data = mapper.callv(args)
+			# Use custom mapper - mapper should construct and return a command instance
+			# Example: func(): return SaveGameCommand.new()
+			# Or with signal args: func(button): return SaveGameCommand.new()
+			var mapped_result = mapper.callv(args)
+			if mapped_result is Command:
+				command = mapped_result
+			else:
+				push_error("[CommandBridge] Mapper must return a Command instance, got: %s" % mapped_result)
+				return
 		else:
-			# Default: map signal args by position
+			# Default: create command using command_type constructor with signal name and data
+			# Note: This assumes command_type.new(type: String, data: Dictionary) signature
+			# Most commands have custom constructors, so provide a mapper for proper usage
+			var command_data: Dictionary = {}
 			var arg_names = ["arg0", "arg1", "arg2", "arg3", "arg4"]
 			for i in range(min(args.size(), arg_names.size())):
 				command_data[arg_names[i]] = args[i]
+			command = command_type.new(signal_name, command_data)
 		
-		# Create and dispatch command
-		var command = command_type.new(signal_name, command_data)
+		if command == null:
+			push_error("[CommandBridge] Failed to create command instance")
+			return
+		
 		var result = await _command_bus.dispatch(command)
 		
 		# Log errors if command dispatch failed
