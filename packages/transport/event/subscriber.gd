@@ -1,9 +1,9 @@
 const Validator = preload("res://packages/transport/event/validator.gd")
 
 extends RefCounted
-class_name SubscriptionEntry
+class_name Subscriber
 
-## Subscription registry entry.
+## Subscriber entry.
 
 var callable: Callable
 var priority: int = 0
