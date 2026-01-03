@@ -31,9 +31,15 @@ func set_trace_enabled(enabled: bool) -> void:
 ## @param priority: Higher priority middleware executes first (default: 0)
 ## @return: Middleware ID for later removal
 func add_middleware_before(callback: Callable, priority: int = 0) -> int:
+	assert(callback.is_valid(), "Middleware callback must be valid")
 	var mw = MiddlewareEntry.new(callback, priority)
-	_middleware_before.append(mw)
-	Array.sort_by_priority(_middleware_before)
+	# Insert in sorted position (higher priority first) - O(n) insertion sort
+	var insert_pos: int = _middleware_before.size()
+	for i in range(_middleware_before.size() - 1, -1, -1):
+		if _middleware_before[i].priority >= priority:
+			insert_pos = i + 1
+			break
+	_middleware_before.insert(insert_pos, mw)
 	if _verbose:
 		print("[EventSubscribers] Added before-middleware (priority=", priority, ")")
 	return mw.id
@@ -44,9 +50,15 @@ func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 ## @param priority: Higher priority middleware executes first (default: 0)
 ## @return: Middleware ID for later removal
 func add_middleware_after(callback: Callable, priority: int = 0) -> int:
+	assert(callback.is_valid(), "Middleware callback must be valid")
 	var mw = MiddlewareEntry.new(callback, priority)
-	_middleware_after.append(mw)
-	Array.sort_by_priority(_middleware_after)
+	# Insert in sorted position (higher priority first) - O(n) insertion sort
+	var insert_pos: int = _middleware_after.size()
+	for i in range(_middleware_after.size() - 1, -1, -1):
+		if _middleware_after[i].priority >= priority:
+			insert_pos = i + 1
+			break
+	_middleware_after.insert(insert_pos, mw)
 	if _verbose:
 		print("[EventSubscribers] Added after-middleware (priority=", priority, ")")
 	return mw.id
@@ -54,33 +66,24 @@ func add_middleware_after(callback: Callable, priority: int = 0) -> int:
 ## Remove middleware.
 func remove_middleware(middleware_id: int) -> bool:
 	assert(middleware_id >= 0, "Middleware ID must be non-negative")
-	var removed: bool = false
 	
-	# Find and remove from before-middleware
-	var before_to_remove: Array = []
+	# Find and remove from before-middleware (single pass)
 	for i in range(_middleware_before.size()):
 		if _middleware_before[i].id == middleware_id:
-			before_to_remove.append(i)
+			_middleware_before.remove_at(i)
+			if _verbose:
+				print("[EventSubscribers] Removed before-middleware (id=", middleware_id, ")")
+			return true
 	
-	if before_to_remove.size() > 0:
-		Array.remove_indices(_middleware_before, before_to_remove)
-		removed = true
-		if _verbose:
-			print("[EventSubscribers] Removed before-middleware (id=", middleware_id, ")")
-	
-	# Find and remove from after-middleware
-	var after_to_remove: Array = []
+	# Find and remove from after-middleware (single pass)
 	for i in range(_middleware_after.size()):
 		if _middleware_after[i].id == middleware_id:
-			after_to_remove.append(i)
+			_middleware_after.remove_at(i)
+			if _verbose:
+				print("[EventSubscribers] Removed after-middleware (id=", middleware_id, ")")
+			return true
 	
-	if after_to_remove.size() > 0:
-		Array.remove_indices(_middleware_after, after_to_remove)
-		removed = true
-		if _verbose:
-			print("[EventSubscribers] Removed after-middleware (id=", middleware_id, ")")
-	
-	return removed
+	return false
 
 ## Clear all middleware.
 func clear_middleware() -> void:
