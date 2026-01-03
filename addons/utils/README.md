@@ -1,20 +1,20 @@
-# Array Utils
+# Utils
 
-Utility functions for array operations in Godot 4.5.1+.
+Utility functions in Godot 4.5.1+.
 
 ## Installation
 
-1. Copy the `addons/array-utils` directory into your Godot project's `addons/` folder
+1. Copy the `addons/utils` directory into your Godot project's `addons/` folder
 2. Open your project in Godot
 3. Go to **Project → Project Settings → Plugins**
-4. Enable the "Array Utils" plugin
+4. Enable the "Utils" plugin
 
 **Requirements:** Godot 4.5.1 or later
 
 ## Usage
 
 ```gdscript
-const ArrayUtils = preload("res://addons/array-utils/array_utils.gd")
+const ArrayUtils = preload("res://addons/utils/array_utils.gd")
 
 # Remove items at specific indices
 var arr = [1, 2, 3, 4, 5]
