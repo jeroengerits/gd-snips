@@ -330,7 +330,7 @@ var all_metrics = command_bus.get_all_metrics()
 
 ## Signal Integration
 
-The transport system is designed as an alternative to Godot signals, but sometimes you need to bridge between them. The `Bridge` utility makes this easy.
+The transport system is designed as an alternative to Godot signals, but sometimes you need to bridge between them. The `SignalBridge` and `CommandSignalBridge` utilities make this easy.
 
 ### When You Need Bridging
 
@@ -339,7 +339,7 @@ The transport system is designed as an alternative to Godot signals, but sometim
 - **Third-party plugins** - Libraries that emit signals you can't control
 - **Legacy code** - Gradually migrating from signals to transport
 
-### Using the Bridge
+### Using Signal Bridges
 
 **Event Signal Bridge:**
 ```gdscript
