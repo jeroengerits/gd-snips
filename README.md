@@ -476,25 +476,14 @@ Support functions for Godot 4.5.1+.
 
 ### Usage
 
-You can use the barrel file to load all support utilities at once:
+Access support utilities through the Engine addon:
 
 ```gdscript
-const Support = preload("res://addons/support/support.gd")
-
-# Access utilities via Support namespace
-Support.Array.remove_indices(arr, [1, 3])
-Support.String.is_blank("   ")
-```
-
-Or preload individual utilities:
-
-```gdscript
-const Array = preload("res://addons/support/src/array.gd")
-const String = preload("res://addons/support/src/string.gd")
+const Engine = preload("res://addons/engine/src/engine.gd")
 
 # Array operations
 var arr = [1, 2, 3, 4, 5]
-Array.remove_indices(arr, [1, 3])
+Engine.Support.Array.remove_indices(arr, [1, 3])
 # arr is now [1, 3, 5]
 
 var entries = [Entry.new(priority=5), Entry.new(priority=10), Entry.new(priority=3)]
