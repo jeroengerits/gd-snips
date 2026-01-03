@@ -4,7 +4,7 @@ Reusable addons for **Godot 4.5.1+** with a focus on modular architecture and cl
 
 ## Installation
 
-### Recommended: Install All Addons
+### Install All Addons
 
 To install all gd-snips addons at once:
 
@@ -14,17 +14,6 @@ To install all gd-snips addons at once:
 4. Enable the "Core" plugin
 
 When you install the Core addon, all addons (Transport, Support) are automatically available. The Core addon provides a unified entry point to access all functionality.
-
-### Alternative: Install Individual Addons
-
-If you only need specific addons, you can install them individually:
-
-1. Copy only the addon directories you need (e.g., `addons/transport/`, `addons/support/`) into your project's `addons/` folder
-2. Open your project in Godot
-3. Go to **Project → Project Settings → Plugins**
-4. Enable the plugins you want to use
-
-**Note:** If you install the Core addon, you must also install Transport and Support addons as Core depends on them.
 
 **Requirements:** Godot 4.5.1 or later
 
