@@ -4,6 +4,12 @@ Reusable addons for **Godot 4.5.1+** with a focus on modular architecture and cl
 
 ## Addons
 
+### Core
+
+Unified entry point for all gd-snips addons. Load all addons with a single import.
+
+**[Documentation →](addons/core/README.md)**
+
 ### Transport
 
 Type-safe command/event transport framework.

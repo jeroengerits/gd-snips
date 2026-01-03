@@ -16,6 +16,10 @@ All addons live under `addons/`:
 
 ```
 addons/
+├── core/          # Unified entry point for all addons (Godot addon)
+│   ├── plugin.cfg # Addon configuration
+│   ├── core.gd    # Public API barrel file (loads all addons)
+│   └── README.md  # Documentation
 ├── transport/     # Command/Event transport framework (Godot addon)
 │   ├── plugin.cfg # Addon configuration
 │   ├── transport.gd # Public API barrel file
@@ -198,6 +202,33 @@ addons/
 - No functional changes - metadata only
 
 **Key Insight:** Consistent metadata across addons improves project professionalism and makes version management easier as the project grows.
+
+### Core Addon Creation
+
+**Decision:** Created `core` addon as unified entry point for all gd-snips addons (January 2026)
+
+**Rationale:**
+- Provides single import point to access all addons
+- Simplifies usage: `const Core = preload("res://addons/core/core.gd")` loads everything
+- Better developer experience - one import instead of multiple
+- Maintains flexibility - individual addons can still be imported separately
+- Follows common pattern of meta-packages in package ecosystems
+
+**Implementation:**
+- Created `addons/core/` directory with `plugin.cfg`
+- Created `core.gd` barrel file that preloads Transport and Support
+- Created README.md with usage examples
+- Updated main README.md to list Core addon first
+- Updated CLAUDE.md project structure diagram
+
+**Impact:**
+- New feature: Users can now use `const Core = preload("res://addons/core/core.gd")` to access all addons
+- Access pattern: `Core.Transport.CommandBus`, `Core.Support.ArrayUtils`
+- Backward compatible: Individual addon imports still work
+- No breaking changes - all existing code continues to work
+- Core addon depends on Transport and Support (must be installed together)
+
+**Key Insight:** A meta-addon provides convenience without forcing a specific usage pattern. Users can choose between the unified Core import or individual addon imports based on their needs.
 
 ### Source Directory Reorganization
 
