@@ -1,18 +1,12 @@
 # Transport
 
-A type-safe command and event messaging framework for Godot 4.5.1+ that helps you build clean, decoupled game architectures.
+A message transport framework for Godot 4.5.1+ that helps you build clean, decoupled game architectures.
 
 ## Overview
 
-Transport provides a structured way to handle communication between different parts of your game. Instead of tightly coupling systems together, you send commands (things to do) and events (things that happened) through centralized buses.
+Transport provides a centralized messaging system for communication between different parts of your game. Instead of tightly coupling systems together, you send **commands** (actions to perform) and **events** (notifications of things that occurred) through centralized buses.
 
-**Who is this for?** Transport is ideal for developers building medium to large Godot projects, teams who want clear communication patterns, and anyone who finds Godot signals limiting for complex game logic.
-
-**What problem does it solve?**
-- Decouples systems so they don't need direct references to each other
-- Provides type safety at compile time
-- Ensures predictable execution order
-- Makes debugging easier with built-in metrics and tracing
+This approach decouples systems by removing direct dependencies while preserving compile-time type safety, predictable execution order, and easier debugging through built-in metrics and tracing.
 
 ## Features
 
@@ -23,7 +17,7 @@ Transport provides a structured way to handle communication between different pa
 - ✅ **Lifecycle-aware** - Automatic cleanup when objects are freed
 - ✅ **Middleware** - Intercept and process messages before/after execution
 - ✅ **Metrics** - Built-in performance tracking and introspection
-- ✅ **Scene-tree independent** - Works with any RefCounted objects
+- ✅ **Scene-tree independent** - Works with any `RefCounted` objects
 
 ## Installation
 
@@ -130,6 +124,7 @@ func _init(e_id: int, pts: int, pos: Vector2 = Vector2.ZERO) -> void:
 The `CommandBus` ensures exactly one handler processes each command.
 
 **Register a handler:**
+
 ```gdscript
 command_bus.handle(MovePlayerCommand, func(command):
     player.move_to(command.target_position)
@@ -138,6 +133,7 @@ command_bus.handle(MovePlayerCommand, func(command):
 ```
 
 **Dispatch a command:**
+
 ```gdscript
 var result = await command_bus.dispatch(MovePlayerCommand.new(Vector2(100, 200)))
 
@@ -149,6 +145,7 @@ else:
 ```
 
 **Error types:**
+
 - `NO_HANDLER` - No handler registered for this command
 - `MULTIPLE_HANDLERS` - Multiple handlers registered (shouldn't happen)
 - `HANDLER_FAILED` - Handler execution failed or was cancelled
@@ -158,6 +155,7 @@ else:
 The `EventBus` broadcasts events to all subscribers.
 
 **Subscribe to events:**
+
 ```gdscript
 # Basic subscription
 event_bus.on(EnemyDiedEvent, func(event):
@@ -175,6 +173,7 @@ event_bus.on(EnemyDiedEvent, _update_ui, owner=self)
 ```
 
 **Emit events:**
+
 ```gdscript
 # Fire and forget
 event_bus.emit(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
@@ -184,6 +183,7 @@ await event_bus.emit_and_await(event)
 ```
 
 **Unsubscribe:**
+
 ```gdscript
 # By callable
 event_bus.unsubscribe(EnemyDiedEvent, _my_listener)
@@ -198,6 +198,7 @@ event_bus.unsubscribe_by_id(EnemyDiedEvent, sub_id)
 Middleware lets you intercept messages before and after they're processed. Useful for logging, validation, timing, and other cross-cutting concerns.
 
 **Using callables:**
+
 ```gdscript
 # Before-execution middleware (can cancel by returning false)
 command_bus.add_middleware_before(func(cmd: Command):
@@ -216,6 +217,7 @@ command_bus.remove_middleware(mw_id)
 ```
 
 **Using the Middleware class:**
+
 ```gdscript
 const Transport = preload("res://addons/transport/transport.gd")
 
@@ -261,18 +263,21 @@ var all_metrics = command_bus.get_all_metrics()
 Transport is designed as an alternative to Godot signals, but you can bridge between them when needed.
 
 **When to use Transport:**
+
 - Business logic and domain events
 - Cross-system communication
 - Commands that need exactly one handler
 - Situations requiring priority ordering or middleware
 
 **When to use signals:**
+
 - UI interactions (button clicks, input)
 - Scene tree lifecycle events
 - Godot's built-in events (`area_entered`, `body_entered`, etc.)
 - Third-party plugin integrations
 
 **Bridging signals to Transport:**
+
 ```gdscript
 const Transport = preload("res://addons/transport/transport.gd")
 
@@ -298,23 +303,27 @@ bridge.disconnect_all()
 ## Best Practices
 
 ### Command Design
+
 - Use commands for actions that need to happen
 - Keep handlers focused on one responsibility
 - Return meaningful results
 - Handle errors gracefully
 
 ### Event Design
+
 - Use events for notifications about things that already happened
 - Keep listeners small and focused
 - Avoid side effects in listeners
 - Consider priority when order matters
 
 ### Subscription Management
+
 - Use `owner=self` for automatic cleanup
 - Explicitly unsubscribe for long-lived objects
 - Watch for memory leaks if not using lifecycle binding
 
 ### Development & Debugging
+
 - Enable metrics in development
 - Use middleware for logging during development
 - Monitor performance in production
@@ -323,16 +332,19 @@ bridge.disconnect_all()
 ## Architecture
 
 **Command Flow:**
+
 ```
 Input → CommandBus → Validation → Single Handler → Result/Error
 ```
 
 **Event Flow:**
+
 ```
 Emit → EventBus → Middleware → Listeners (priority order) → Done
 ```
 
 **Key Components:**
+
 - `CommandBus` - Dispatches commands with single-handler guarantee
 - `EventBus` - Broadcasts events to zero or more subscribers
 - `Middleware` - Intercepts messages before/after processing
@@ -355,6 +367,7 @@ Contributions are welcome! Here's how you can help:
 - **Improve documentation** - Help make the docs clearer
 
 When contributing:
+
 - Follow the existing code style
 - Add tests for new features
 - Update documentation as needed
