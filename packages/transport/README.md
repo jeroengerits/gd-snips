@@ -1,6 +1,6 @@
 # Godot Transport System
 
-A simple and type-safe transport framework for Godot 4.5.1+ designed to support modular game architecture, precise execution order, and debugging tools.
+A simple, type-safe messaging framework for Godot 4.5.1+ that helps you build modular game architectures with clear communication patterns, predictable execution order, and powerful debugging tools.
 
 ## Table of Contents
 
@@ -13,8 +13,8 @@ A simple and type-safe transport framework for Godot 4.5.1+ designed to support 
 - [Usage Guide](#usage-guide)
   - [Creating Commands](#creating-commands)
   - [Creating Events](#creating-events)
-  - [Command Router](#command-router)
-  - [Event Broadcaster](#event-broadcaster)
+  - [Commander](#commander)
+  - [Publisher](#publisher)
   - [Middleware](#middleware)
   - [Metrics](#metrics)
 - [Signal Integration](#signal-integration)
@@ -41,60 +41,64 @@ Copy the `packages/transport` directory into your Godot project.
 
 ## Quick Start
 
+Here's everything you need to get started in 30 seconds:
+
 ```gdscript
 const Transport = preload("res://packages/transport/transport.gd")
 
-# Create router and broadcaster instances
-var command_router = Transport.Commander.new()
-var event_broadcaster = Transport.Publisher.new()
+# Create your commander and publisher instances
+var commander = Transport.Commander.new()
+var publisher = Transport.Publisher.new()
 
-# Register a command handler
-command_router.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
+# Register a command handler (one handler per command type)
+commander.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
     print("Moving player to ", cmd.target_position)
     return true
 )
 
-# Subscribe to events
-event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+# Subscribe to events (zero or more listeners per event type)
+publisher.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
     print("Enemy ", evt.enemy_id, " died!")
 )
 
-# Execute commands
-await command_router.execute(MovePlayerCommand.new(Vector2(100, 200)))
+# Execute a command (returns result or error)
+await commander.execute(MovePlayerCommand.new(Vector2(100, 200)))
 
-# Broadcast events
-event_broadcaster.broadcast(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
+# Broadcast an event (notifies all subscribers)
+publisher.broadcast(EnemyDiedEvent.new(42, 100, Vector2(50, 60)))
 ```
+
+That's it! You're ready to build a clean, decoupled architecture.
 
 ## Core Concepts
 
 ### Commands
 
-Commands represent requests that expect a single authoritative handler. Think: **"Do this."**
+Commands are requests that need to be handled by exactly one handler. Think of them as instructions: **"Do this."**
 
-**Characteristics:**
-- Exactly one handler (errors if ambiguous or unhandled)
-- Returns a result or propagates an error
-- Clear boundaries and responsibility
+**Key characteristics:**
+- **One handler only** - If there's no handler or multiple handlers, you get an error
+- **Returns a result** - The handler can return data or propagate errors
+- **Clear ownership** - There's no ambiguity about who handles what
 
-**Use cases:**
-- `MovePlayerCommand` - Move the player to a position
-- `SaveGameCommand` - Save game state
-- `DealDamageCommand` - Apply damage to a target
+**Perfect for:**
+- `MovePlayerCommand` - Move the player to a specific position
+- `SaveGameCommand` - Save the current game state
+- `DealDamageCommand` - Apply damage to a target entity
 
 ### Events
 
-Events signal that something has already occurred in the game domain. Think: **"This happened."**
+Events announce that something has already happened in your game. Think of them as notifications: **"This happened."**
 
-**Characteristics:**
-- Any number of listeners (including zero)
-- Ordered by priority, processed sequentially
-- No return value (listeners execute sequentially, async listeners are awaited)
+**Key characteristics:**
+- **Zero or more listeners** - No one listening? That's fine. Ten listeners? Also fine.
+- **Priority-based ordering** - Listeners run in priority order (higher first)
+- **Sequential execution** - Each listener completes before the next starts (async listeners are awaited)
 
-**Use cases:**
-- `EnemyDiedEvent` - Enemy was defeated
-- `PlayerHealthChangedEvent` - Player health changed
-- `LevelCompletedEvent` - Level was completed
+**Perfect for:**
+- `EnemyDiedEvent` - An enemy was defeated
+- `PlayerHealthChangedEvent` - Player's health changed
+- `LevelCompletedEvent` - The level was completed
 
 ## Usage Guide
 
@@ -138,213 +142,270 @@ func _init(e_id: int, pts: int, pos: Vector2 = Vector2.ZERO) -> void:
     super._init("enemy_died", {"enemy_id": e_id, "points": pts, "position": pos}, "Enemy %d died" % e_id)
 ```
 
-### Command Router
+### Commander
+
+The `Commander` handles command execution. It ensures exactly one handler processes each command.
 
 #### Registering Handlers
 
 ```gdscript
 # Register a handler for a command type
-command_router.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
+commander.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
     # Handle the command
     player.move_to(cmd.target_position)
     return true
 )
 ```
 
+**Note:** If you register a handler for a command type that already has one, the old handler is replaced. This prevents accidental duplicate handlers.
+
 #### Executing Commands
 
 ```gdscript
-# Execute a command (returns result or throws CommandRoutingError)
+# Execute a command (returns result or CommandRoutingError)
 var cmd = MovePlayerCommand.new(Vector2(100, 200))
-var result = await command_router.execute(cmd)
+var result = await commander.execute(cmd)
+
+# Check for errors
+if result is Commander.CommandRoutingError:
+    print("Command failed: ", result.message)
+else:
+    print("Command succeeded: ", result)
 ```
 
 #### Error Handling
 
-Commands can throw `Commander.CommandRoutingError`:
-- `NO_HANDLER` - No handler registered for command type
-- `MULTIPLE_HANDLERS` - Multiple handlers registered (invalid state)
-- `HANDLER_FAILED` - Handler execution failed
+Commands return `Commander.CommandRoutingError` when something goes wrong:
+- `NO_HANDLER` - No handler registered for this command type
+- `MULTIPLE_HANDLERS` - Multiple handlers registered (should never happen, but we check)
+- `HANDLER_FAILED` - Handler execution failed or was cancelled by middleware
 
-### Event Broadcaster
+### Publisher
+
+The `Publisher` handles event broadcasting. It notifies all subscribers when an event occurs.
 
 #### Subscribing to Events
 
 ```gdscript
 # Basic subscription
-event_broadcaster.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
+publisher.subscribe(EnemyDiedEvent, func(evt: EnemyDiedEvent):
     print("Enemy died: ", evt.enemy_id)
 )
 
-# With priority (higher = executed first)
-event_broadcaster.subscribe(EnemyDiedEvent, _handle_enemy_died, priority=10)
+# With priority (higher numbers run first)
+publisher.subscribe(EnemyDiedEvent, _handle_enemy_died, priority=10)
 
 # One-shot subscription (automatically unsubscribes after first call)
-event_broadcaster.subscribe(EnemyDiedEvent, _on_first_enemy_death, once=true)
+publisher.subscribe(EnemyDiedEvent, _on_first_enemy_death, once=true)
 
-# Lifecycle-bound subscription (auto-unsubscribes when object exits tree)
-event_broadcaster.subscribe(EnemyDiedEvent, _update_ui, owner=self)
+# Lifecycle-bound subscription (auto-unsubscribes when owner is freed)
+publisher.subscribe(EnemyDiedEvent, _update_ui, owner=self)
 ```
+
+**Priority ordering:** Listeners with higher priority values execute first. If two listeners have the same priority, they execute in registration order.
 
 #### Broadcasting Events
 
 ```gdscript
-# Broadcast an event (non-blocking, listeners execute sequentially)
+# Broadcast an event (listeners execute sequentially)
 var evt = EnemyDiedEvent.new(42, 100, Vector2(50, 60))
-event_broadcaster.broadcast(evt)
+publisher.broadcast(evt)
+
+# Or await all async listeners to complete
+await publisher.broadcast_and_await(evt)
 ```
+
+**Note:** Even though `broadcast()` doesn't return a value, it still awaits async listeners to prevent memory leaks. This means it may briefly block, but it's necessary for proper cleanup.
 
 #### Unsubscribing
 
 ```gdscript
 # Unsubscribe by callable
-event_broadcaster.unsubscribe(EnemyDiedEvent, _my_listener)
+publisher.unsubscribe(EnemyDiedEvent, _my_listener)
 
-# Unsubscribe by subscription ID
-var sub_id = event_broadcaster.subscribe(EnemyDiedEvent, _my_listener)
-event_broadcaster.unsubscribe_by_id(EnemyDiedEvent, sub_id)
+# Unsubscribe by subscription ID (useful for anonymous functions)
+var sub_id = publisher.subscribe(EnemyDiedEvent, func(evt): print("Event!"))
+publisher.unsubscribe_by_id(EnemyDiedEvent, sub_id)
 ```
 
 ### Middleware
 
-Middleware allows pre and post-processing of messages:
+Middleware lets you intercept and process messages before and after they reach their handlers or listeners. Perfect for logging, validation, timing, and other cross-cutting concerns.
 
 ```gdscript
 # Pre-processing middleware (runs before handlers/listeners)
-command_router.add_middleware_pre(func(cmd: Command):
+# Can cancel delivery by returning false
+commander.add_middleware_pre(func(cmd: Command):
     print("Pre-processing: ", cmd)
+    return true  # Return false to cancel delivery
 , priority=0)
 
 # Post-processing middleware (runs after handlers/listeners)
-command_router.add_middleware_post(func(cmd: Command, result):
+# Receives the message and the result
+commander.add_middleware_post(func(cmd: Command, result):
     print("Post-processing result: ", result)
 , priority=0)
 
-# Remove middleware
-var middleware_id = command_router.add_middleware_pre(my_callback)
-command_router.remove_middleware(middleware_id)
+# Remove middleware when you're done
+var middleware_id = commander.add_middleware_pre(my_callback)
+commander.remove_middleware(middleware_id)
 ```
+
+**Use cases:**
+- Logging all commands/events
+- Performance timing
+- Validation and authorization
+- Error handling and recovery
 
 ### Metrics
 
-Enable metrics tracking for performance monitoring:
+Track performance and usage patterns with built-in metrics:
 
 ```gdscript
-# Enable metrics
-command_router.set_metrics_enabled(true)
-event_broadcaster.set_metrics_enabled(true)
+# Enable metrics tracking
+commander.set_metrics_enabled(true)
+publisher.set_metrics_enabled(true)
 
-# Get metrics for a specific type
-var cmd_metrics = command_router.get_metrics(MovePlayerCommand)
-# Returns: {"count": 42, "total_time_ms": 123.4, "avg_time_ms": 2.94, ...}
+# Get metrics for a specific command/event type
+var cmd_metrics = commander.get_metrics(MovePlayerCommand)
+# Returns: {
+#   "count": 42,
+#   "total_time": 123.4,
+#   "min_time": 0.5,
+#   "max_time": 5.2,
+#   "avg_time": 2.94
+# }
 
-# Get all metrics
-var all_metrics = command_router.get_all_metrics()
+# Get all metrics at once
+var all_metrics = commander.get_all_metrics()
 ```
+
+**Metrics include:**
+- `count` - How many times this type was processed
+- `total_time` - Total time spent (in seconds)
+- `min_time` - Fastest execution time
+- `max_time` - Slowest execution time
+- `avg_time` - Average execution time
 
 ## Signal Integration
 
-While this transport system is designed as an alternative to Godot signals, bridging between signals and transport is useful for:
+The transport system is designed as an alternative to Godot signals, but sometimes you need to bridge between them. The `Bridge` utility makes this easy.
 
-- UI interactions (button clicks, input events)
-- Scene tree events (`area_entered`, `body_entered`)
-- Third-party plugins that emit signals
-- Legacy code migration from signals to transport
+### When You Need Bridging
 
-### Bridge
+- **UI interactions** - Button clicks, input events from Godot's UI system
+- **Scene tree events** - `area_entered`, `body_entered`, and other built-in signals
+- **Third-party plugins** - Libraries that emit signals you can't control
+- **Legacy code** - Gradually migrating from signals to transport
 
-Bridge Node signals to Publisher:
+### Using the Bridge
 
 ```gdscript
 const Transport = preload("res://packages/transport/transport.gd")
 
-var event_broadcaster = Transport.Publisher.new()
-var adapter = Transport.Bridge.new(event_broadcaster)
+var publisher = Transport.Publisher.new()
+var bridge = Transport.Bridge.new(publisher)
 
-# Bridge button signal to event
-adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
+# Simple bridge: button press → event
+bridge.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
 
-# Custom data mapping
-adapter.connect_signal_to_event(
+# Custom data mapping: extract what you need from signal args
+bridge.connect_signal_to_event(
     $Area2D,
     "body_entered",
     AreaEnteredEvent,
-    func(body): return {"body_name": body.name}
+    func(body): return {"body_name": body.name, "body_type": body.get_class()}
 )
+
+# Clean up when done (automatically happens when bridge is freed)
+bridge.disconnect_all()
 ```
+
+The bridge automatically cleans up connections when it's freed, so you don't need to worry about memory leaks.
 
 ### When to Use What
 
-**Use transport (preferred for game logic):**
+**Use transport for:**
 - Business logic and domain events
 - Cross-system communication
-- Commands requiring single handler
-- Priority ordering and middleware needs
+- Commands that need exactly one handler
+- Situations requiring priority ordering or middleware
 
-**Use signals (preferred for UI/Godot-specific):**
+**Use signals for:**
 - UI interactions (button clicks, input)
 - Scene tree lifecycle events
-- Godot built-in events (`area_entered`, etc.)
+- Godot's built-in events (`area_entered`, `body_entered`, etc.)
 - Third-party plugin integrations
 
 **Use Bridge when:**
-- Migrating from signals to transport
+- Migrating gradually from signals to transport
 - Integrating legacy signal-based code
-- Connecting UI signals to game logic
+- Connecting UI signals to your game logic
 
 ## Architecture
 
-### Command Flow
+### How It Works
 
+**Command Flow:**
 ```
-Validate Input → Execute Command → Commander → Single Handler → Result or Error
+Input → Commander → Validation → Single Handler → Result/Error
 ```
 
-### Event Flow
+Commands are validated to ensure exactly one handler exists, then executed. The result (or error) is returned to the caller.
 
+**Event Flow:**
 ```
-Broadcast Event → Publisher → Listener 1 (priority 10) → Listener 2 (priority 5) → ... → Listener N (priority 0)
+Broadcast → Publisher → Middleware → Listeners (priority order) → Done
 ```
+
+Events are broadcast to all subscribers in priority order. Each listener completes before the next starts, ensuring predictable execution.
 
 ### Component Overview
 
-- **Commander** - Handles command execution with single-handler guarantee
-- **Publisher** - Handles event broadcasting to multiple subscribers
-- **Message** - Base class for all messages
+- **Commander** - Executes commands with a single-handler guarantee
+- **Publisher** - Broadcasts events to zero or more subscribers
+- **Message** - Base class for all messages (commands and events extend this)
 - **Command** - Base class for commands
 - **Event** - Base class for events
-- **Bridge** - Bridges Godot signals to events
-- **SubscriptionRegistry** - Internal implementation shared by both router and broadcaster
+- **Bridge** - Connects Godot signals to the transport system
+- **SubscriptionRegistry** - Internal implementation (you don't use this directly)
 
 ## Best Practices
 
 ### Command Design
 
-- Use commands for actions requiring ownership and a single response
-- Keep command handlers small and focused
-- Return meaningful results or propagate errors clearly
+- **Use commands for actions** - Things that need to happen, not things that already happened
+- **Keep handlers focused** - One handler, one responsibility
+- **Return meaningful results** - Make it clear whether the command succeeded or failed
+- **Handle errors gracefully** - Check for `CommandRoutingError` and handle appropriately
 
 ### Event Design
 
-- Use events for notifications, side effects, and observability
-- Write small, deterministic listeners
-- Avoid side effects in event listeners that modify shared state unpredictably
+- **Use events for notifications** - Things that already happened that others might care about
+- **Keep listeners small** - Each listener should do one thing well
+- **Avoid side effects** - Listeners shouldn't modify shared state in unpredictable ways
+- **Think about priority** - Order matters. Higher priority listeners run first.
 
 ### Subscription Management
 
-- Bind subscriptions to object lifecycles to prevent leaks
-- Use `owner` parameter for automatic cleanup
-- Prefer explicit unsubscription for long-lived objects
+- **Use lifecycle binding** - Pass `owner=self` for automatic cleanup when objects are freed
+- **Unsubscribe explicitly** - For long-lived objects, explicitly unsubscribe when done
+- **Watch for leaks** - If you're not using lifecycle binding, make sure you clean up
 
 ### Development & Debugging
 
-- Enable tracing and metrics during development for deep diagnostics
-- Use middleware for cross-cutting concerns (logging, validation, timing)
-- Monitor metrics in production for performance insights
+- **Enable metrics in development** - See what's slow, what's called frequently
+- **Use middleware for logging** - Log all commands/events during development
+- **Monitor in production** - Keep metrics enabled to catch performance issues
+- **Use tracing** - Enable trace logging to see the execution flow
 
 ## Design Principles
 
-- **Explicitness over "magic"** - Clear, explicit APIs over implicit behavior
-- **Deterministic behavior** - Predictable execution order over convenience
-- **Debuggability first** - Optimize for transparency and maintainability
-- **Type safety** - Leverage Godot's type system for compile-time checks
+This framework is built on a few core principles:
+
+- **Explicitness over "magic"** - We prefer clear, explicit APIs over hidden behavior. You should always know what's happening.
+- **Deterministic behavior** - Execution order is predictable. Higher priority always runs first. No surprises.
+- **Debuggability first** - We optimize for transparency and maintainability. Metrics, tracing, and clear error messages help you understand what's happening.
+- **Type safety** - We leverage Godot's type system for compile-time checks. If it compiles, it's probably correct.
+
+These principles guide every design decision. If something feels magical or unpredictable, we've probably made a mistake.
