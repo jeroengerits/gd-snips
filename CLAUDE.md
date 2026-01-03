@@ -231,6 +231,7 @@ const ArrayUtils = preload("res://addons/transport/utils/array_utils.gd")
 - `set_trace_enabled(true)` - Enable execution flow tracing
 - `set_log_listener_calls(true)` - Log each listener call (EventBus only)
 - `set_metrics_enabled(true)` - Enable performance metrics tracking
+- `MessageTypeResolver.set_verbose(true)` - Enable verbose warnings for type resolution issues (development only)
 
 ## Common Issues and Solutions
 
@@ -464,6 +465,14 @@ if not source.connect(signal_name, callback):
 
 2. **Documentation:** Clarified async behavior in EventBus.emit() - documented that async listeners are awaited to prevent memory leaks, even though the method doesn't return a value.
 
+3. **Phase 1 Refactoring (January 2026):** Comprehensive type safety and developer experience improvements.
+   - **Type Annotations:** Added `Variant` type annotations to `CommandBus.handle()`, `EventBus.on()`, and related methods with runtime type validation
+   - **Error Messages:** Enhanced `MessageTypeResolver` with verbose warnings and better error context, added `MessageTypeResolver.set_verbose()` for development debugging
+   - **Warning Suppression:** Added `@warning_ignore("unused_parameter")` annotations for intentional patterns in signal bridge callbacks
+   - **Documentation:** Enhanced all public APIs with complete `@param`, `@return`, and `@example` annotations for better IDE support
+   - **Impact:** Improved type safety, better error messages for debugging, cleaner compiler output, enhanced IDE autocomplete and documentation
+   - **No Breaking Changes:** All improvements are additive and maintain backward compatibility
+
 ### Code Simplification
 
 1. **Collection Package Removal:** Removed Collection package dependency from transport system. Replaced with direct array/dictionary operations using helper functions (`_remove_indices_from_array()`). Simplifies codebase and reduces dependencies.
@@ -530,9 +539,10 @@ if not source.connect(signal_name, callback):
 ### Potential Improvements
 
 1. **Batch Operations:** For high-frequency event publishing (multiple events in one operation)
-2. **Type Safety:** More compile-time checks for message types (require class_name validation)
+2. **Type Safety:** More compile-time checks for message types (require class_name validation) - *Partially addressed in Phase 1 with runtime validation*
 3. **Performance Metrics:** Enhanced profiling options (per-listener breakdown, slow handler warnings)
 4. **Thread Safety:** Document thread-safety assumptions (currently single-threaded)
+5. **Phase 2 Refactoring:** Performance optimizations (reduce array duplication, cache cleaned registrations)
 
 ### Breaking Changes Policy
 
