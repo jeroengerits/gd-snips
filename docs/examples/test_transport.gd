@@ -56,7 +56,7 @@ func _test_command_no_handler() -> void:
 	var result = await command_bus.dispatch(cmd)
 	
 	# Should return a CommandRoutingError
-	test_results[test_name] = result is Transport.CommandBus.CommandRoutingError
+	test_results[test_name] = result is Transport.CommandRoutingError
 	print("✓ " if test_results[test_name] else "✗ ", test_name)
 
 func _test_command_multiple_handlers() -> void:
