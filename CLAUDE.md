@@ -18,9 +18,8 @@ All addons live under `addons/`:
 addons/
 ├── core/          # Unified entry point for all addons (Godot addon)
 │   ├── plugin.cfg # Addon configuration
-│   ├── src/       # Source code directory
-│   │   └── core.gd # Public API barrel file (loads all addons)
-│   └── README.md  # Documentation
+│   └── src/       # Source code directory
+│       └── core.gd # Public API barrel file (loads all addons)
 ├── transport/     # Command/Event transport framework (Godot addon)
 │   ├── plugin.cfg # Addon configuration
 │   ├── transport.gd # Public API barrel file
@@ -36,6 +35,7 @@ addons/
     └── src/       # Source code directory
         ├── array.gd   # Array utility functions
         └── string.gd  # String utility functions
+└── README.md      # Consolidated documentation for all addons
 ```
 
 ## Architectural Decisions
@@ -237,7 +237,7 @@ addons/
 
 **Rationale:**
 - Separates source code from configuration and documentation files
-- Cleaner addon root directory (only plugin.cfg, barrel file, README.md)
+- Cleaner addon root directory (only plugin.cfg, barrel file)
 - Follows common project structure patterns
 - Makes it clear which files are source code vs. metadata
 - Easier to exclude source from certain operations if needed
@@ -783,7 +783,7 @@ The codebase demonstrates solid architectural thinking with good separation of c
 
 ## References
 
-- [Transport Addon README](addons/transport/README.md)
+- [Main README](README.md) - Consolidated documentation for all addons
 - [Developer Diary](docs/developer-diary/)
 - [Tech Stack Documentation](docs/TECH_STACK.md)
 - [Code Review](CODE_REVIEW.md) - CLEAN Code and SOLID principles analysis
