@@ -1,9 +1,6 @@
 # Godot Snips
 
-A curated collection of packages and utilities for **Godot 4.5.1+**, designed for modular game architecture and clean code practices.
-
-
-Each package is self-contained with its own documentation and can be used independently. 
+A curated collection of packages for **Godot 4.5.1+**, designed for modular game architecture and clean code practices.
 
 ## Packages
 
