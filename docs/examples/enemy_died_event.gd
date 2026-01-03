@@ -1,6 +1,6 @@
-const Messaging = preload("res://packages/messaging/messaging.gd")
+const Transport = preload("res://packages/transport/transport.gd")
 
-extends Messaging.Event
+extends Transport.Event
 class_name EnemyDiedEvent
 
 ## Example event: Enemy died notification.

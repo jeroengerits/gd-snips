@@ -16,12 +16,13 @@ All packages live under `packages/`:
 
 ```
 packages/
-└── messaging/     # Command/Event messaging framework
-    ├── buses/     # CommandBus, EventBus
-    ├── types/     # Message, Command, Event base classes
-    ├── rules/     # Domain rules (CommandRules, SubscriptionRules)
-    ├── internal/   # MessageBus foundation class
-    └── utilities/  # Package-specific utilities
+└── transport/     # Command/Event transport framework
+    ├── routing/    # CommandRouter
+    ├── pubsub/     # EventBroadcaster, SubscriptionRegistry
+    ├── messages/   # Message, Command, Event base classes
+    ├── validation/ # Domain rules (CommandValidator, SubscriptionValidator)
+    ├── observability/ # Metrics utilities
+    └── adapters/   # SignalEventAdapter
 ```
 
 ## Architectural Decisions
@@ -45,10 +46,10 @@ packages/
 **Decision:** Removed Collection package and replaced with direct array/dictionary operations (January 2026)
 
 **Rationale:**
-- Collection was only used internally in the messaging package
+- Collection was only used internally in the transport package
 - Direct GDScript array/dictionary operations are simpler and more idiomatic
 - Reduces package dependencies and complexity
-- No external API impact (Collection was never part of public messaging API)
+- No external API impact (Collection was never part of public transport API)
 
 **Implementation:**
 - Replaced `Collection.remove_at()` with `_remove_indices_from_array()` helper function
@@ -57,9 +58,9 @@ packages/
 - All functionality preserved using native GDScript operations
 
 **Impact:**
-- Messaging package no longer depends on Collection package
+- Transport package no longer depends on Collection package
 - Code is more straightforward and easier to understand
-- No breaking changes to messaging API
+- No breaking changes to transport API
 
 
 ### Method Naming Convention
@@ -83,8 +84,8 @@ packages/
 
 **Pattern:**
 - Barrel file at root (`{package}.gd`) - Public API entry point
-- `types/` subdirectory - Core classes/types
-- Additional subdirectories as needed (e.g., `buses/`, `rules/`, `internal/`)
+- Organized subdirectories by functionality
+- Internal implementation details in nested `internal/` folders
 
 **Rationale:**
 - Consistency makes packages easier to navigate
@@ -92,26 +93,27 @@ packages/
 - Easier to add new packages following the same pattern
 
 **Examples:**
-- `messaging/messaging.gd` → `types/message.gd`, `buses/command_bus.gd`
+- `transport/transport.gd` → `messages/message.gd`, `routing/command_router.gd`
 
-### Messaging Package Architecture
+### Transport Package Architecture
 
 **Layered Design:**
 ```
-Public API (CommandBus/EventBus)
+Public API (CommandRouter/EventBroadcaster)
     ↓
-Foundation (MessageBus)
+Foundation (SubscriptionRegistry)
     ↓
-Domain Rules (CommandRules/SubscriptionRules)
+Domain Rules (CommandValidator/SubscriptionValidator)
     ↓
 Infrastructure (MessageTypeResolver)
 ```
 
 **Key Patterns:**
-- **Barrel Files:** Each package has a main entry point (e.g., `messaging.gd`)
-- **Domain Rules:** Business logic separated into Rules classes
+- **Barrel Files:** Each package has a main entry point (e.g., `transport.gd`)
+- **Domain Rules:** Business logic separated into validation classes (CommandValidator, SubscriptionValidator)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
 - **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
+- **Organized Structure:** Functionality-based organization (messages, routing, pubsub, validation, observability, adapters)
 
 ### Type Resolution and Lifecycle Management
 
@@ -130,26 +132,26 @@ Subscriptions and adapters automatically clean up to prevent memory leaks:
 
 ### Signal Integration
 
-**Decision:** Provide adapter utilities for bridging Godot signals and messaging (January 2026)
+**Decision:** Provide adapter utilities for bridging Godot signals and transport (January 2026)
 
 **Rationale:**
-- Messaging system is designed as alternative to signals, but integration is sometimes needed
+- Transport system is designed as alternative to signals, but integration is sometimes needed
 - UI interactions, scene tree events, and third-party plugins often use signals
-- Adapters enable gradual migration from signals to messaging
+- Adapters enable gradual migration from signals to transport
 
 **Adapters:**
-- **SignalEventAdapter:** Bridges Node signals → EventBus (RefCounted utility)
+- **SignalEventAdapter:** Bridges Node signals → EventBroadcaster (RefCounted utility)
 
 **Usage Guidelines:**
-- Use messaging for game logic and domain events
+- Use transport for game logic and domain events
 - Use signals for UI interactions and Godot-specific events
-- Use SignalEventAdapter when bridging signals to messaging
+- Use SignalEventAdapter when bridging signals to transport
 - Keep adapters thin—only convert formats, no business logic
 
 **Pattern:**
 ```gdscript
 # Signal → Event
-var adapter = Messaging.SignalEventAdapter.new(event_bus)
+var adapter = Transport.SignalEventAdapter.new(event_broadcaster)
 adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
 ```
 
@@ -159,25 +161,25 @@ adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
 
 **Package Import (Barrel Files):**
 ```gdscript
-const Messaging = preload("res://packages/messaging/messaging.gd")
+const Transport = preload("res://packages/transport/transport.gd")
 
 # Use via barrel file
-var bus = Messaging.CommandBus.new()
-var event_bus = Messaging.EventBus.new()
+var router = Transport.CommandRouter.new()
+var broadcaster = Transport.EventBroadcaster.new()
 ```
 
 **Direct Import (for internal files):**
 ```gdscript
-const MessageBus = preload("res://packages/messaging/internal/message_bus.gd")
+const SubscriptionRegistry = preload("res://packages/transport/pubsub/internal/subscription_registry.gd")
 ```
 
 **Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations instead.
 
-### Messaging Patterns
+### Transport Patterns
 
 **Command Pattern:**
 - Exactly one handler per command type
-- Returns result or CommandError
+- Returns result or CommandRoutingError
 - Use for imperative actions
 
 **Event Pattern:**
@@ -193,17 +195,17 @@ const MessageBus = preload("res://packages/messaging/internal/message_bus.gd")
 **Symptom:** `preload()` fails with "Resource not found"
 
 **Solution:** Ensure all paths use `res://packages/` prefix:
-- ✅ `res://packages/messaging/messaging.gd`
-- ❌ `res://messaging/messaging.gd`
+- ✅ `res://packages/transport/transport.gd`
+- ❌ `res://transport/transport.gd`
 
 ### Issue: Multiple Command Handlers
 
-**Symptom:** `CommandError: Multiple handlers registered`
+**Symptom:** `CommandRoutingError: Multiple handlers registered`
 
 **Solution:** Commands must have exactly one handler. Clear existing handler first:
 ```gdscript
-command_bus.clear_type(MyCommand)
-command_bus.handle(MyCommand, my_handler)
+command_router.clear_registrations(MyCommand)
+command_router.register_handler(MyCommand, my_handler)
 ```
 
 ### Issue: SignalEventAdapter Connection Leaks
@@ -225,13 +227,13 @@ extends Message
 class_name MyCommand  # Required for consistent resolution
 ```
 
-### Issue: EventBus.publish() Blocks
+### Issue: EventBroadcaster.broadcast() Blocks
 
-**Symptom:** `publish()` appears to block even though it's "fire-and-forget"
+**Symptom:** `broadcast()` appears to block even though it's "fire-and-forget"
 
-**Solution:** `publish()` awaits async listeners to prevent memory leaks. This is intentional. For non-blocking behavior from Node context, use `call_deferred()`:
+**Solution:** `broadcast()` awaits async listeners to prevent memory leaks. This is intentional. For non-blocking behavior from Node context, use `call_deferred()`:
 ```gdscript
-call_deferred("_publish_event", event_bus, evt)
+call_deferred("_broadcast_event", event_broadcaster, evt)
 ```
 
 ## Testing Insights
@@ -248,7 +250,7 @@ call_deferred("_publish_event", event_bus, evt)
 
 ### Naming Conventions
 
-- **Classes:** PascalCase (`CommandBus`, `EventBus`, `Message`)
+- **Classes:** PascalCase (`CommandRouter`, `EventBroadcaster`, `Message`)
 - **Methods:** snake_case (`get_key()`, `remove_at()`)
 - **Variables:** snake_case (`command_bus`, `subscriptions`)
 - **Constants:** UPPER_SNAKE_CASE (not used in this project)
@@ -270,11 +272,33 @@ call_deferred("_publish_event", event_bus, evt)
 
 - One class per file (when possible)
 - Barrel files for package entry points
-- Internal implementation in `internal/` folders
-- Domain rules in `rules/` folders
-- Package-specific utilities in `utilities/` folders
+- Internal implementation in nested `internal/` folders
+- Organized by functionality (routing, pubsub, messages, validation, observability, adapters)
 
 ## Recent Improvements (January 2026)
+
+### Folder Structure Refactoring
+
+**Decision:** Reorganized transport package structure for better clarity and organization (January 2026)
+
+**Rationale:**
+- More semantic organization that reflects functionality
+- Clearer separation of concerns
+- Better discoverability for developers
+
+**Changes:**
+- `types/` → `messages/` (Message, Command, Event base classes)
+- `buses/` → `pubsub/` (EventBroadcaster, SubscriptionRegistry)
+- `routers/` → `routing/` (CommandRouter)
+- `rules/` → `validation/` (CommandValidator, SubscriptionValidator)
+- `utilities/` → `observability/` (MetricsUtils)
+- `internal/` → moved to `messages/internal/` and `pubsub/internal/` (internal implementation details)
+
+**Impact:**
+- All preload paths updated automatically
+- Public API unchanged (all exports through `transport.gd` barrel file)
+- No breaking changes for external code using the public API
+- Improved code organization and maintainability
 
 ### Performance Optimizations
 
@@ -284,7 +308,7 @@ call_deferred("_publish_event", event_bus, evt)
 
 ### Bug Fixes
 
-1. **Metrics Recording:** Fixed double-recording bug in EventBus where metrics were recorded per-listener and again for overall operation. Now correctly records overall operation time once.
+1. **Metrics Recording:** Fixed double-recording bug in EventBroadcaster where metrics were recorded per-listener and again for overall operation. Now correctly records overall operation time once.
 
 2. **Resource Cleanup:** Added automatic cleanup for `SignalEventAdapter` connections via `_notification()` to prevent memory leaks when adapters are freed.
 
@@ -294,13 +318,13 @@ call_deferred("_publish_event", event_bus, evt)
 
 1. **Documentation:** Enhanced all code files with comprehensive GDScript documentation following best practices. Added `@param`, `@return`, and `@example` tags throughout the codebase.
 
-2. **Documentation:** Clarified async behavior in EventBus.publish() - documented that async listeners are awaited to prevent memory leaks, even though the method doesn't return a value.
+2. **Documentation:** Clarified async behavior in EventBroadcaster.broadcast() - documented that async listeners are awaited to prevent memory leaks, even though the method doesn't return a value.
 
 ### Code Simplification
 
-1. **Collection Package Removal:** Removed Collection package dependency from messaging system. Replaced with direct array/dictionary operations using helper functions (`_remove_indices_from_array()`). Simplifies codebase and reduces dependencies.
+1. **Collection Package Removal:** Removed Collection package dependency from transport system. Replaced with direct array/dictionary operations using helper functions (`_remove_indices_from_array()`). Simplifies codebase and reduces dependencies.
 
-2. **Obsolete Code Cleanup:** Removed unused `listener_start_time` variable from EventBus that was never used (leftover from planned per-listener metrics).
+2. **Obsolete Code Cleanup:** Removed unused `listener_start_time` variable from EventBroadcaster that was never used (leftover from planned per-listener metrics).
 
 ## Future Considerations
 
@@ -320,7 +344,7 @@ call_deferred("_publish_event", event_bus, evt)
 
 ## References
 
-- [Messaging Package README](packages/messaging/README.md)
+- [Transport Package README](packages/transport/README.md)
 - [Developer Diary](docs/developer-diary/)
 - [Tech Stack Documentation](docs/TECH_STACK.md)
 - [Godot Documentation](https://docs.godotengine.org/)

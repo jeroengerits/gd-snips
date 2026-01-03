@@ -1,6 +1,6 @@
-const MessageTypeResolver = preload("res://packages/messaging/internal/message_type_resolver.gd")
-const SubscriptionValidator = preload("res://packages/messaging/rules/subscription_validation.gd")
-const MetricsUtils = preload("res://packages/messaging/utilities/metrics_utils.gd")
+const MessageTypeResolver = preload("res://packages/transport/messages/internal/message_type_resolver.gd")
+const SubscriptionValidator = preload("res://packages/transport/validation/subscription_validation.gd")
+const MetricsUtils = preload("res://packages/transport/observability/metrics_utils.gd")
 
 extends RefCounted
 ## Internal subscription registry. Manages subscriptions, middleware, and metrics.

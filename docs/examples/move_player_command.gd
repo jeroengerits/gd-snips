@@ -1,6 +1,6 @@
-const Messaging = preload("res://packages/messaging/messaging.gd")
+const Transport = preload("res://packages/transport/transport.gd")
 
-extends Messaging.Command
+extends Transport.Command
 class_name MovePlayerCommand
 
 ## Example command: Move player to a target position.

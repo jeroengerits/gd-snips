@@ -4,11 +4,11 @@ Reusable packages for **Godot 4.5.1+** with a focus on modular architecture and 
 
 ## Packages
 
-### Messaging
+### Transport
 
-Type-safe command/event messaging framework.
+Type-safe command/event transport framework.
 
-**[Documentation →](packages/messaging/README.md)**
+**[Documentation →](packages/transport/README.md)**
 
 ## Requirements
 

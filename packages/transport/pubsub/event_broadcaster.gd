@@ -1,6 +1,6 @@
-const SubscriptionRegistry = preload("res://packages/messaging/internal/subscription_registry.gd")
-const SubscriptionValidator = preload("res://packages/messaging/rules/subscription_validation.gd")
-const Event = preload("res://packages/messaging/types/event.gd")
+const SubscriptionRegistry = preload("res://packages/transport/pubsub/internal/subscription_registry.gd")
+const SubscriptionValidator = preload("res://packages/transport/validation/subscription_validation.gd")
+const Event = preload("res://packages/transport/messages/event.gd")
 
 extends SubscriptionRegistry
 class_name EventBroadcaster

@@ -1,6 +1,6 @@
-const SubscriptionRegistry = preload("res://packages/messaging/internal/subscription_registry.gd")
-const CommandValidator = preload("res://packages/messaging/rules/command_validation.gd")
-const Command = preload("res://packages/messaging/types/command.gd")
+const SubscriptionRegistry = preload("res://packages/transport/pubsub/internal/subscription_registry.gd")
+const CommandValidator = preload("res://packages/transport/validation/command_validation.gd")
+const Command = preload("res://packages/transport/messages/command.gd")
 
 extends SubscriptionRegistry
 class_name CommandRouter

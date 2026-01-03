@@ -8,15 +8,15 @@ extends Node
 ## - Executing commands and broadcasting events
 ## - Using priorities, one-shot subscriptions, and lifecycle binding
 
-const Messaging = preload("res://packages/messaging/messaging.gd")
+const Transport = preload("res://packages/transport/transport.gd")
 
-var command_router: Messaging.CommandRouter
-var event_broadcaster: Messaging.EventBroadcaster
+var command_router: Transport.CommandRouter
+var event_broadcaster: Transport.EventBroadcaster
 
 func _ready() -> void:
 	# Create router and broadcaster instances
-	command_router = Messaging.CommandRouter.new()
-	event_broadcaster = Messaging.EventBroadcaster.new()
+	command_router = Transport.CommandRouter.new()
+	event_broadcaster = Transport.EventBroadcaster.new()
 	
 	# Enable verbose logging for this example
 	command_router.set_verbose(true)

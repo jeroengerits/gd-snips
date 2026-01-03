@@ -47,7 +47,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
 2. **Use Variant for truly dynamic types:**
    - When a parameter can accept multiple types
    - When return type depends on runtime behavior
-   - Our messaging system uses `Variant` for flexible return types
+   - Our transport system uses `Variant` for flexible return types
 
 3. **Type checking with `is_instance_of()`:**
    ```gdscript
@@ -58,7 +58,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
        # Handle Node
    ```
 
-**Our Implementation:** ✅ All messaging methods use explicit type annotations throughout.
+**Our Implementation:** ✅ All transport methods use explicit type annotations throughout.
 
 ---
 
@@ -66,7 +66,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
 
 ### When to Use RefCounted
 
-**Current Usage:** ✅ We use `RefCounted` for all messaging classes (MessageBus, CommandBus, EventBus, Message, Command, Event).
+**Current Usage:** ✅ We use `RefCounted` for all transport classes (SubscriptionRegistry, CommandRouter, EventBroadcaster, Message, Command, Event).
 
 **Best Practices:**
 
@@ -74,12 +74,12 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
    - Classes that don't need scene tree integration
    - Utility classes and services
    - Data containers and value objects
-   - **Our use case:** MessageBus, Message types, utilities
+   - **Our use case:** SubscriptionRegistry, Message types, utilities
 
 2. **Node for scene tree integration:**
    - Classes that need signals, groups, or scene tree access
    - Classes that need `_ready()`, `_process()`, etc.
-   - **Our use case:** None (we use RefCounted for all messaging classes)
+   - **Our use case:** None (we use RefCounted for all transport classes)
 
 ### Cleanup Patterns
 

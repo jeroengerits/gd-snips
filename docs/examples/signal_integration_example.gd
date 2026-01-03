@@ -1,21 +1,21 @@
 extends Node
 
-## Example demonstrating signal integration with the messaging system.
+## Example demonstrating signal integration with the transport system.
 ##
-## This shows how to bridge Godot signals to messaging events
+## This shows how to bridge Godot signals to transport events
 ## using the SignalEventAdapter utility.
 
-const Messaging = preload("res://packages/messaging/messaging.gd")
+const Transport = preload("res://packages/transport/transport.gd")
 
 # Example event types
-class ButtonPressedEvent extends Messaging.Event:
+class ButtonPressedEvent extends Transport.Event:
 	var button_name: String
 	
 	func _init(name: String) -> void:
 		button_name = name
 		super._init("button_pressed", {"button_name": name})
 
-class AreaEnteredEvent extends Messaging.Event:
+class AreaEnteredEvent extends Transport.Event:
 	var body_name: String
 	var body_type: String
 	
@@ -24,7 +24,7 @@ class AreaEnteredEvent extends Messaging.Event:
 		body_type = body.get_class()
 		super._init("area_entered", {"body_name": body_name, "body_type": body_type})
 
-class EnemyDiedEvent extends Messaging.Event:
+class EnemyDiedEvent extends Transport.Event:
 	var enemy_id: int
 	var points: int
 	
@@ -33,12 +33,12 @@ class EnemyDiedEvent extends Messaging.Event:
 		points = pts
 		super._init("enemy_died", {"enemy_id": id, "points": pts})
 
-var event_broadcaster: Messaging.EventBroadcaster
-var signal_adapter: Messaging.SignalEventAdapter
+var event_broadcaster: Transport.EventBroadcaster
+var signal_adapter: Transport.SignalEventAdapter
 
 func _ready() -> void:
-	# Create bus instance
-	event_broadcaster = Messaging.EventBroadcaster.new()
+	# Create broadcaster instance
+	event_broadcaster = Transport.EventBroadcaster.new()
 	
 	# Enable verbose logging
 	event_broadcaster.set_verbose(true)
@@ -51,7 +51,7 @@ func _ready() -> void:
 
 ## Example 1: Bridge signals to events
 func _setup_signal_to_event_bridge() -> void:
-	signal_adapter = Messaging.SignalEventAdapter.new(event_broadcaster)
+	signal_adapter = Transport.SignalEventAdapter.new(event_broadcaster)
 	
 	# Simple signal → event bridge
 	# When button is pressed, ButtonPressedEvent is published
@@ -73,7 +73,7 @@ func _setup_signal_to_event_bridge() -> void:
 			func(body: Node2D): return {"body_name": body.name, "body_type": body.get_class()}
 		)
 
-## Example 2: Subscribe to events (normal messaging usage)
+## Example 2: Subscribe to events (normal transport usage)
 func _setup_event_listeners() -> void:
 	# Subscribe to events published via signal bridge
 	event_broadcaster.subscribe(ButtonPressedEvent, func(evt: ButtonPressedEvent):
