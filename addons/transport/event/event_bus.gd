@@ -133,8 +133,9 @@ func _emit_internal(evt: Event, await_async: bool) -> void:
 	var ones_to_remove: Array = []
 	var start_time: int = Time.get_ticks_msec()
 	
-	# Create a snapshot for safe iteration (subscribers may unsubscribe during dispatch)
-	var entries_snapshot: Array = entries.duplicate()
+	# entries is already a snapshot from _get_valid_registrations() (safe for iteration)
+	# No need to duplicate again - subscribers may unsubscribe during dispatch but we have a snapshot
+	var entries_snapshot: Array = entries
 	
 	for entry in entries_snapshot:
 		# Re-check validity (object might have been freed since snapshot)

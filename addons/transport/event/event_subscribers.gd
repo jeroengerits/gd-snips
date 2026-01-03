@@ -231,7 +231,11 @@ func unregister(message_type, handler: Callable) -> int:
 	return removed
 
 ## Clean up invalid registrations.
-func _cleanup_invalid_registrations(key: StringName, entries: Array) -> void:
+##
+## @param key: Registration key
+## @param entries: Array of EventSubscriber entries (modified in place if cleanup needed)
+## @return: true if any entries were removed, false otherwise
+func _cleanup_invalid_registrations(key: StringName, entries: Array) -> bool:
 	var to_remove: Array = []
 	for i in range(entries.size() - 1, -1, -1):
 		if not entries[i].is_valid():
@@ -241,6 +245,8 @@ func _cleanup_invalid_registrations(key: StringName, entries: Array) -> void:
 		ArrayUtils.remove_indices(entries, to_remove)
 		if entries.is_empty():
 			_registrations.erase(key)
+		return true
+	return false
 
 ## Clear registrations for a message type (internal).
 func clear_registrations(message_type) -> void:
@@ -265,13 +271,23 @@ func get_registration_count(message_type) -> int:
 	return entries.size()
 
 ## Get valid registrations for a message type (internal).
+##
+## Returns a snapshot array that can be safely iterated even if registrations
+## change during iteration. Only duplicates if cleanup was needed.
+##
+## @param message_type: Message type to get registrations for
+## @return: Array of valid EventSubscriber entries (snapshot, safe for iteration)
 func _get_valid_registrations(message_type) -> Array[EventSubscriber]:
 	var key: StringName = MessageTypeResolver.resolve_type(message_type)
 	if not _registrations.has(key):
 		return []
 	
 	var entries: Array = _registrations[key]
-	_cleanup_invalid_registrations(key, entries)
+	var had_cleanup: bool = _cleanup_invalid_registrations(key, entries)
+	
+	# Always return a snapshot for safe iteration (callers may modify during iteration)
+	# This is necessary because EventBus creates its own snapshot anyway,
+	# and CommandBus needs a safe copy for validation
 	return entries.duplicate()
 
 ## Mark registration for removal.

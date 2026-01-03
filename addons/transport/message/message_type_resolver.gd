@@ -31,21 +31,25 @@ static func resolve_type(message_or_type: Variant) -> StringName:
 		var obj: Object = message_or_type
 		var class_name_str: String = obj.get_class()
 		
-		# If class_name exists and is not "Object", use it
+		# If class_name exists and is not "Object", use it (most reliable path)
 		if class_name_str != "" and class_name_str != "Object":
 			return StringName(class_name_str)
 		
-		# Fallback: extract from script path
+		# Fallback: extract from script path (less reliable but better than "Object")
 		var script: Script = obj.get_script()
-		if script != null and script.resource_path != "":
-			var resolved: StringName = StringName(script.resource_path.get_file().get_basename())
-			if _verbose:
-				push_warning("[MessageTypeResolver] Resolved Object type from script path: %s (class_name not set, consider adding class_name for better type resolution)" % resolved)
-			return resolved
+		if script != null:
+			var script_path: String = script.resource_path
+			if script_path != "":
+				var resolved: StringName = StringName(script_path.get_file().get_basename())
+				if _verbose:
+					push_warning("[MessageTypeResolver] Resolved Object type from script path: %s (class_name not set, consider adding class_name for better type resolution)" % resolved)
+				return resolved
+			elif _verbose:
+				push_warning("[MessageTypeResolver] Object has script but no resource_path. Object type: %s" % class_name_str)
 		
 		# Last resort: use get_class() result (will be "Object" for plain objects)
 		if _verbose and class_name_str == "Object":
-			push_warning("[MessageTypeResolver] Could not resolve Object type - no class_name and no script path. Using 'Object' as fallback.")
+			push_warning("[MessageTypeResolver] Could not resolve Object type - no class_name and no script path. Using 'Object' as fallback. This may cause routing issues.")
 		return StringName(class_name_str)
 	
 	# Handle GDScript class references - get class_name without instantiation
@@ -57,7 +61,7 @@ static func resolve_type(message_or_type: Variant) -> StringName:
 		if global_name != "":
 			return StringName(global_name)
 		
-		# Fallback: use script filename
+		# Fallback: use script filename (less reliable but better than "UnknownScript")
 		var path: String = script.resource_path
 		if path != "":
 			var resolved: StringName = StringName(path.get_file().get_basename())
@@ -65,8 +69,14 @@ static func resolve_type(message_or_type: Variant) -> StringName:
 				push_warning("[MessageTypeResolver] Resolved GDScript type from path: %s (class_name not set, consider adding class_name for better type resolution)" % resolved)
 			return resolved
 		
-		# Better error message for debugging
-		push_warning("[MessageTypeResolver] Could not resolve GDScript type. Script path: %s. Consider adding class_name to the script for reliable type resolution." % path)
+		# Better error message for debugging - this is a problematic case
+		var error_msg: String = "[MessageTypeResolver] Could not resolve GDScript type"
+		if path != "":
+			error_msg += ". Script path: %s" % path
+		else:
+			error_msg += ". Script has no resource_path"
+		error_msg += ". Consider adding class_name to the script for reliable type resolution."
+		push_warning(error_msg)
 		return StringName("UnknownScript")
 	
 	# Last resort: convert to string with warning
