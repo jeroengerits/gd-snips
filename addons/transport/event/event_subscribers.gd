@@ -1,7 +1,7 @@
-const MessageTypeResolver = preload("res://addons/transport/core/message_type_resolver.gd")
+const MessageTypeResolver = preload("res://addons/transport/message/message_type_resolver.gd")
 const MetricsUtils = preload("res://addons/transport/utils/metrics_utils.gd")
 const ArrayUtils = preload("res://addons/transport/utils/array_utils.gd")
-const MiddlewareEntry = preload("res://addons/transport/core/middleware_entry.gd")
+const MiddlewareEntry = preload("res://addons/transport/middleware/middleware_entry.gd")
 const EventSubscriber = preload("res://addons/transport/event/event_subscriber.gd")
 
 extends RefCounted
@@ -31,7 +31,7 @@ func add_middleware_before(callback: Callable, priority: int = 0) -> int:
 	_middleware_before.append(mw)
 	ArrayUtils.sort_by_priority(_middleware_before)
 	if _verbose:
-		print("[Subscribers] Added before-middleware (priority=", priority, ")")
+		print("[EventSubscribers] Added before-middleware (priority=", priority, ")")
 	return mw.id
 
 ## Add after-execution middleware.
@@ -40,7 +40,7 @@ func add_middleware_after(callback: Callable, priority: int = 0) -> int:
 	_middleware_after.append(mw)
 	ArrayUtils.sort_by_priority(_middleware_after)
 	if _verbose:
-		print("[Subscribers] Added after-middleware (priority=", priority, ")")
+		print("[EventSubscribers] Added after-middleware (priority=", priority, ")")
 	return mw.id
 
 ## Remove middleware.
@@ -58,7 +58,7 @@ func remove_middleware(middleware_id: int) -> bool:
 		ArrayUtils.remove_indices(_middleware_before, before_to_remove)
 		removed = true
 		if _verbose:
-			print("[Subscribers] Removed before-middleware (id=", middleware_id, ")")
+			print("[EventSubscribers] Removed before-middleware (id=", middleware_id, ")")
 	
 	# Find and remove from after-middleware
 	var after_to_remove: Array = []
@@ -70,7 +70,7 @@ func remove_middleware(middleware_id: int) -> bool:
 		ArrayUtils.remove_indices(_middleware_after, after_to_remove)
 		removed = true
 		if _verbose:
-			print("[Subscribers] Removed after-middleware (id=", middleware_id, ")")
+			print("[EventSubscribers] Removed after-middleware (id=", middleware_id, ")")
 	
 	return removed
 
@@ -79,7 +79,7 @@ func clear_middleware() -> void:
 	_middleware_before.clear()
 	_middleware_after.clear()
 	if _verbose:
-		print("[Subscribers] Cleared all middleware")
+		print("[EventSubscribers] Cleared all middleware")
 
 ## Enable metrics tracking.
 func set_metrics_enabled(enabled: bool) -> void:
@@ -170,7 +170,7 @@ func register(message_type, handler: Callable, priority: int = 0, once: bool = f
 	entries.insert(insert_pos, entry)
 	
 	if _verbose:
-		print("[Subscribers] Registered to ", key, " (priority=", priority, ", once=", once, ")")
+		print("[EventSubscribers] Registered to ", key, " (priority=", priority, ", once=", once, ")")
 	
 	return entry.id
 
@@ -188,7 +188,7 @@ func unregister_by_id(message_type, registration_id: int) -> bool:
 		if entries.is_empty():
 			_registrations.erase(key)
 		if _verbose:
-			print("[Subscribers] Unregistered from ", key, " (id=", registration_id, ")")
+			print("[EventSubscribers] Unregistered from ", key, " (id=", registration_id, ")")
 		return true
 	return false
 
@@ -215,7 +215,7 @@ func unregister(message_type, handler: Callable) -> int:
 			_registrations.erase(key)
 	
 	if _verbose and removed > 0:
-		print("[Subscribers] Unregistered ", removed, " registration(s) from ", key)
+		print("[EventSubscribers] Unregistered ", removed, " registration(s) from ", key)
 	
 	return removed
 
@@ -236,13 +236,13 @@ func clear_registrations(message_type) -> void:
 	var key = MessageTypeResolver.resolve_type(message_type)
 	_registrations.erase(key)
 	if _verbose:
-		print("[Subscribers] Cleared registrations for ", key)
+		print("[EventSubscribers] Cleared registrations for ", key)
 
 ## Clear all registrations.
 func clear() -> void:
 	_registrations.clear()
 	if _verbose:
-		print("[Subscribers] Cleared all registrations")
+		print("[EventSubscribers] Cleared all registrations")
 
 ## Get registration count (internal).
 func get_registration_count(message_type) -> int:

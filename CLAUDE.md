@@ -19,9 +19,10 @@ addons/
 └── transport/     # Command/Event transport framework (Godot addon)
     ├── plugin.cfg # Addon configuration
     ├── transport.gd # Public API barrel file
-    ├── core/      # Shared infrastructure (Message, MessageTypeResolver, Subscribers, Middleware, MiddlewareEntry)
+    ├── message/   # Message base class and MessageTypeResolver
+    ├── middleware/# Middleware base class and MiddlewareEntry
     ├── utils/     # Metrics utilities
-    ├── event/     # EventBus, Event, Validator, EventSignalBridge, EventSubscriber
+    ├── event/     # EventBus, Event, EventSubscribers, Validator, EventSignalBridge, EventSubscriber
     └── command/   # CommandBus, Command, Validator, CommandSignalBridge
 ```
 
@@ -75,18 +76,20 @@ addons/
 - Removing EventValidator dependency from Subscribers improves separation of concerns (priority sorting is generic logic, not event-specific validation)
 
 **Implementation:**
-- Moved `event/subscribers.gd` → `core/subscribers.gd`
+- Moved `event/subscribers.gd` → `core/subscribers.gd` (later moved to `event/event_subscribers.gd`)
 - Extracted priority sorting logic to `_sort_by_priority()` method in Subscribers class (later moved to ArrayUtils)
 - Removed EventValidator dependency from Subscribers (was only used for sorting middleware)
 - Inlined lifecycle validation in EventSubscriber class (removed EventValidator dependency)
 - Updated imports in command_bus.gd and event_bus.gd to use new path
 - Later renamed `Subscriber` to `EventSubscriber` for clarity (distinguishes from `Subscribers` infrastructure class)
+- Final reorganization: Moved to `event/event_subscribers.gd` when `core/` directory was removed
 
 **Impact:**
-- Better architectural clarity - core/ folder explicitly shows shared infrastructure
+- Better architectural clarity - shared infrastructure explicitly separated
 - Reduced coupling - Subscribers no longer depends on event-specific validators
 - No breaking changes - public API unchanged (Subscribers is internal implementation)
 - Improved maintainability - clearer separation between shared and domain-specific code
+- Final structure: EventSubscribers in `event/` directory (organizes by functional domain)
 
 ### Method Naming Convention
 
@@ -118,7 +121,7 @@ addons/
 - Easier to add new packages following the same pattern
 
 **Examples:**
-- `transport/transport.gd` → `core/message.gd`, `command/command_bus.gd`
+- `transport/transport.gd` → `message/message.gd`, `command/command_bus.gd`
 
 ### Transport Package Architecture
 
@@ -126,7 +129,7 @@ addons/
 ```
 Public API (CommandBus/EventBus)
     ↓
-Shared Infrastructure (Subscribers, Message, MessageTypeResolver in core/)
+Shared Infrastructure (EventSubscribers, Message/MessageTypeResolver, Middleware)
     ↓
 Domain Rules (Validator classes in command/ and event/)
     ↓
@@ -135,11 +138,11 @@ Base Types (Command, Event in their respective directories)
 
 **Key Patterns:**
 - **Barrel Files:** Each package has a main entry point (e.g., `transport.gd`)
-- **Shared Infrastructure:** Core functionality (Subscribers, Middleware, MiddlewareEntry) in `core/` folder, used by both CommandBus and EventBus
+- **Shared Infrastructure:** Message infrastructure in `message/`, middleware in `middleware/`, and EventSubscribers in `event/` (used by both CommandBus and EventBus)
 - **Domain Rules:** Business logic separated into validation classes (Validator in command/, Validator in event/)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
 - **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
-- **Organized Structure:** Functionality-based organization with clear separation between shared infrastructure (core/) and domain-specific code (command/, event/)
+- **Organized Structure:** Functionality-based organization with clear separation by domain (message/, middleware/, command/, event/)
 
 ### Type Resolution and Lifecycle Management
 
@@ -200,8 +203,8 @@ var event_bus = Transport.EventBus.new()
 
 **Direct Import (for internal files):**
 ```gdscript
-const Subscribers = preload("res://addons/transport/core/subscribers.gd")
-const MessageTypeResolver = preload("res://addons/transport/core/message_type_resolver.gd")
+const Subscribers = preload("res://addons/transport/event/event_subscribers.gd")
+const MessageTypeResolver = preload("res://addons/transport/message/message_type_resolver.gd")
 const ArrayUtils = preload("res://addons/transport/utils/array_utils.gd")
 ```
 
@@ -352,27 +355,27 @@ if not source.connect(signal_name, callback):
 - Addons can now be enabled/disabled through Godot's plugin interface
 - Better alignment with Godot ecosystem standards
 
-### Middleware Move to Core Directory
+### Middleware Directory Organization
 
-**Decision:** Moved Middleware and MiddlewareEntry from `middleware/` to `core/` directory (January 2026)
+**Decision:** Organized Middleware and MiddlewareEntry in dedicated `middleware/` directory (January 2026)
 
 **Rationale:**
-- Middleware is shared infrastructure used by both CommandBus and EventBus, not domain-specific code
-- Consistent with other shared infrastructure (Subscribers) being in `core/`
-- Reduces folder count and simplifies structure
-- Better reflects that middleware is infrastructure, not a separate domain
+- Middleware is a distinct functional domain with its own concerns
+- Clear separation of middleware infrastructure from other domains
+- Better organization by functional area rather than generic "core" folder
+- Easier to locate and understand middleware-related code
 
 **Implementation:**
-- Moved `middleware/middleware.gd` → `core/middleware.gd`
-- Moved `middleware/middleware_entry.gd` → `core/middleware_entry.gd`
-- Updated preload paths in `subscribers.gd` and `transport.gd`
-- Removed empty `middleware/` directory
+- Middleware base class in `middleware/middleware.gd`
+- MiddlewareEntry in `middleware/middleware_entry.gd`
+- Updated preload paths in all files using middleware
+- Part of broader reorganization that removed `core/` directory
 
 **Impact:**
 - Internal change only (Middleware is exported via barrel file, path change is transparent)
 - No breaking changes to public API
-- Improved architectural clarity - all shared infrastructure now in `core/`
-- Cleaner folder structure
+- Improved organizational clarity - functional domains clearly separated
+- Cleaner, more intuitive folder structure
 
 ### Folder Structure Refactoring
 
@@ -390,11 +393,13 @@ if not source.connect(signal_name, callback):
 3. Flattened: Removed nested `internal/` folders
 4. Consolidated: `type/`, `utils/`, `event/`, `command/` (singular folder names)
 5. Reorganized: Removed `type/` directory, moved files to domain-specific directories (January 2026)
+6. Further refined: Removed `core/` directory, organized by functional domain (January 2026)
 
 **Current Structure:**
-- `core/` - Shared infrastructure: Message (message.gd), MessageTypeResolver (message_type_resolver.gd), Subscribers (subscribers.gd), Middleware (middleware.gd), MiddlewareEntry (middleware_entry.gd)
+- `message/` - Message base class (message.gd), MessageTypeResolver (message_type_resolver.gd)
+- `middleware/` - Middleware base class (middleware.gd), MiddlewareEntry (middleware_entry.gd)
 - `utils/` - Metrics utilities
-- `event/` - EventBus (event_bus.gd), Event (event.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd), EventSubscriber (event_subscriber.gd)
+- `event/` - EventBus (event_bus.gd), Event (event.gd), EventSubscribers (event_subscribers.gd), EventSubscriber (event_subscriber.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd)
 - `command/` - CommandBus (command_bus.gd), Command (command.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
 
 **File Naming:**
@@ -458,7 +463,8 @@ if not source.connect(signal_name, callback):
 
 ### Architecture Improvements
 
-1. **Subscribers Refactoring:** Moved Subscribers to core/ directory and removed EventValidator dependency (January 2026).
+1. **Subscribers Refactoring:** Reorganized Subscribers (now EventSubscribers) and removed EventValidator dependency (January 2026).
+   - Moved to `event/event_subscribers.gd` as part of domain-based organization
    - Better architectural clarity - shared infrastructure explicitly separated
    - Reduced coupling between shared code and domain-specific validators
    - Improved maintainability with clearer separation of concerns

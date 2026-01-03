@@ -1,4 +1,4 @@
-const Message = preload("res://addons/transport/core/message.gd")
+const Message = preload("res://addons/transport/message/message.gd")
 
 extends RefCounted
 class_name Middleware
