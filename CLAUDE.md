@@ -125,7 +125,7 @@ The `MessageTypeResolver` handles Godot's type system complexity:
 **Lifecycle Management:**
 Subscriptions and adapters automatically clean up to prevent memory leaks:
 - Subscriptions bound to objects auto-unsubscribe when object is freed (uses `is_instance_valid()`)
-- `SignalBridge` and `CommandSignalBridge` automatically disconnect signal connections when freed (uses `_notification(NOTIFICATION_PREDELETE)`)
+- `EventSignalBridge` and `CommandSignalBridge` automatically disconnect signal connections when freed (uses `_notification(NOTIFICATION_PREDELETE)`)
 - No manual cleanup needed for scene-bound subscriptions and adapters
 
 ### Signal Integration
