@@ -45,8 +45,8 @@ Copy the `packages/transport` directory into your Godot project.
 const Transport = preload("res://packages/transport/transport.gd")
 
 # Create router and broadcaster instances
-var command_router = Transport.CommandRouter.new()
-var event_broadcaster = Transport.EventBroadcaster.new()
+var command_router = Transport.Commander.new()
+var event_broadcaster = Transport.Publisher.new()
 
 # Register a command handler
 command_router.register_handler(MovePlayerCommand, func(cmd: MovePlayerCommand) -> bool:
@@ -161,7 +161,7 @@ var result = await command_router.execute(cmd)
 
 #### Error Handling
 
-Commands can throw `CommandRouter.CommandRoutingError`:
+Commands can throw `Commander.CommandRoutingError`:
 - `NO_HANDLER` - No handler registered for command type
 - `MULTIPLE_HANDLERS` - Multiple handlers registered (invalid state)
 - `HANDLER_FAILED` - Handler execution failed
@@ -251,15 +251,15 @@ While this transport system is designed as an alternative to Godot signals, brid
 - Third-party plugins that emit signals
 - Legacy code migration from signals to transport
 
-### SignalEventAdapter
+### Bridge
 
-Bridge Node signals to EventBroadcaster:
+Bridge Node signals to Publisher:
 
 ```gdscript
 const Transport = preload("res://packages/transport/transport.gd")
 
-var event_broadcaster = Transport.EventBroadcaster.new()
-var adapter = Transport.SignalEventAdapter.new(event_broadcaster)
+var event_broadcaster = Transport.Publisher.new()
+var adapter = Transport.Bridge.new(event_broadcaster)
 
 # Bridge button signal to event
 adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
@@ -287,7 +287,7 @@ adapter.connect_signal_to_event(
 - Godot built-in events (`area_entered`, etc.)
 - Third-party plugin integrations
 
-**Use SignalEventAdapter when:**
+**Use Bridge when:**
 - Migrating from signals to transport
 - Integrating legacy signal-based code
 - Connecting UI signals to game logic
@@ -297,23 +297,23 @@ adapter.connect_signal_to_event(
 ### Command Flow
 
 ```
-Validate Input → Execute Command → CommandRouter → Single Handler → Result or Error
+Validate Input → Execute Command → Commander → Single Handler → Result or Error
 ```
 
 ### Event Flow
 
 ```
-Broadcast Event → EventBroadcaster → Listener 1 (priority 10) → Listener 2 (priority 5) → ... → Listener N (priority 0)
+Broadcast Event → Publisher → Listener 1 (priority 10) → Listener 2 (priority 5) → ... → Listener N (priority 0)
 ```
 
 ### Component Overview
 
-- **CommandRouter** - Handles command execution with single-handler guarantee
-- **EventBroadcaster** - Handles event broadcasting to multiple subscribers
+- **Commander** - Handles command execution with single-handler guarantee
+- **Publisher** - Handles event broadcasting to multiple subscribers
 - **Message** - Base class for all messages
 - **Command** - Base class for commands
 - **Event** - Base class for events
-- **SignalEventAdapter** - Bridges Godot signals to events
+- **Bridge** - Bridges Godot signals to events
 - **SubscriptionRegistry** - Internal implementation shared by both router and broadcaster
 
 ## Best Practices

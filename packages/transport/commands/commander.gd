@@ -1,11 +1,11 @@
 const SubscriptionRegistry = preload("res://packages/transport/events/registry.gd")
-const CommandValidator = preload("res://packages/transport/commands/validator.gd")
+const Validator = preload("res://packages/transport/commands/validator.gd")
 const Command = preload("res://packages/transport/types/command.gd")
 
 extends SubscriptionRegistry
-class_name CommandRouter
+class_name Commander
 
-## Command router: routes commands to exactly one handler.
+## Commander: routes commands to exactly one handler.
 
 ## Error raised during command routing/execution.
 class CommandRoutingError extends RefCounted:
@@ -36,7 +36,7 @@ func register_handler(command_type, handler: Callable) -> void:
 	if existing > 0:
 		clear_registrations(command_type)
 		if _verbose:
-			print("[CommandRouter] Replaced existing handler for ", key)
+			print("[Commander] Replaced existing handler for ", key)
 	
 	register(command_type, handler, 0, false, null)
 
@@ -54,22 +54,22 @@ func execute(cmd: Command) -> Variant:
 	# Execute pre-middleware (can cancel delivery)
 	if not _execute_middleware_pre(cmd, key):
 		if _trace_enabled:
-			print("[CommandRouter] Executing ", key, " cancelled by middleware")
+			print("[Commander] Executing ", key, " cancelled by middleware")
 		return CommandRoutingError.new("Command execution cancelled by middleware", CommandRoutingError.Code.HANDLER_FAILED)
 	
 	var entries: Array = _get_valid_registrations(key)
 	
 	# Validate routing rules
-	var validation: CommandValidator.Result = CommandValidator.validate_count(entries.size())
+	var validation: Validator.Result = Validator.validate_count(entries.size())
 	
 	match validation:
-		CommandValidator.Result.NO_HANDLER:
+		Validator.Result.NO_HANDLER:
 			var err: CommandRoutingError = CommandRoutingError.new("No handler registered for command type: %s" % key, CommandRoutingError.Code.NO_HANDLER)
 			push_error(err.to_string())
 			_execute_middleware_post(cmd, key, err)
 			return err
 		
-		CommandValidator.Result.MULTIPLE_HANDLERS:
+		Validator.Result.MULTIPLE_HANDLERS:
 			var err: CommandRoutingError = CommandRoutingError.new("Multiple handlers registered for command type: %s (expected exactly one)" % key, CommandRoutingError.Code.MULTIPLE_HANDLERS)
 			push_error(err.to_string())
 			_execute_middleware_post(cmd, key, err)
@@ -82,7 +82,7 @@ func execute(cmd: Command) -> Variant:
 	var entry = entries[0]
 	
 	if _trace_enabled:
-		print("[CommandRouter] Executing ", key, " -> handler (priority=", entry.priority, ")")
+		print("[Commander] Executing ", key, " -> handler (priority=", entry.priority, ")")
 	
 	if not entry.is_valid():
 		var err: CommandRoutingError = CommandRoutingError.new("Handler is invalid (freed object) for command type: %s" % key, CommandRoutingError.Code.HANDLER_FAILED)

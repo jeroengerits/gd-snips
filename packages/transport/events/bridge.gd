@@ -1,14 +1,14 @@
 extends RefCounted
-class_name SignalEventAdapter
+class_name Bridge
 
-## Bridges Godot signals to EventBroadcaster events.
+## Bridges Godot signals to Publisher events.
 
-var _event_broadcaster: EventBroadcaster
+var _event_broadcaster: Publisher
 var _connections: Array = []
 
 ## Create adapter.
-func _init(event_broadcaster: EventBroadcaster) -> void:
-	assert(event_broadcaster != null, "EventBroadcaster cannot be null")
+func _init(event_broadcaster: Publisher) -> void:
+	assert(event_broadcaster != null, "Publisher cannot be null")
 	_event_broadcaster = event_broadcaster
 
 ## Connect signal to event type.
@@ -35,7 +35,7 @@ func connect_signal_to_event(source: Object, signal_name: StringName, event_type
 	
 	# Connect signal to callback
 	if not source.connect(signal_name, callback):
-		push_error("[SignalEventAdapter] Failed to connect signal: %s" % signal_name)
+		push_error("[Bridge] Failed to connect signal: %s" % signal_name)
 		return
 	
 	# Store connection for cleanup

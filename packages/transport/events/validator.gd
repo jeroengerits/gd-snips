@@ -1,5 +1,5 @@
 extends RefCounted
-class_name SubscriptionValidator
+class_name Validator
 
 ## Validation logic for subscription behavior.
 

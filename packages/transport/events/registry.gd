@@ -1,10 +1,10 @@
 const MessageTypeResolver = preload("res://packages/transport/types/message_type_resolver.gd")
-const SubscriptionValidator = preload("res://packages/transport/events/validator.gd")
+const Validator = preload("res://packages/transport/events/validator.gd")
 const MetricsUtils = preload("res://packages/transport/utils/metrics_utils.gd")
 
 extends RefCounted
 ## Internal subscription registry. Manages subscriptions, middleware, and metrics.
-## Use CommandRouter or EventBroadcaster instead.
+## Use Commander or Publisher instead.
 
 ## Middleware registry entry.
 class MiddlewareEntry:
@@ -39,7 +39,7 @@ class SubscriptionEntry:
 		_next_id += 1
 	
 	func is_valid() -> bool:
-		if not SubscriptionValidator.is_valid_for_lifecycle(owner):
+		if not Validator.is_valid_for_lifecycle(owner):
 			return false
 		return callable.is_valid()
 	
@@ -59,14 +59,14 @@ func set_verbose(enabled: bool) -> void:
 	_verbose = enabled
 
 ## Enable tracing.
-func set_tracing(enabled: bool) -> void:
+func set_trace_enabled(enabled: bool) -> void:
 	_trace_enabled = enabled
 
 ## Add pre-processing middleware.
 func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_pre.append(mw)
-	SubscriptionValidator.sort_by_priority(_middleware_pre)
+	Validator.sort_by_priority(_middleware_pre)
 	if _verbose:
 		print("[SubscriptionRegistry] Added pre-middleware (priority=", priority, ")")
 	return mw.id
@@ -75,7 +75,7 @@ func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
 func add_middleware_post(callback: Callable, priority: int = 0) -> int:
 	var mw = MiddlewareEntry.new(callback, priority)
 	_middleware_post.append(mw)
-	SubscriptionValidator.sort_by_priority(_middleware_post)
+	Validator.sort_by_priority(_middleware_post)
 	if _verbose:
 		print("[SubscriptionRegistry] Added post-middleware (priority=", priority, ")")
 	return mw.id

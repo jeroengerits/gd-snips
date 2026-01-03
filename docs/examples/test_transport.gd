@@ -1,6 +1,6 @@
 extends Node
 
-## Test suite for SubscriptionRegistry, CommandRouter, and EventBroadcaster.
+## Test suite for SubscriptionRegistry, Commander, and Publisher.
 ##
 ## Run this scene to verify:
 ## - Single command handler enforcement
@@ -12,13 +12,13 @@ extends Node
 
 const Transport = preload("res://packages/transport/transport.gd")
 
-var command_router: Transport.CommandRouter
-var event_broadcaster: Transport.EventBroadcaster
+var command_router: Transport.Commander
+var event_broadcaster: Transport.Publisher
 var test_results: Dictionary = {}
 
 func _ready() -> void:
-	command_router = Transport.CommandRouter.new()
-	event_broadcaster = Transport.EventBroadcaster.new()
+	command_router = Transport.Commander.new()
+	event_broadcaster = Transport.Publisher.new()
 	
 	print("=== Running SubscriptionRegistry Tests ===\n")
 	
@@ -56,7 +56,7 @@ func _test_command_no_handler() -> void:
 	var result = await command_router.execute(cmd)
 	
 	# Should return a CommandRoutingError
-	test_results[test_name] = result is Transport.CommandRouter.CommandRoutingError
+	test_results[test_name] = result is Transport.Commander.CommandRoutingError
 	print("✓ " if test_results[test_name] else "✗ ", test_name)
 
 func _test_command_multiple_handlers() -> void:

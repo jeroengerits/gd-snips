@@ -3,7 +3,7 @@ extends Node
 ## Example demonstrating signal integration with the transport system.
 ##
 ## This shows how to bridge Godot signals to transport events
-## using the SignalEventAdapter utility.
+## using the Bridge utility.
 
 const Transport = preload("res://packages/transport/transport.gd")
 
@@ -33,12 +33,12 @@ class EnemyDiedEvent extends Transport.Event:
 		points = pts
 		super._init("enemy_died", {"enemy_id": id, "points": pts})
 
-var event_broadcaster: Transport.EventBroadcaster
-var signal_adapter: Transport.SignalEventAdapter
+var event_broadcaster: Transport.Publisher
+var signal_adapter: Transport.Bridge
 
 func _ready() -> void:
 	# Create broadcaster instance
-	event_broadcaster = Transport.EventBroadcaster.new()
+	event_broadcaster = Transport.Publisher.new()
 	
 	# Enable verbose logging
 	event_broadcaster.set_verbose(true)
@@ -51,7 +51,7 @@ func _ready() -> void:
 
 ## Example 1: Bridge signals to events
 func _setup_signal_to_event_bridge() -> void:
-	signal_adapter = Transport.SignalEventAdapter.new(event_broadcaster)
+	signal_adapter = Transport.Bridge.new(event_broadcaster)
 	
 	# Simple signal → event bridge
 	# When button is pressed, ButtonPressedEvent is published

@@ -19,8 +19,8 @@ packages/
 └── transport/     # Command/Event transport framework
     ├── types/      # Message, Command, Event base classes
     ├── utils/      # Metrics utilities
-    ├── events/     # EventBroadcaster, SubscriptionRegistry, SubscriptionValidator, SignalEventAdapter
-    └── commands/   # CommandRouter, CommandValidator
+    ├── events/     # Publisher, SubscriptionRegistry, Validator, Bridge
+    └── commands/   # Commander, Validator
 ```
 
 ## Architectural Decisions
@@ -97,18 +97,18 @@ packages/
 
 **Layered Design:**
 ```
-Public API (CommandRouter/EventBroadcaster)
+Public API (Commander/Publisher)
     ↓
 Foundation (SubscriptionRegistry)
     ↓
-Domain Rules (CommandValidator/SubscriptionValidator)
+Domain Rules (Validator classes)
     ↓
 Infrastructure (MessageTypeResolver)
 ```
 
 **Key Patterns:**
 - **Barrel Files:** Each package has a main entry point (e.g., `transport.gd`)
-- **Domain Rules:** Business logic separated into validation classes (CommandValidator, SubscriptionValidator)
+- **Domain Rules:** Business logic separated into validation classes (Validator in commands/, Validator in events/)
 - **Lifecycle Binding:** Subscriptions auto-cleanup when bound objects are freed
 - **Type Resolution:** Handles Godot's type system complexity transparently (prioritizes `class_name`)
 - **Organized Structure:** Functionality-based organization (messages, routing, pubsub, validation, observability, adapters)
@@ -125,7 +125,7 @@ The `MessageTypeResolver` handles Godot's type system complexity:
 **Lifecycle Management:**
 Subscriptions and adapters automatically clean up to prevent memory leaks:
 - Subscriptions bound to objects auto-unsubscribe when object is freed (uses `is_instance_valid()`)
-- `SignalEventAdapter` automatically disconnects signal connections when freed (uses `_notification(NOTIFICATION_PREDELETE)`)
+- `Bridge` automatically disconnects signal connections when freed (uses `_notification(NOTIFICATION_PREDELETE)`)
 - No manual cleanup needed for scene-bound subscriptions and adapters
 
 ### Signal Integration
@@ -138,18 +138,18 @@ Subscriptions and adapters automatically clean up to prevent memory leaks:
 - Adapters enable gradual migration from signals to transport
 
 **Adapters:**
-- **SignalEventAdapter:** Bridges Node signals → EventBroadcaster (RefCounted utility)
+- **Bridge:** Bridges Node signals → Publisher (RefCounted utility)
 
 **Usage Guidelines:**
 - Use transport for game logic and domain events
 - Use signals for UI interactions and Godot-specific events
-- Use SignalEventAdapter when bridging signals to transport
+- Use Bridge when bridging signals to transport
 - Keep adapters thin—only convert formats, no business logic
 
 **Pattern:**
 ```gdscript
 # Signal → Event
-var adapter = Transport.SignalEventAdapter.new(event_broadcaster)
+var adapter = Transport.Bridge.new(event_broadcaster)
 adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
 ```
 
@@ -162,8 +162,8 @@ adapter.connect_signal_to_event($Button, "pressed", ButtonPressedEvent)
 const Transport = preload("res://packages/transport/transport.gd")
 
 # Use via barrel file
-var router = Transport.CommandRouter.new()
-var broadcaster = Transport.EventBroadcaster.new()
+var router = Transport.Commander.new()
+var broadcaster = Transport.Publisher.new()
 ```
 
 **Direct Import (for internal files):**
@@ -206,7 +206,7 @@ command_router.clear_registrations(MyCommand)
 command_router.register_handler(MyCommand, my_handler)
 ```
 
-### Issue: SignalEventAdapter Connection Leaks
+### Issue: Bridge Connection Leaks
 
 **Symptom:** Signal connections remain after adapter is freed, causing errors
 
@@ -225,7 +225,7 @@ extends Message
 class_name MyCommand  # Required for consistent resolution
 ```
 
-### Issue: EventBroadcaster.broadcast() Blocks
+### Issue: Publisher.broadcast() Blocks
 
 **Symptom:** `broadcast()` appears to block even though it's "fire-and-forget"
 
@@ -248,7 +248,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 ### Naming Conventions
 
-- **Classes:** PascalCase (`CommandRouter`, `EventBroadcaster`, `Message`)
+- **Classes:** PascalCase (`Commander`, `Publisher`, `Message`)
 - **Methods:** snake_case (`get_key()`, `remove_at()`)
 - **Variables:** snake_case (`command_bus`, `subscriptions`)
 - **Constants:** UPPER_SNAKE_CASE (not used in this project)
@@ -294,12 +294,12 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 **Current Structure:**
 - `types/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
-- `events/` - EventBroadcaster (broadcaster.gd), SubscriptionRegistry (registry.gd), SubscriptionValidator (validator.gd), SignalEventAdapter (bridge.gd)
-- `commands/` - CommandRouter (router.gd), CommandValidator (validator.gd)
+- `events/` - Publisher (publisher.gd), SubscriptionRegistry (registry.gd), Validator (validator.gd), Bridge (bridge.gd)
+- `commands/` - Commander (commander.gd), Validator (validator.gd)
 
 **File Naming:**
-- Files use short, descriptive names: `broadcaster.gd`, `router.gd`, `registry.gd`, `bridge.gd`, `validator.gd`
-- Class names remain unchanged (EventBroadcaster, CommandRouter, etc.)
+- Files use short, descriptive names: `publisher.gd`, `commander.gd`, `registry.gd`, `bridge.gd`, `validator.gd`
+- Class names remain unchanged (Publisher, Commander, etc.)
 - All files are at most one level deep from package root
 
 **Impact:**
@@ -317,9 +317,9 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 ### Bug Fixes
 
-1. **Metrics Recording:** Fixed double-recording bug in EventBroadcaster where metrics were recorded per-listener and again for overall operation. Now correctly records overall operation time once.
+1. **Metrics Recording:** Fixed double-recording bug in Publisher where metrics were recorded per-listener and again for overall operation. Now correctly records overall operation time once.
 
-2. **Resource Cleanup:** Added automatic cleanup for `SignalEventAdapter` connections via `_notification()` to prevent memory leaks when adapters are freed.
+2. **Resource Cleanup:** Added automatic cleanup for `Bridge` connections via `_notification()` to prevent memory leaks when adapters are freed.
 
 3. **Validation Logic:** Simplified Message._init() validation by removing redundant checks after assertions, improving clarity and maintainability.
 
@@ -327,13 +327,13 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 1. **Documentation:** Enhanced all code files with comprehensive GDScript documentation following best practices. Added `@param`, `@return`, and `@example` tags throughout the codebase.
 
-2. **Documentation:** Clarified async behavior in EventBroadcaster.broadcast() - documented that async listeners are awaited to prevent memory leaks, even though the method doesn't return a value.
+2. **Documentation:** Clarified async behavior in Publisher.broadcast() - documented that async listeners are awaited to prevent memory leaks, even though the method doesn't return a value.
 
 ### Code Simplification
 
 1. **Collection Package Removal:** Removed Collection package dependency from transport system. Replaced with direct array/dictionary operations using helper functions (`_remove_indices_from_array()`). Simplifies codebase and reduces dependencies.
 
-2. **Obsolete Code Cleanup:** Removed unused `listener_start_time` variable from EventBroadcaster that was never used (leftover from planned per-listener metrics).
+2. **Obsolete Code Cleanup:** Removed unused `listener_start_time` variable from Publisher that was never used (leftover from planned per-listener metrics).
 
 ## Future Considerations
 

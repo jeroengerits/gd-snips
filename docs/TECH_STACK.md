@@ -66,7 +66,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
 
 ### When to Use RefCounted
 
-**Current Usage:** ✅ We use `RefCounted` for all transport classes (SubscriptionRegistry, CommandRouter, EventBroadcaster, Message, Command, Event).
+**Current Usage:** ✅ We use `RefCounted` for all transport classes (SubscriptionRegistry, Commander, Publisher, Message, Command, Event).
 
 **Best Practices:**
 
@@ -88,7 +88,7 @@ Godot Engine is a free and open-source game engine that provides a comprehensive
 **From Godot Docs:**
 ```gdscript
 extends RefCounted
-class_name SignalEventAdapter
+class_name Bridge
 
 func _notification(what: int) -> void:
     if what == NOTIFICATION_PREDELETE:
@@ -98,7 +98,7 @@ func _notification(what: int) -> void:
 **Why This Matters:**
 - RefCounted objects don't automatically cleanup like Node objects
 - Signal connections hold references and can cause memory leaks
-- **Our implementation:** ✅ SignalEventAdapter uses this pattern
+- **Our implementation:** ✅ Bridge uses this pattern
 
 **Best Practice:** Always implement cleanup in `_notification()` for RefCounted classes that manage resources (connections, subscriptions, etc.).
 

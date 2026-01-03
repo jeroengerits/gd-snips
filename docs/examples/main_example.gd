@@ -1,6 +1,6 @@
 extends Node
 
-## Example usage of CommandRouter and EventBroadcaster in gameplay code.
+## Example usage of Commander and Publisher in gameplay code.
 ##
 ## This demonstrates:
 ## - Registering command handlers
@@ -10,13 +10,13 @@ extends Node
 
 const Transport = preload("res://packages/transport/transport.gd")
 
-var command_router: Transport.CommandRouter
-var event_broadcaster: Transport.EventBroadcaster
+var command_router: Transport.Commander
+var event_broadcaster: Transport.Publisher
 
 func _ready() -> void:
 	# Create router and broadcaster instances
-	command_router = Transport.CommandRouter.new()
-	event_broadcaster = Transport.EventBroadcaster.new()
+	command_router = Transport.Commander.new()
+	event_broadcaster = Transport.Publisher.new()
 	
 	# Enable verbose logging for this example
 	command_router.set_verbose(true)

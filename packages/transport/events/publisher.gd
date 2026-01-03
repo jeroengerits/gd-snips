@@ -1,11 +1,11 @@
 const SubscriptionRegistry = preload("res://packages/transport/events/registry.gd")
-const SubscriptionValidator = preload("res://packages/transport/events/validator.gd")
+const Validator = preload("res://packages/transport/events/validator.gd")
 const Event = preload("res://packages/transport/types/event.gd")
 
 extends SubscriptionRegistry
-class_name EventBroadcaster
+class_name Publisher
 
-## Event broadcaster: broadcasts events to 0..N subscribers.
+## Publisher: broadcasts events to 0..N subscribers.
 
 var _log_listener_calls: bool = false
 
@@ -69,13 +69,13 @@ func _broadcast_internal(evt: Event, await_async: bool) -> void:
 	# Execute pre-middleware (can cancel delivery)
 	if not _execute_middleware_pre(evt, key):
 		if _trace_enabled:
-			print("[EventBroadcaster] Broadcasting ", key, " cancelled by middleware")
+			print("[Publisher] Broadcasting ", key, " cancelled by middleware")
 		return
 	
 	var entries: Array = _get_valid_registrations(key)
 	
 	if _trace_enabled:
-		print("[EventBroadcaster] Broadcasting ", key, " -> ", entries.size(), " listener(s)")
+		print("[Publisher] Broadcasting ", key, " -> ", entries.size(), " listener(s)")
 	
 	if entries.is_empty():
 		return
@@ -100,7 +100,7 @@ func _broadcast_internal(evt: Event, await_async: bool) -> void:
 		# Error logging provides context before errors crash (if enabled)
 		if _log_listener_calls:
 			# Log context before calling (helps debug if error occurs)
-			push_warning("[EventBroadcaster] Calling listener for event: %s (registration_id=%d)" % [key, entry.id])
+			push_warning("[Publisher] Calling listener for event: %s (registration_id=%d)" % [key, entry.id])
 		
 		result = entry.callable.call(evt)
 		
@@ -116,7 +116,7 @@ func _broadcast_internal(evt: Event, await_async: bool) -> void:
 				result = await result
 		
 		# Handle one-shot subscriptions (domain rule: auto-unsubscribe after first delivery)
-		if SubscriptionValidator.should_remove_after_delivery(entry.once):
+		if Validator.should_remove_after_delivery(entry.once):
 			ones_to_remove.append({"key": key, "entry": entry})
 	
 	# Remove one-shot subscriptions after iteration
