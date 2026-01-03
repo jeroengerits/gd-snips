@@ -1,6 +1,6 @@
 const MessageTypeResolver = preload("res://packages/messaging/internal/message_type_resolver.gd")
 const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
-const Collection = preload("res://packages/collection/collection.gd")
+const Collection = preload("res://packages/collection/types/collection.gd")
 const MetricsUtils = preload("res://packages/messaging/utilities/metrics_utils.gd")
 
 extends RefCounted

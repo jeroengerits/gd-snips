@@ -58,7 +58,7 @@ event_bus.publish(MyEvent.new())
 ```gdscript
 const Collection = preload("res://packages/collection/collection.gd")
 
-var numbers = Collection.new([1, 2, 3, 4, 5])
+var numbers = Collection.Collection.new([1, 2, 3, 4, 5])
 var evens = numbers.filter(func(n): return n % 2 == 0).array()
 ```
 

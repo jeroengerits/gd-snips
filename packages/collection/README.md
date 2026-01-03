@@ -4,23 +4,25 @@ A fluent, object-oriented wrapper for working with arrays, inspired by Laravel's
 
 ## Quick Start
 
-**Import the Collection class:**
+**Import via barrel file:**
 
 ```gdscript
 const Collection = preload("res://packages/collection/collection.gd")
+var collection = Collection.Collection.new([1, 2, 3])
 ```
 
-**Or use the package barrel file:**
+**Or import the class directly:**
 
 ```gdscript
-const CollectionPackage = preload("res://packages/collection/collection_package.gd")
-var collection = CollectionPackage.Collection.new([1, 2, 3])
+const Collection = preload("res://packages/collection/types/collection.gd")
+var collection = Collection.new([1, 2, 3])
 ```
 
 **Basic Usage:**
 
 ```gdscript
 const Collection = preload("res://packages/collection/collection.gd")
+var collection = Collection.Collection.new([1, 2, 3])
 
 # Create a collection
 var collection = Collection.new([1, 2, 3, 4, 5])
@@ -85,6 +87,8 @@ var result = collection.filter(func(x): return x > 2).map(func(x): return x * 2)
 By default, Collection creates a copy of the array. To work with the original array reference:
 
 ```gdscript
+const Collection = preload("res://packages/collection/types/collection.gd")
+
 var my_array: Array = [1, 2, 3]
 var collection = Collection.new(my_array, false)  # false = use reference
 collection.push(4)  # Modifies my_array directly
@@ -95,7 +99,7 @@ collection.push(4)  # Modifies my_array directly
 Common pattern for managing arrays in dictionaries (caches, registries, subscriptions):
 
 ```gdscript
-const Collection = preload("res://packages/collection/collection.gd")
+const Collection = preload("res://packages/collection/types/collection.gd")
 
 var subscriptions: Dictionary = {}
 var listeners: Array = []

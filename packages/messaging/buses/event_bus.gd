@@ -1,7 +1,7 @@
 const MessageBus = preload("res://packages/messaging/internal/message_bus.gd")
 const SubscriptionRules = preload("res://packages/messaging/rules/subscription_rules.gd")
 const Event = preload("res://packages/messaging/types/event.gd")
-const Collection = preload("res://packages/collection/collection.gd")
+const Collection = preload("res://packages/collection/types/collection.gd")
 
 extends MessageBus
 class_name EventBus

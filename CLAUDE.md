@@ -23,6 +23,8 @@ packages/
 │   ├── internal/   # MessageBus foundation class
 │   └── utilities/  # Package-specific utilities
 └── collection/     # Fluent array wrapper
+    ├── types/      # Collection class
+    └── collection.gd  # Barrel file
 ```
 
 ## Architectural Decisions
@@ -92,10 +94,20 @@ Infrastructure (MessageTypeResolver)
 
 ### Import Patterns
 
-**Package Import:**
+**Package Import (Barrel Files):**
 ```gdscript
 const Messaging = preload("res://packages/messaging/messaging.gd")
 const Collection = preload("res://packages/collection/collection.gd")
+
+# Use via barrel file
+var bus = Messaging.CommandBus.new()
+var coll = Collection.Collection.new([1, 2, 3])
+```
+
+**Direct Class Import:**
+```gdscript
+const Collection = preload("res://packages/collection/types/collection.gd")
+var coll = Collection.new([1, 2, 3])
 ```
 
 **Direct Import (for internal files):**
@@ -107,6 +119,8 @@ const MessageBus = preload("res://packages/messaging/internal/message_bus.gd")
 
 **Working with References:**
 ```gdscript
+const Collection = preload("res://packages/collection/types/collection.gd")
+
 var my_array: Array = [1, 2, 3]
 var collection = Collection.new(my_array, false)  # false = use reference
 collection.push(4)  # Modifies my_array directly
