@@ -406,7 +406,7 @@ The bridges automatically clean up connections when they're freed, so you don't 
 - Godot's built-in events (`area_entered`, `body_entered`, etc.)
 - Third-party plugin integrations
 
-**Use SignalBridge/CommandSignalBridge when:**
+**Use EventSignalBridge/CommandSignalBridge when:**
 - Migrating gradually from signals to transport
 - Integrating legacy signal-based code
 - Connecting UI signals to your game logic

@@ -324,7 +324,7 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 1. **Metrics Recording:** Fixed double-recording bug in EventBus where metrics were recorded per-listener and again for overall operation. Now correctly records overall operation time once.
 
-2. **Resource Cleanup:** Added automatic cleanup for `SignalBridge` and `CommandSignalBridge` connections via `_notification()` to prevent memory leaks when adapters are freed.
+2. **Resource Cleanup:** Added automatic cleanup for `EventSignalBridge` and `CommandSignalBridge` connections via `_notification()` to prevent memory leaks when adapters are freed.
 
 3. **Validation Logic:** Simplified Message._init() validation by removing redundant checks after assertions, improving clarity and maintainability.
 
