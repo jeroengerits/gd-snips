@@ -72,10 +72,11 @@ packages/
 
 **Implementation:**
 - Moved `event/subscribers.gd` → `core/subscribers.gd`
-- Extracted priority sorting logic to `_sort_by_priority()` method in Subscribers class
+- Extracted priority sorting logic to `_sort_by_priority()` method in Subscribers class (later moved to ArrayUtils)
 - Removed EventValidator dependency from Subscribers (was only used for sorting middleware)
 - Inlined lifecycle validation in EventSubscriber class (removed EventValidator dependency)
 - Updated imports in command_bus.gd and event_bus.gd to use new path
+- Later renamed `Subscriber` to `EventSubscriber` for clarity (distinguishes from `Subscribers` infrastructure class)
 
 **Impact:**
 - Better architectural clarity - core/ folder explicitly shows shared infrastructure
@@ -433,7 +434,13 @@ if not source.connect(signal_name, callback):
 
 ### API Naming Improvements
 
-1. **Middleware Terminology:** Renamed all middleware methods from "pre/post" to "before/after" for better clarity (January 2026).
+1. **EventSubscriber Class Rename:** Renamed `Subscriber` to `EventSubscriber` (class and filename) (January 2026).
+   - **Rationale:** Makes it explicit that this class is event-specific (used by EventBus)
+   - **Benefit:** Avoids confusion with the `Subscribers` class (shared infrastructure)
+   - **Changed:** `subscriber.gd` → `event_subscriber.gd`, `class_name Subscriber` → `class_name EventSubscriber`
+   - **Impact:** Internal change only (EventSubscriber is not part of public API), improves code clarity
+
+2. **Middleware Terminology:** Renamed all middleware methods from "pre/post" to "before/after" for better clarity (January 2026).
 
    **Changed methods:**
    - `add_middleware_pre()` → `add_middleware_before()`
