@@ -1,6 +1,6 @@
 const CommandBus = preload("res://addons/transport/command/command_bus.gd")
 const CommandRoutingError = preload("res://addons/transport/command/command_routing_error.gd")
-const Command = preload("res://addons/transport/type/command.gd")
+const Command = preload("res://addons/transport/command/command.gd")
 const SignalConnectionTracker = preload("res://addons/transport/utils/signal_connection_tracker.gd")
 
 extends RefCounted

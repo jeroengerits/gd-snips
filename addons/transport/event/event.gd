@@ -1,4 +1,4 @@
-const Message = preload("res://addons/transport/type/message.gd")
+const Message = preload("res://addons/transport/core/message.gd")
 
 extends Message
 class_name Event

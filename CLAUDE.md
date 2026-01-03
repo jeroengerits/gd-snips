@@ -19,11 +19,10 @@ addons/
 └── transport/     # Command/Event transport framework (Godot addon)
     ├── plugin.cfg # Addon configuration
     ├── transport.gd # Public API barrel file
-    ├── type/      # Message, Command, Event base classes
+    ├── core/      # Shared infrastructure (Message, MessageTypeResolver, Subscribers, Middleware, MiddlewareEntry)
     ├── utils/     # Metrics utilities
-    ├── core/      # Shared infrastructure (Subscribers, Middleware, MiddlewareEntry)
-    ├── event/     # EventBus, Validator, EventSignalBridge, EventSubscriber
-    └── command/   # CommandBus, Validator, CommandSignalBridge
+    ├── event/     # EventBus, Event, Validator, EventSignalBridge, EventSubscriber
+    └── command/   # CommandBus, Command, Validator, CommandSignalBridge
 ```
 
 ## Architectural Decisions
@@ -119,7 +118,7 @@ addons/
 - Easier to add new packages following the same pattern
 
 **Examples:**
-- `transport/transport.gd` → `type/message.gd`, `command/command_bus.gd`
+- `transport/transport.gd` → `core/message.gd`, `command/command_bus.gd`
 
 ### Transport Package Architecture
 
@@ -127,11 +126,11 @@ addons/
 ```
 Public API (CommandBus/EventBus)
     ↓
-Shared Infrastructure (Subscribers in core/)
+Shared Infrastructure (Subscribers, Message, MessageTypeResolver in core/)
     ↓
 Domain Rules (Validator classes in command/ and event/)
     ↓
-Infrastructure (MessageTypeResolver in type/)
+Base Types (Command, Event in their respective directories)
 ```
 
 **Key Patterns:**
@@ -202,7 +201,7 @@ var event_bus = Transport.EventBus.new()
 **Direct Import (for internal files):**
 ```gdscript
 const Subscribers = preload("res://addons/transport/core/subscribers.gd")
-const MessageTypeResolver = preload("res://addons/transport/type/message_type_resolver.gd")
+const MessageTypeResolver = preload("res://addons/transport/core/message_type_resolver.gd")
 const ArrayUtils = preload("res://addons/transport/utils/array_utils.gd")
 ```
 
@@ -389,14 +388,14 @@ if not source.connect(signal_name, callback):
 1. Initial: `types/`, `buses/`, `routers/`, `rules/`, `internal/`, `utilities/` (plural)
 2. First refactor: `messages/`, `pubsub/`, `routing/`, `validation/`, `observability/`, `adapters/`
 3. Flattened: Removed nested `internal/` folders
-4. Final structure: `type/`, `utils/`, `event/`, `command/` (singular folder names)
+4. Consolidated: `type/`, `utils/`, `event/`, `command/` (singular folder names)
+5. Reorganized: Removed `type/` directory, moved files to domain-specific directories (January 2026)
 
 **Current Structure:**
-- `type/` - Message, Command, Event base classes and MessageTypeResolver
+- `core/` - Shared infrastructure: Message (message.gd), MessageTypeResolver (message_type_resolver.gd), Subscribers (subscribers.gd), Middleware (middleware.gd), MiddlewareEntry (middleware_entry.gd)
 - `utils/` - Metrics utilities
-- `core/` - Shared infrastructure: Subscribers (subscribers.gd), Middleware (middleware.gd), MiddlewareEntry (middleware_entry.gd)
-- `event/` - EventBus (event_bus.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd), EventSubscriber (event_subscriber.gd)
-- `command/` - CommandBus (command_bus.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
+- `event/` - EventBus (event_bus.gd), Event (event.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd), EventSubscriber (event_subscriber.gd)
+- `command/` - CommandBus (command_bus.gd), Command (command.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
 
 **File Naming:**
 - Files match class names: `command_bus.gd`, `event_bus.gd`, `subscribers.gd`, `event_signal_bridge.gd`, `command_signal_bridge.gd`, `validator.gd`

@@ -1,4 +1,4 @@
-const MessageTypeResolver = preload("res://addons/transport/type/message_type_resolver.gd")
+const MessageTypeResolver = preload("res://addons/transport/core/message_type_resolver.gd")
 const MetricsUtils = preload("res://addons/transport/utils/metrics_utils.gd")
 const ArrayUtils = preload("res://addons/transport/utils/array_utils.gd")
 const MiddlewareEntry = preload("res://addons/transport/core/middleware_entry.gd")
