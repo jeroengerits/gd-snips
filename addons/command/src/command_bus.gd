@@ -3,11 +3,23 @@ const CommandValidator = preload("res://addons/command/src/command_validator.gd"
 const Command = preload("res://addons/command/src/command.gd")
 const CommandRoutingError = preload("res://addons/command/src/command_routing_error.gd")
 const MessageTypeResolver = preload("res://addons/message/src/message_type_resolver.gd")
+const MiddlewareAPI = preload("res://addons/middleware/src/middleware_api.gd")
 
 extends Subscribers
 class_name CommandBus
 
 ## CommandBus: routes commands to exactly one handler.
+
+var _middleware_api: MiddlewareAPI
+
+func _init() -> void:
+	super._init()
+	_middleware_api = MiddlewareAPI.new(self)
+
+## Middleware API for adding and managing middleware.
+var middleware: MiddlewareAPI:
+	get:
+		return _middleware_api
 
 ## Register handler for a command type (replaces existing).
 ##

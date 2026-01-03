@@ -2,6 +2,7 @@ const Subscribers = preload("res://addons/event/src/event_subscribers.gd")
 const EventValidator = preload("res://addons/event/src/event_validator.gd")
 const Event = preload("res://addons/event/src/event.gd")
 const MessageTypeResolver = preload("res://addons/message/src/message_type_resolver.gd")
+const MiddlewareAPI = preload("res://addons/middleware/src/middleware_api.gd")
 
 extends Subscribers
 class_name EventBus
@@ -9,22 +10,20 @@ class_name EventBus
 ## EventBus: broadcasts events to 0..N subscribers.
 
 var _log_listener_calls: bool = false
+var _middleware_api: MiddlewareAPI
+
+func _init() -> void:
+	super._init()
+	_middleware_api = MiddlewareAPI.new(self)
+
+## Middleware API for adding and managing middleware.
+var middleware: MiddlewareAPI:
+	get:
+		return _middleware_api
 
 ## Enable listener call logging.
 func set_log_listener_calls(enabled: bool) -> void:
 	_log_listener_calls = enabled
-
-## Add before-execution middleware.
-func add_middleware_before(callback: Callable, priority: int = 0) -> int:
-	return super.add_middleware_before(callback, priority)
-
-## Add after-execution middleware.
-func add_middleware_after(callback: Callable, priority: int = 0) -> int:
-	return super.add_middleware_after(callback, priority)
-
-## Remove middleware.
-func remove_middleware(middleware_id: int) -> bool:
-	return super.remove_middleware(middleware_id)
 
 ## Enable metrics tracking.
 func set_metrics_enabled(enabled: bool) -> void:
