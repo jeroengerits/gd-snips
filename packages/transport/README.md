@@ -44,7 +44,7 @@ Copy the `packages/transport` directory into your Godot project.
 ```gdscript
 const Transport = preload("res://packages/transport/transport.gd")
 
-# Create bus instances
+# Create router and broadcaster instances
 var command_router = Transport.CommandRouter.new()
 var event_broadcaster = Transport.EventBroadcaster.new()
 

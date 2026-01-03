@@ -1,4 +1,4 @@
-const Message = preload("res://packages/transport/messages/message.gd")
+const Message = preload("res://packages/transport/types/message.gd")
 
 extends Message
 class_name Command

@@ -17,12 +17,10 @@ All packages live under `packages/`:
 ```
 packages/
 └── transport/     # Command/Event transport framework
-    ├── routing/    # CommandRouter
-    ├── pubsub/     # EventBroadcaster, SubscriptionRegistry
-    ├── messages/   # Message, Command, Event base classes
-    ├── validation/ # Domain rules (CommandValidator, SubscriptionValidator)
-    ├── observability/ # Metrics utilities
-    └── adapters/   # SignalEventAdapter
+    ├── types/      # Message, Command, Event base classes
+    ├── utils/      # Metrics utilities
+    ├── events/     # EventBroadcaster, SubscriptionRegistry, SubscriptionValidator, SignalEventAdapter
+    └── commands/   # CommandRouter, CommandValidator
 ```
 
 ## Architectural Decisions
@@ -85,7 +83,7 @@ packages/
 **Pattern:**
 - Barrel file at root (`{package}.gd`) - Public API entry point
 - Organized subdirectories by functionality
-- Internal implementation details in nested `internal/` folders
+- Flat structure with no nested folders
 
 **Rationale:**
 - Consistency makes packages easier to navigate
@@ -93,7 +91,7 @@ packages/
 - Easier to add new packages following the same pattern
 
 **Examples:**
-- `transport/transport.gd` → `messages/message.gd`, `routing/command_router.gd`
+- `transport/transport.gd` → `types/message.gd`, `commands/router.gd`
 
 ### Transport Package Architecture
 
@@ -170,7 +168,7 @@ var broadcaster = Transport.EventBroadcaster.new()
 
 **Direct Import (for internal files):**
 ```gdscript
-const SubscriptionRegistry = preload("res://packages/transport/pubsub/internal/subscription_registry.gd")
+const SubscriptionRegistry = preload("res://packages/transport/events/registry.gd")
 ```
 
 **Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations instead.
@@ -272,8 +270,8 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 
 - One class per file (when possible)
 - Barrel files for package entry points
-- Internal implementation in nested `internal/` folders
-- Organized by functionality (routing, pubsub, messages, validation, observability, adapters)
+- Flat folder structure (no nested subdirectories)
+- Organized by functionality (types, utils, events, commands)
 
 ## Recent Improvements (January 2026)
 
@@ -285,20 +283,31 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 - More semantic organization that reflects functionality
 - Clearer separation of concerns
 - Better discoverability for developers
+- Flatter structure with no nested subdirectories
 
-**Changes:**
-- `types/` → `messages/` (Message, Command, Event base classes)
-- `buses/` → `pubsub/` (EventBroadcaster, SubscriptionRegistry)
-- `routers/` → `routing/` (CommandRouter)
-- `rules/` → `validation/` (CommandValidator, SubscriptionValidator)
-- `utilities/` → `observability/` (MetricsUtils)
-- `internal/` → moved to `messages/internal/` and `pubsub/internal/` (internal implementation details)
+**Evolution:**
+1. Initial: `types/`, `buses/`, `routers/`, `rules/`, `internal/`, `utilities/`
+2. First refactor: `messages/`, `pubsub/`, `routing/`, `validation/`, `observability/`, `adapters/`
+3. Flattened: Removed nested `internal/` folders
+4. Final structure: `types/`, `utils/`, `events/`, `commands/`
+
+**Current Structure:**
+- `types/` - Message, Command, Event base classes and MessageTypeResolver
+- `utils/` - Metrics utilities
+- `events/` - EventBroadcaster (broadcaster.gd), SubscriptionRegistry (registry.gd), SubscriptionValidator (validator.gd), SignalEventAdapter (bridge.gd)
+- `commands/` - CommandRouter (router.gd), CommandValidator (validator.gd)
+
+**File Naming:**
+- Files use short, descriptive names: `broadcaster.gd`, `router.gd`, `registry.gd`, `bridge.gd`, `validator.gd`
+- Class names remain unchanged (EventBroadcaster, CommandRouter, etc.)
+- All files are at most one level deep from package root
 
 **Impact:**
 - All preload paths updated automatically
 - Public API unchanged (all exports through `transport.gd` barrel file)
 - No breaking changes for external code using the public API
 - Improved code organization and maintainability
+- Flatter structure makes navigation easier
 
 ### Performance Optimizations
 
