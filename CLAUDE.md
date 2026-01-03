@@ -19,7 +19,7 @@ packages/
 └── transport/     # Command/Event transport framework
     ├── type/      # Message, Command, Event base classes
     ├── utils/     # Metrics utilities
-    ├── event/     # EventBus, SubscriptionRegistry, Validator, EventSignalBridge
+    ├── event/     # EventBus, subscribers, Validator, EventSignalBridge
     └── command/   # CommandBus, Validator
 ```
 
@@ -99,7 +99,7 @@ packages/
 ```
 Public API (CommandBus/EventBus)
     ↓
-Foundation (SubscriptionRegistry)
+Foundation (subscribers)
     ↓
 Domain Rules (Validator classes)
     ↓
@@ -172,7 +172,7 @@ var event_bus = Transport.EventBus.new()
 
 **Direct Import (for internal files):**
 ```gdscript
-const SubscriptionRegistry = preload("res://packages/transport/event/registry.gd")
+const subscribers = preload("res://packages/transport/event/subscribers.gd")
 ```
 
 **Note:** Collection package was removed (January 2026). Use direct GDScript array/dictionary operations instead.
@@ -299,11 +299,11 @@ call_deferred("_broadcast_event", event_broadcaster, evt)
 - `type/` - Message, Command, Event base classes and MessageTypeResolver
 - `utils/` - Metrics utilities
 - `middleware/` - Middleware base class (middleware.gd), MiddlewareEntry (middleware_entry.gd)
-- `event/` - EventBus (event_bus.gd), SubscriptionRegistry (registry.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd)
+- `event/` - EventBus (event_bus.gd), subscribers (subscribers.gd), Validator (event_validator.gd), EventSignalBridge (event_signal_bridge.gd)
 - `command/` - CommandBus (command_bus.gd), Validator (command_validator.gd), CommandSignalBridge (command_signal_bridge.gd)
 
 **File Naming:**
-- Files match class names: `command_bus.gd`, `event_bus.gd`, `registry.gd`, `event_signal_bridge.gd`, `command_signal_bridge.gd`, `validator.gd`
+- Files match class names: `command_bus.gd`, `event_bus.gd`, `subscribers.gd`, `event_signal_bridge.gd`, `command_signal_bridge.gd`, `validator.gd`
 - Class names match filenames (CommandBus, EventBus, etc.)
 - All files are at most one level deep from package root
 

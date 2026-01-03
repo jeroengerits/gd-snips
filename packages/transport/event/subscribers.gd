@@ -5,7 +5,7 @@ const MiddlewareEntry = preload("res://packages/transport/middleware/middleware_
 const SubscriptionEntry = preload("res://packages/transport/event/subscription_entry.gd")
 
 extends RefCounted
-## Internal subscription registry. Manages subscriptions, middleware, and metrics.
+## Internal subscribers registry. Manages subscriptions, middleware, and metrics.
 ## Use CommandBus or EventBus instead.
 
 var _registrations: Dictionary = {}  # StringName -> Array[SubscriptionEntry]
@@ -26,7 +26,7 @@ func add_middleware_pre(callback: Callable, priority: int = 0) -> int:
 	_middleware_pre.append(mw)
 	Validator.sort_by_priority(_middleware_pre)
 	if _verbose:
-		print("[SubscriptionRegistry] Added pre-middleware (priority=", priority, ")")
+		print("[Subscribers] Added pre-middleware (priority=", priority, ")")
 	return mw.id
 
 ## Add post-processing middleware.
@@ -35,7 +35,7 @@ func add_middleware_post(callback: Callable, priority: int = 0) -> int:
 	_middleware_post.append(mw)
 	Validator.sort_by_priority(_middleware_post)
 	if _verbose:
-		print("[SubscriptionRegistry] Added post-middleware (priority=", priority, ")")
+		print("[Subscribers] Added post-middleware (priority=", priority, ")")
 	return mw.id
 
 ## Remove middleware.
@@ -53,7 +53,7 @@ func remove_middleware(middleware_id: int) -> bool:
 		_remove_indices_from_array(_middleware_pre, pre_to_remove)
 		removed = true
 		if _verbose:
-			print("[SubscriptionRegistry] Removed pre-middleware (id=", middleware_id, ")")
+			print("[Subscribers] Removed pre-middleware (id=", middleware_id, ")")
 	
 	# Find and remove from post-middleware
 	var post_to_remove: Array = []
@@ -65,7 +65,7 @@ func remove_middleware(middleware_id: int) -> bool:
 		_remove_indices_from_array(_middleware_post, post_to_remove)
 		removed = true
 		if _verbose:
-			print("[SubscriptionRegistry] Removed post-middleware (id=", middleware_id, ")")
+			print("[Subscribers] Removed post-middleware (id=", middleware_id, ")")
 	
 	return removed
 
@@ -74,7 +74,7 @@ func clear_middleware() -> void:
 	_middleware_pre.clear()
 	_middleware_post.clear()
 	if _verbose:
-		print("[SubscriptionRegistry] Cleared all middleware")
+		print("[Subscribers] Cleared all middleware")
 
 ## Enable metrics tracking.
 func set_metrics_enabled(enabled: bool) -> void:
@@ -173,7 +173,7 @@ func register(message_type, handler: Callable, priority: int = 0, once: bool = f
 	entries.insert(insert_pos, entry)
 	
 	if _verbose:
-		print("[SubscriptionRegistry] Registered to ", key, " (priority=", priority, ", once=", once, ")")
+		print("[Subscribers] Registered to ", key, " (priority=", priority, ", once=", once, ")")
 	
 	return entry.id
 
@@ -191,7 +191,7 @@ func unregister_by_id(message_type, registration_id: int) -> bool:
 		if entries.is_empty():
 			_registrations.erase(key)
 		if _verbose:
-			print("[SubscriptionRegistry] Unregistered from ", key, " (id=", registration_id, ")")
+			print("[Subscribers] Unregistered from ", key, " (id=", registration_id, ")")
 		return true
 	return false
 
@@ -218,7 +218,7 @@ func unregister(message_type, handler: Callable) -> int:
 			_registrations.erase(key)
 	
 	if _verbose and removed > 0:
-		print("[SubscriptionRegistry] Unregistered ", removed, " registration(s) from ", key)
+		print("[Subscribers] Unregistered ", removed, " registration(s) from ", key)
 	
 	return removed
 
@@ -239,13 +239,13 @@ func clear_registrations(message_type) -> void:
 	var key = resolve_type_key(message_type)
 	_registrations.erase(key)
 	if _verbose:
-		print("[SubscriptionRegistry] Cleared registrations for ", key)
+		print("[Subscribers] Cleared registrations for ", key)
 
 ## Clear all registrations.
 func clear() -> void:
 	_registrations.clear()
 	if _verbose:
-		print("[SubscriptionRegistry] Cleared all registrations")
+		print("[Subscribers] Cleared all registrations")
 
 ## Get registration count (internal).
 func get_registration_count(message_type) -> int:

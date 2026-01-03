@@ -1,8 +1,8 @@
-const SubscriptionRegistry = preload("res://packages/transport/event/registry.gd")
+const Subscribers = preload("res://packages/transport/event/subscribers.gd")
 const Validator = preload("res://packages/transport/event/validator.gd")
 const Event = preload("res://packages/transport/type/event.gd")
 
-extends SubscriptionRegistry
+extends Subscribers
 class_name EventBus
 
 ## EventBus: broadcasts events to 0..N subscribers.

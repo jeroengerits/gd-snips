@@ -1,9 +1,9 @@
-const SubscriptionRegistry = preload("res://packages/transport/event/registry.gd")
+const Subscribers = preload("res://packages/transport/event/subscribers.gd")
 const Validator = preload("res://packages/transport/command/validator.gd")
 const Command = preload("res://packages/transport/type/command.gd")
 const CommandRoutingError = preload("res://packages/transport/command/command_routing_error.gd")
 
-extends SubscriptionRegistry
+extends Subscribers
 class_name CommandBus
 
 ## CommandBus: routes commands to exactly one handler.
