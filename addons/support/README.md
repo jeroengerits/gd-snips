@@ -1,6 +1,6 @@
 # Support
 
-Utility functions in Godot 4.5.1+.
+Support functions for Godot 4.5.1+.
 
 ## Installation
 
